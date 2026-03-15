@@ -7,7 +7,7 @@
     <h1 class="h3 mb-0">
         {{ work.title }}
         {% if work.starred %}
-            <i class="fa-solid fa-star text-warning ms-1" aria-label="Favorite work"></i>
+            <i class="bi bi-star-fill text-warning ms-1" aria-label="Favorite work"></i>
         {% endif %}
     </h1>
     <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary">

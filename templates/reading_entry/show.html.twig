@@ -75,7 +75,7 @@
             <dt class="col-sm-5">{{ 'reading.field.starred'|trans }}</dt>
             <dd class="col-sm-7">
                 {% if entry.starred %}
-                    <i class="fa-solid fa-heart text-danger" aria-label="Yes"></i>
+                    <i class="bi bi-heart-fill text-danger" aria-label="Yes"></i>
                 {% else %}
                     —
                 {% endif %}
@@ -94,7 +94,7 @@
 {% if not entry.work.deleted %}
     <div class="border-top pt-3">
         <a href="{{ path('app_work_show', {id: entry.work.id}) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa-solid fa-book" aria-hidden="true"></i>
+            <i class="bi bi-book" aria-hidden="true"></i>
             {{ 'reading.entry.view_work'|trans }}
         </a>
     </div>

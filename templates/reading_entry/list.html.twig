@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">{{ 'reading.entry.list_heading'|trans }}</h1>
     <a href="{{ path('app_work_select') }}" class="btn btn-primary">
-        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        <i class="bi bi-plus-lg" aria-hidden="true"></i>
         {{ 'reading.entry.add'|trans }}
     </a>
 </div>
@@ -42,7 +42,7 @@
                             {% else %}
                                 <a href="{{ path('app_reading_entry_show', {id: entry.id}) }}">{{ entry.work.title }}</a>
                                 {% if entry.work.starred %}
-                                    <i class="fa-solid fa-star text-warning ms-1" aria-label="Favorite work"></i>
+                                    <i class="bi bi-star-fill text-warning ms-1" aria-label="Favorite work"></i>
                                 {% endif %}
                             {% endif %}
                         </td>
@@ -68,14 +68,14 @@
                                 —
                             {% endif %}
                             {% if entry.starred %}
-                                <i class="fa-solid fa-heart text-danger ms-1" aria-label="Favorite entry"></i>
+                                <i class="bi bi-heart-fill text-danger ms-1" aria-label="Favorite entry"></i>
                             {% endif %}
                         </td>
                         <td>
                             {% if not entry.work.deleted %}
                                 <a href="{{ path('app_work_show', {id: entry.work.id}) }}"
                                    class="btn btn-sm btn-outline-secondary">
-                                    <i class="fa-solid fa-book" aria-hidden="true"></i>
+                                    <i class="bi bi-book" aria-hidden="true"></i>
                                     {{ 'reading.entry.view_work'|trans }}
                                 </a>
                             {% endif %}
