@@ -49,7 +49,7 @@ function addRemoveButton(item) {
     btn.className = 'btn btn-outline-danger btn-sm';
     btn.dataset.collectionRemove = '';
     btn.setAttribute('aria-label', 'Remove');
-    btn.innerHTML = '<i class="fa fa-times" aria-hidden="true"></i>';
+    btn.innerHTML = '<i class="bi bi-x-lg" aria-hidden="true"></i>';
 
     btn.addEventListener('click', (e) => {
         e.preventDefault();
