@@ -49,6 +49,7 @@ reading:
     entry:
         title: 'Reading Entry'
         add: 'Add Entry'
+        added: 'Entry added.'
         list_heading: 'My Reading List'
         empty: 'No reading entries yet. Add your first one!'
         work_deleted: '[Deleted work]'

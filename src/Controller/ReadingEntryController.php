@@ -86,7 +86,7 @@ class ReadingEntryController extends AbstractController
 
             try {
                 $this->readingEntryService->validateAndSave($entry);
-                $this->addFlash('success', 'reading.entry.add');
+                $this->addFlash('success', 'reading.entry.added');
 
                 return $this->redirectToRoute('app_reading_entry_list');
             } catch (\InvalidArgumentException $e) {
