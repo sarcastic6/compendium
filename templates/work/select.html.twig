@@ -24,23 +24,30 @@
     {% else %}
         <div class="list-group mb-3">
             {% for work in works %}
-                <a href="{{ path('app_reading_entry_new', {workId: work.id}) }}"
-                   class="list-group-item list-group-item-action">
+                <div class="list-group-item">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <strong>{{ work.title }}</strong>
+                            <a href="{{ path('app_work_show', {id: work.id}) }}" class="fw-bold text-decoration-none">
+                                {{ work.title }}
+                            </a>
                             {% if work.authors is not empty %}
                                 <span class="text-muted ms-2">
                                     by {{ work.authors|map(a => a.name)|join(', ') }}
                                 </span>
                             {% endif %}
+                            {% if work.series %}
+                                <div><small class="text-muted">{{ work.series.name }}</small></div>
+                            {% endif %}
                         </div>
-                        <span class="badge bg-secondary ms-2">{{ work.type.value }}</span>
+                        <div class="d-flex align-items-center gap-2 ms-2 flex-shrink-0">
+                            <span class="badge bg-secondary">{{ work.type.value }}</span>
+                            <a href="{{ path('app_reading_entry_new', {workId: work.id}) }}"
+                               class="btn btn-sm btn-primary">
+                                {{ 'reading.entry.add'|trans }}
+                            </a>
+                        </div>
                     </div>
-                    {% if work.series %}
-                        <small class="text-muted">{{ work.series.name }}</small>
-                    {% endif %}
-                </a>
+                </div>
             {% endfor %}
         </div>
     {% endif %}
