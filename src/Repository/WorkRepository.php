@@ -26,4 +26,22 @@ class WorkRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['link' => $link]);
     }
+
+    /**
+     * Fetches a work with all related entities in a single query to avoid N+1 problems.
+     * Used by the work detail page.
+     */
+    public function findWithAllRelations(int $id): ?Work
+    {
+        return $this->createQueryBuilder('w')
+            ->leftJoin('w.authors', 'a')->addSelect('a')
+            ->leftJoin('w.metadata', 'm')->addSelect('m')
+            ->leftJoin('m.metadataType', 'mt')->addSelect('mt')
+            ->leftJoin('w.series', 's')->addSelect('s')
+            ->leftJoin('w.language', 'l')->addSelect('l')
+            ->where('w.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

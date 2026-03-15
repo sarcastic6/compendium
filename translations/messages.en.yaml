@@ -68,6 +68,14 @@ work:
     select_heading: 'Select a Work'
     select_prompt: 'Search for an existing work or create a new one.'
     create_new: 'Create New Work'
+    show:
+        heading: 'Work details'
+        no_metadata: 'No metadata attached to this work.'
+        field:
+            published_date: 'Published'
+            last_updated_date: 'Last updated'
+            created_at: 'Created'
+            updated_at: 'Updated'
     field:
         type: 'Type'
         title: 'Title'

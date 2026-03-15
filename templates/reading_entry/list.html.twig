@@ -40,7 +40,7 @@
                                     {{ 'reading.entry.work_deleted'|trans }}
                                 </span>
                             {% else %}
-                                {{ entry.work.title }}
+                                <a href="{{ path('app_work_show', {id: entry.work.id}) }}">{{ entry.work.title }}</a>
                                 {% if entry.work.starred %}
                                     <i class="fa fa-star text-warning ms-1" aria-label="Favorite work"></i>
                                 {% endif %}

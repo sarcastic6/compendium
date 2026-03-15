@@ -79,6 +79,23 @@ class WorkController extends AbstractController
     }
 
     /**
+     * Read-only detail page for a single Work.
+     */
+    #[Route('/{id}', name: 'app_work_show', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function show(int $id): Response
+    {
+        $work = $this->workRepository->findWithAllRelations($id);
+
+        if ($work === null) {
+            throw $this->createNotFoundException();
+        }
+
+        return $this->render('work/show.html.twig', [
+            'work' => $work,
+        ]);
+    }
+
+    /**
      * Step 1b: Select an existing Work to create a ReadingEntry for (e.g., re-reads).
      */
     #[Route('/select', name: 'app_work_select', methods: ['GET'])]

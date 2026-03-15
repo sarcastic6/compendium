@@ -1,0 +1,137 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ work.title }}{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        {{ work.title }}
+        {% if work.starred %}
+            <i class="fa fa-star text-warning ms-1" aria-label="Favorite work"></i>
+        {% endif %}
+    </h1>
+    <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary">
+        {{ 'nav.home'|trans }}
+    </a>
+</div>
+
+<div class="row g-4">
+    {# Left column: core details #}
+    <div class="col-md-6">
+        <dl class="row mb-0">
+
+            {% if work.authors is not empty %}
+                <dt class="col-sm-4">{{ 'work.field.authors'|trans }}</dt>
+                <dd class="col-sm-8">
+                    {% for author in work.authors %}
+                        {% if author.link %}
+                            <a href="{{ author.link }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
+                        {% else %}
+                            {{ author.name }}
+                        {% endif %}
+                        {%- if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </dd>
+            {% endif %}
+
+            <dt class="col-sm-4">{{ 'work.field.type'|trans }}</dt>
+            <dd class="col-sm-8">{{ work.type.value }}</dd>
+
+            <dt class="col-sm-4">{{ 'work.field.source_type'|trans }}</dt>
+            <dd class="col-sm-8">
+                {% if work.link %}
+                    <a href="{{ work.link }}" target="_blank" rel="noopener noreferrer">{{ work.sourceType.value }}</a>
+                {% else %}
+                    {{ work.sourceType.value }}
+                {% endif %}
+            </dd>
+
+            {% if work.language %}
+                <dt class="col-sm-4">{{ 'work.field.language'|trans }}</dt>
+                <dd class="col-sm-8">{{ work.language.name }}</dd>
+            {% endif %}
+
+            {% if work.series %}
+                <dt class="col-sm-4">{{ 'work.field.series'|trans }}</dt>
+                <dd class="col-sm-8">
+                    {% if work.series.link %}
+                        <a href="{{ work.series.link }}" target="_blank" rel="noopener noreferrer">{{ work.series.name }}</a>
+                    {% else %}
+                        {{ work.series.name }}
+                    {% endif %}
+                    {% if work.placeInSeries %}
+                        (#{{ work.placeInSeries }})
+                    {% endif %}
+                </dd>
+            {% endif %}
+
+        </dl>
+    </div>
+
+    {# Right column: counts and dates #}
+    <div class="col-md-6">
+        <dl class="row mb-0">
+
+            {% if work.words %}
+                <dt class="col-sm-5">{{ 'work.field.words'|trans }}</dt>
+                <dd class="col-sm-7">{{ work.words|number_format }}</dd>
+            {% endif %}
+
+            {% if work.chapters %}
+                <dt class="col-sm-5">{{ 'work.field.chapters'|trans }}</dt>
+                <dd class="col-sm-7">{{ work.chapters }}</dd>
+            {% endif %}
+
+            {% if work.publishedDate %}
+                <dt class="col-sm-5">{{ 'work.show.field.published_date'|trans }}</dt>
+                <dd class="col-sm-7">{{ work.publishedDate|date('Y-m-d') }}</dd>
+            {% endif %}
+
+            {% if work.lastUpdatedDate %}
+                <dt class="col-sm-5">{{ 'work.show.field.last_updated_date'|trans }}</dt>
+                <dd class="col-sm-7">{{ work.lastUpdatedDate|date('Y-m-d') }}</dd>
+            {% endif %}
+
+            <dt class="col-sm-5">{{ 'work.show.field.created_at'|trans }}</dt>
+            <dd class="col-sm-7 text-muted">{{ work.createdAt|date('Y-m-d') }}</dd>
+
+            <dt class="col-sm-5">{{ 'work.show.field.updated_at'|trans }}</dt>
+            <dd class="col-sm-7 text-muted">{{ work.updatedAt|date('Y-m-d') }}</dd>
+
+        </dl>
+    </div>
+</div>
+
+{% if work.summary %}
+    <hr>
+    <p class="text-muted mb-0" style="white-space: pre-wrap;">{{ work.summary }}</p>
+{% endif %}
+
+<hr>
+
+{# Metadata grouped by type #}
+{% if work.metadata is empty %}
+    <p class="text-muted">{{ 'work.show.no_metadata'|trans }}</p>
+{% else %}
+    {# Build grouped map: {typeName: [metadata items]} #}
+    {% set grouped = {} %}
+    {% for item in work.metadata %}
+        {% set key = item.metadataType.name %}
+        {% if key not in grouped|keys %}
+            {% set grouped = grouped|merge({(key): []}) %}
+        {% endif %}
+        {% set grouped = grouped|merge({(key): grouped[key]|merge([item])}) %}
+    {% endfor %}
+
+    <div class="row g-2">
+        {% for typeName, items in grouped %}
+            <div class="col-12">
+                <span class="fw-semibold me-2">{{ typeName }}:</span>
+                {% for item in items %}
+                    <span class="badge bg-secondary me-1">{{ item.name }}</span>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}
