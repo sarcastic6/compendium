@@ -12,7 +12,7 @@
             <div class="card-body">
                 <h2 class="h5 card-title">{{ 'mfa.totp.heading'|trans }}</h2>
                 {% if totp_enabled %}
-                    <p class="text-success"><i class="fa fa-check-circle" aria-hidden="true"></i> Enabled</p>
+                    <p class="text-success"><i class="fa-solid fa-check-circle" aria-hidden="true"></i> Enabled</p>
                     <form method="post" action="{{ path('app_mfa_totp_disable') }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('mfa_totp_disable') }}">
                         <button type="submit" class="btn btn-outline-danger">
@@ -35,7 +35,7 @@
             <div class="card-body">
                 <h2 class="h5 card-title">{{ 'mfa.email.heading'|trans }}</h2>
                 {% if email_enabled %}
-                    <p class="text-success"><i class="fa fa-check-circle" aria-hidden="true"></i> Enabled</p>
+                    <p class="text-success"><i class="fa-solid fa-check-circle" aria-hidden="true"></i> Enabled</p>
                     <form method="post" action="{{ path('app_mfa_email_disable') }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('mfa_email_disable') }}">
                         <button type="submit" class="btn btn-outline-danger">

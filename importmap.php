@@ -42,4 +42,8 @@ return [
         'version' => '7.2.0',
         'type' => 'css',
     ],
+    '@fortawesome/fontawesome-free/css/solid.min.css' => [
+        'version' => '7.2.0',
+        'type' => 'css',
+    ],
 ];
