@@ -20,7 +20,7 @@ class Ao3ScraperTest extends TestCase
         $response = new MockResponse($html, ['http_code' => $status]);
         $client = new MockHttpClient($response);
 
-        return new Ao3Scraper($client, new NullLogger());
+        return new Ao3Scraper($client, new NullLogger(), 'ReadingStats/test');
     }
 
     private function fixture(string $name): string

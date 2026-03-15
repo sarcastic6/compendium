@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Scraper;
 
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -19,12 +20,13 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class Ao3Scraper implements ScraperInterface
 {
-    private const USER_AGENT = 'ReadingStats/1.0';
     private const AO3_HOST = 'archiveofourown.org';
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly LoggerInterface $logger,
+        #[Autowire(env: 'SCRAPER_USER_AGENT')]
+        private readonly string $userAgent,
     ) {
     }
 
@@ -54,7 +56,7 @@ class Ao3Scraper implements ScraperInterface
         try {
             $response = $this->httpClient->request('GET', $normalizedUrl, [
                 'headers' => [
-                    'User-Agent' => self::USER_AGENT,
+                    'User-Agent' => $this->userAgent,
                     // AO3 redirects canonical work URLs to /chapters/{id} and drops the
                     // ?view_adult=true query param. Sending it as a cookie ensures the
                     // adult-content bypass persists through the entire redirect chain.
