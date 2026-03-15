@@ -17,4 +17,13 @@ class WorkRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Work::class);
     }
+
+    /**
+     * Finds an active (non-deleted) work by its source URL.
+     * Used for duplicate detection during import.
+     */
+    public function findByLink(string $link): ?Work
+    {
+        return $this->findOneBy(['link' => $link]);
+    }
 }
