@@ -63,6 +63,46 @@ class ReadingEntryRepository extends ServiceEntityRepository
         }
     }
 
+    /**
+     * Fetches a single reading entry by ID, scoped to the given user.
+     * Returns null if the entry doesn't exist or belongs to a different user.
+     *
+     * The SoftDeleteFilter is disabled so entries referencing soft-deleted works
+     * still load correctly (same reasoning as findByUser).
+     */
+    public function findByIdForUser(int $id, User $user): ?ReadingEntry
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            return $this->createQueryBuilder('re')
+                ->innerJoin('re.work', 'w')
+                ->addSelect('w')
+                ->leftJoin('w.authors', 'a')
+                ->addSelect('a')
+                ->innerJoin('re.status', 's')
+                ->addSelect('s')
+                ->leftJoin('re.mainPairing', 'mp')
+                ->addSelect('mp')
+                ->where('re.id = :id')
+                ->andWhere('re.user = :user')
+                ->setParameter('id', $id)
+                ->setParameter('user', $user)
+                ->getQuery()
+                ->getOneOrNullResult();
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
     public function countByUser(User $user): int
     {
         return (int) $this->createQueryBuilder('re')

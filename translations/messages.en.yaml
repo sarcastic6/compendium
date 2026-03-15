@@ -56,6 +56,8 @@ reading:
         work_deleted: '[Deleted work]'
         col_title: 'Title'
         col_authors: 'Author(s)'
+        back_to_list: 'Back to My List'
+        view_work: 'View Work'
     field:
         status: 'Status'
         date_started: 'Date Started'

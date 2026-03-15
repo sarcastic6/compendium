@@ -40,7 +40,7 @@
                                     {{ 'reading.entry.work_deleted'|trans }}
                                 </span>
                             {% else %}
-                                <a href="{{ path('app_work_show', {id: entry.work.id}) }}">{{ entry.work.title }}</a>
+                                <a href="{{ path('app_reading_entry_show', {id: entry.id}) }}">{{ entry.work.title }}</a>
                                 {% if entry.work.starred %}
                                     <i class="fa fa-star text-warning ms-1" aria-label="Favorite work"></i>
                                 {% endif %}
@@ -72,7 +72,13 @@
                             {% endif %}
                         </td>
                         <td>
-                            {# Entry detail / edit links go here in Phase 3 #}
+                            {% if not entry.work.deleted %}
+                                <a href="{{ path('app_work_show', {id: entry.work.id}) }}"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   title="{{ 'reading.entry.view_work'|trans }}">
+                                    <i class="fa fa-book" aria-hidden="true"></i>
+                                </a>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}

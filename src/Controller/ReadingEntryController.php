@@ -51,6 +51,20 @@ class ReadingEntryController extends AbstractController
         ]);
     }
 
+    #[Route('/{id}', name: 'app_reading_entry_show', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function show(int $id): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $entry = $this->readingEntryRepository->findByIdForUser($id, $user);
+        if ($entry === null) {
+            throw $this->createNotFoundException();
+        }
+
+        return $this->render('reading_entry/show.html.twig', ['entry' => $entry]);
+    }
+
     #[Route('/new/{workId}', name: 'app_reading_entry_new', requirements: ['workId' => '\d+'], methods: ['GET', 'POST'])]
     public function new(Request $request, int $workId): Response
     {
