@@ -1,5 +1,5 @@
 nav:
-    home: 'Home'
+    home: 'My List'
     new_entry: 'New Entry'
     import: 'Import'
     admin: 'Admin'
