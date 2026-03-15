@@ -53,13 +53,22 @@ class Ao3Scraper implements ScraperInterface
 
         try {
             $response = $this->httpClient->request('GET', $normalizedUrl, [
-                'headers' => ['User-Agent' => self::USER_AGENT],
+                'headers' => [
+                    'User-Agent' => self::USER_AGENT,
+                    // AO3 redirects canonical work URLs to /chapters/{id} and drops the
+                    // ?view_adult=true query param. Sending it as a cookie ensures the
+                    // adult-content bypass persists through the entire redirect chain.
+                    'Cookie' => 'view_adult=true',
+                ],
             ]);
 
             $statusCode = $response->getStatusCode();
+            $finalUrl = $response->getInfo('url') ?? $normalizedUrl;
             $this->logger->debug('AO3 scraper: received response', [
-                'url' => $normalizedUrl,
+                'requested_url' => $normalizedUrl,
+                'final_url' => $finalUrl,
                 'http_status' => $statusCode,
+                'redirected' => $finalUrl !== $normalizedUrl,
             ]);
 
             if ($statusCode !== 200) {
@@ -72,7 +81,7 @@ class Ao3Scraper implements ScraperInterface
 
             $html = $response->getContent();
             $this->logger->debug('AO3 scraper: fetched HTML', [
-                'url' => $normalizedUrl,
+                'url' => $finalUrl,
                 'bytes' => strlen($html),
             ]);
         } catch (ScrapingException $e) {
