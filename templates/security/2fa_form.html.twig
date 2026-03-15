@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'mfa.code_prompt'|trans }}{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-sm mt-4">
+            <div class="card-body p-4">
+                <h1 class="h4 card-title mb-4">{{ 'mfa.code_prompt'|trans }}</h1>
+
+                {% if authenticationError %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ authenticationError.messageKey|trans(authenticationError.messageData, 'security') }}
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{{ path('2fa_login_check') }}">
+                    <div class="mb-3">
+                        <label for="auth_code" class="form-label">{{ 'mfa.code_field'|trans }}</label>
+                        <input type="text" id="auth_code" name="_auth_code"
+                               class="form-control" autocomplete="one-time-code"
+                               inputmode="numeric" pattern="[0-9]*"
+                               maxlength="6" required autofocus>
+                    </div>
+
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('2fa') }}">
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            {{ 'action.confirm'|trans }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

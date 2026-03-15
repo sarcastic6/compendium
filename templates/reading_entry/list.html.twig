@@ -1,0 +1,108 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'reading.entry.list_heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ 'reading.entry.list_heading'|trans }}</h1>
+    <a href="{{ path('app_work_select') }}" class="btn btn-primary">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+        {{ 'reading.entry.add'|trans }}
+    </a>
+</div>
+
+{% if entries is empty %}
+    <div class="text-center py-5 text-muted">
+        <p class="mb-3">{{ 'reading.entry.empty'|trans }}</p>
+        <a href="{{ path('app_work_select') }}" class="btn btn-outline-primary">
+            {{ 'reading.entry.add'|trans }}
+        </a>
+    </div>
+{% else %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle table-responsive-card">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">Author(s)</th>
+                    <th scope="col">{{ 'reading.field.status'|trans }}</th>
+                    <th scope="col">{{ 'reading.field.date_finished'|trans }}</th>
+                    <th scope="col">★</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                    <tr>
+                        <td data-label="Title">
+                            {% if entry.work.deleted %}
+                                <span class="entry-deleted-work">
+                                    {{ 'reading.entry.work_deleted'|trans }}
+                                </span>
+                            {% else %}
+                                {{ entry.work.title }}
+                                {% if entry.work.starred %}
+                                    <i class="fa fa-star text-warning ms-1" aria-label="Favorite work"></i>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td data-label="Author(s)">
+                            {% if not entry.work.deleted %}
+                                {{ entry.work.authors|map(a => a.name)|join(', ')|default('—') }}
+                            {% endif %}
+                        </td>
+                        <td data-label="{{ 'reading.field.status'|trans }}">
+                            <span class="badge {% if entry.status.finished %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ entry.status.name }}
+                            </span>
+                        </td>
+                        <td data-label="{{ 'reading.field.date_finished'|trans }}">
+                            {{ entry.dateFinished ? entry.dateFinished|date('Y-m-d') : '—' }}
+                        </td>
+                        <td data-label="★">
+                            {% if entry.reviewStars %}
+                                <span class="stars-display" aria-label="{{ entry.reviewStars }} stars">
+                                    {% for i in range(1, entry.reviewStars) %}★{% endfor %}
+                                </span>
+                            {% else %}
+                                —
+                            {% endif %}
+                            {% if entry.starred %}
+                                <i class="fa fa-heart text-danger ms-1" aria-label="Favorite entry"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {# Entry detail / edit links go here in Phase 3 #}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# Pagination #}
+    {% if total_pages > 1 %}
+        <nav aria-label="Reading entries pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ path('app_reading_entry_list', {page: page - 1}) }}"
+                       aria-label="{{ 'pagination.previous'|trans }}">
+                        &laquo; {{ 'pagination.previous'|trans }}
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        {{ page }} / {{ total_pages }}
+                    </span>
+                </li>
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ path('app_reading_entry_list', {page: page + 1}) }}"
+                       aria-label="{{ 'pagination.next'|trans }}">
+                        {{ 'pagination.next'|trans }} &raquo;
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
+{% endif %}
+{% endblock %}

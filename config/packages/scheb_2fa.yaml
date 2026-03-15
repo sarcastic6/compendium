@@ -1,0 +1,20 @@
+scheb_two_factor:
+    model_manager_name: ~
+
+    totp:
+        enabled: true
+        server_name: 'Reading Stats'
+        issuer: 'Reading Stats'
+        leeway: 1
+        template: 'security/2fa_form.html.twig'
+
+    email:
+        enabled: true
+        mailer: App\Mailer\TwoFactorCodeMailer
+        template: 'security/2fa_form.html.twig'
+
+    security_tokens:
+        - Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken
+        - Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken
+
+    ip_whitelist: []

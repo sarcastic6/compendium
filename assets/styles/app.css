@@ -1,0 +1,83 @@
+/* ===== Base Styles ===== */
+
+body {
+    min-height: 100vh;
+}
+
+/* ===== Touch Target Minimum Size ===== */
+
+.btn,
+a.nav-link,
+.pagination .page-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.form-check {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.form-check .form-check-input {
+    margin-top: 0;
+    flex-shrink: 0;
+}
+
+/* ===== Flash Messages ===== */
+
+.flash-container {
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+}
+
+/* ===== Dynamic Collection Fields ===== */
+
+.collection-item {
+    position: relative;
+}
+
+/* ===== Stars Display ===== */
+
+.stars-display {
+    color: #f4c430;
+    letter-spacing: 2px;
+}
+
+/* ===== Reading List ===== */
+
+.entry-deleted-work {
+    color: var(--bs-secondary);
+    font-style: italic;
+}
+
+/* ===== Responsive Table ===== */
+
+@media (max-width: 768px) {
+    .table-responsive-card thead {
+        display: none;
+    }
+
+    .table-responsive-card tr {
+        display: block;
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--bs-border-radius);
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+    }
+
+    .table-responsive-card td {
+        display: flex;
+        justify-content: space-between;
+        border: none;
+        padding: 0.25rem 0;
+    }
+
+    .table-responsive-card td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        margin-right: 1rem;
+    }
+}

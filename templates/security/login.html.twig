@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'auth.login.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-sm mt-4">
+            <div class="card-body p-4">
+                <h1 class="h4 card-title mb-4">{{ 'auth.login.heading'|trans }}</h1>
+
+                {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error.messageKey|trans(error.messageData, 'security') }}
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{{ path('app_login') }}" novalidate>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">{{ 'auth.register.email'|trans }}</label>
+                        <input type="email" id="username" name="_username"
+                               class="form-control" value="{{ last_username }}"
+                               autocomplete="email" required autofocus>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">{{ 'auth.register.password'|trans }}</label>
+                        <input type="password" id="password" name="_password"
+                               class="form-control" autocomplete="current-password" required>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" id="remember_me" name="_remember_me"
+                               class="form-check-input">
+                        <label class="form-check-label" for="remember_me">
+                            {{ 'auth.login.remember_me'|trans }}
+                        </label>
+                    </div>
+
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            {{ 'nav.login'|trans }}
+                        </button>
+                    </div>
+                </form>
+
+                <hr>
+
+                <p class="text-center mb-1">
+                    <a href="{{ path('reset_password_request') }}">{{ 'auth.login.forgot_password'|trans }}</a>
+                </p>
+                <p class="text-center mb-0">
+                    {{ 'auth.login.no_account'|trans }}
+                    <a href="{{ path('app_register') }}">{{ 'nav.register'|trans }}</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

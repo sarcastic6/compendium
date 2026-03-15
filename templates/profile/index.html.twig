@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'profile.heading'|trans }}{% endblock %}
+
+{% block body %}
+<h1 class="h3 mb-4">{{ 'profile.heading'|trans }}</h1>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5 card-title">Profile Details</h2>
+                {{ form_start(profileForm) }}
+                    {{ form_row(profileForm.name) }}
+                    {{ form_row(profileForm.email) }}
+                    <button type="submit" class="btn btn-primary mt-2">{{ 'action.save'|trans }}</button>
+                {{ form_end(profileForm) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5 card-title">{{ 'profile.change_password'|trans }}</h2>
+                <a href="{{ path('app_profile_change_password') }}" class="btn btn-outline-secondary">
+                    {{ 'profile.change_password'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5 card-title">{{ 'mfa.heading'|trans }}</h2>
+                <a href="{{ path('app_mfa_setup') }}" class="btn btn-outline-secondary">
+                    {{ 'mfa.heading'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

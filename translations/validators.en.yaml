@@ -1,0 +1,20 @@
+auth:
+    password:
+        too_short: 'Password must be at least 8 characters.'
+        too_common: 'This password is too common or easy to guess. Please choose a stronger one.'
+        too_weak: 'Password is too weak.'
+        not_blank: 'Please enter a password.'
+        mismatch: 'The passwords do not match.'
+    name:
+        not_blank: 'Please enter your name.'
+        too_long: 'Name must not exceed 255 characters.'
+    email:
+        not_blank: 'Please enter an email address.'
+        invalid: 'Please enter a valid email address.'
+
+reading:
+    entry:
+        stars:
+            out_of_range: 'Rating must be between 1 and 5.'
+        main_pairing:
+            wrong_type: 'The selected pairing is not a valid Pairing metadata entry.'

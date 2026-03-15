@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'auth.register.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm mt-4">
+            <div class="card-body p-4">
+                <h1 class="h4 card-title mb-4">{{ 'auth.register.heading'|trans }}</h1>
+
+                {{ form_start(form, {'attr': {'novalidate': true}}) }}
+
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.email) }}
+                    {{ form_row(form.plainPassword) }}
+
+                    <div class="d-grid mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            {{ 'nav.register'|trans }}
+                        </button>
+                    </div>
+
+                {{ form_end(form) }}
+
+                <hr>
+                <p class="text-center mb-0">
+                    {{ 'auth.register.already_account'|trans }}
+                    <a href="{{ path('app_login') }}">{{ 'nav.login'|trans }}</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

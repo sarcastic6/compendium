@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Reading Stats{% endblock %} | Reading Stats</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>📚</text></svg>">
+        {% block stylesheets %}{% endblock %}
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark" aria-label="{{ 'nav.main'|default('Main navigation') }}">
+            <div class="container">
+                <a class="navbar-brand" href="{{ path('app_reading_entry_list') }}">
+                    📚 Reading Stats
+                </a>
+                <button class="navbar-toggler" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#main-nav"
+                        aria-controls="main-nav" aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="main-nav">
+                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                        {% if is_granted('ROLE_USER') %}
+                            <li class="nav-item">
+                                <a class="nav-link{% if app.request.attributes.get('_route') starts with 'app_reading_entry' %} active{% endif %}"
+                                   href="{{ path('app_reading_entry_list') }}">
+                                    {{ 'nav.home'|trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_work_select') }}">
+                                    {{ 'nav.new_entry'|trans }}
+                                </a>
+                            </li>
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <li class="nav-item">
+                                    <a class="nav-link{% if app.request.attributes.get('_route') starts with 'app_admin' %} active{% endif %}"
+                                       href="{{ path('app_admin_index') }}">
+                                        {{ 'nav.admin'|trans }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                    </ul>
+                    {% if is_granted('ROLE_USER') %}
+                        <ul class="navbar-nav ms-auto mb-2 mb-md-0">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_profile') }}">
+                                    {{ 'nav.profile'|trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_logout') }}">
+                                    {{ 'nav.logout'|trans }}
+                                </a>
+                            </li>
+                        </ul>
+                    {% else %}
+                        <ul class="navbar-nav ms-auto mb-2 mb-md-0">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_login') }}">
+                                    {{ 'nav.login'|trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ path('app_register') }}">
+                                    {{ 'nav.register'|trans }}
+                                </a>
+                            </li>
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <div class="flash-container">
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ type == 'error' ? 'danger' : type }} alert-dismissible fade show mb-0 rounded-0" role="alert">
+                        {{ message|trans }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <main class="container py-4">
+            {% block body %}{% endblock %}
+        </main>
+    </body>
+</html>

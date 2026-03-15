@@ -1,0 +1,158 @@
+nav:
+    home: 'Home'
+    new_entry: 'New Entry'
+    admin: 'Admin'
+    profile: 'Profile'
+    logout: 'Log out'
+    login: 'Log in'
+    register: 'Register'
+
+action:
+    save: 'Save'
+    cancel: 'Cancel'
+    add: 'Add'
+    remove: 'Remove'
+    edit: 'Edit'
+    delete: 'Delete'
+    confirm: 'Confirm'
+
+auth:
+    login:
+        heading: 'Sign In'
+        remember_me: 'Remember me'
+        forgot_password: 'Forgot your password?'
+        no_account: 'Don''t have an account?'
+    register:
+        heading: 'Create Account'
+        name: 'Display Name'
+        email: 'Email Address'
+        password: 'Password'
+        password_confirm: 'Confirm Password'
+        already_account: 'Already have an account?'
+        success: 'Account created. You can now log in.'
+    account_disabled: 'Your account has been disabled. Please contact an administrator.'
+    password:
+        too_short: 'Password must be at least 8 characters.'
+        too_common: 'This password is too common or easy to guess. Please choose a stronger one.'
+        too_weak: 'Password is too weak.'
+        mismatch: 'The passwords do not match.'
+        not_blank: 'Please enter a password.'
+    name:
+        not_blank: 'Please enter your name.'
+        too_long: 'Name must not exceed 255 characters.'
+    email:
+        not_blank: 'Please enter an email address.'
+        invalid: 'Please enter a valid email address.'
+
+reading:
+    entry:
+        title: 'Reading Entry'
+        add: 'Add Entry'
+        list_heading: 'My Reading List'
+        empty: 'No reading entries yet. Add your first one!'
+        work_deleted: '[Deleted work]'
+    field:
+        status: 'Status'
+        date_started: 'Date Started'
+        date_finished: 'Date Finished'
+        last_chapter: 'Last Read Chapter'
+        review_stars: 'Rating'
+        spice_stars: 'Spice Level'
+        main_pairing: 'Main Pairing'
+        comments: 'Comments'
+        starred: 'Favorite'
+
+work:
+    new_heading: 'Add a Work'
+    select_heading: 'Select a Work'
+    select_prompt: 'Search for an existing work or create a new one.'
+    create_new: 'Create New Work'
+    field:
+        type: 'Type'
+        title: 'Title'
+        authors: 'Authors'
+        author_name: 'Author Name'
+        summary: 'Summary'
+        series: 'Series'
+        place_in_series: 'Book # in Series'
+        language: 'Language'
+        published_date: 'Published Date'
+        last_updated_date: 'Last Updated'
+        words: 'Word Count'
+        chapters: 'Chapter Count'
+        link: 'Source URL'
+        source_type: 'Source'
+        starred: 'Favorite'
+        metadata: 'Tags & Metadata'
+        add_author: 'Add Author'
+        add_metadata: 'Add'
+
+admin:
+    heading: 'Admin Panel'
+    statuses:
+        heading: 'Statuses'
+        new_heading: 'New Status'
+        field:
+            name: 'Name'
+            is_finished: 'Marks as Finished'
+    metadata_types:
+        heading: 'Metadata Types'
+        new_heading: 'New Metadata Type'
+        field:
+            name: 'Name'
+            multiple_allowed: 'Allow Multiple per Work'
+
+profile:
+    heading: 'My Profile'
+    change_password: 'Change Password'
+    field:
+        name: 'Display Name'
+        email: 'Email'
+        current_password: 'Current Password'
+        new_password: 'New Password'
+        new_password_confirm: 'Confirm New Password'
+
+mfa:
+    heading: '2FA Setup'
+    totp:
+        heading: 'Authenticator App (TOTP)'
+        enable: 'Enable Authenticator App'
+        disable: 'Disable Authenticator App'
+        enabled: 'Authenticator app has been enabled.'
+        disabled: 'Authenticator app has been disabled.'
+        invalid_code: 'Invalid verification code. Please try again.'
+        scan_qr: 'Scan this QR code with your authenticator app, then enter the 6-digit code below to confirm.'
+        verify_code: 'Verification Code'
+    email:
+        heading: 'Email Authentication'
+        enable: 'Enable Email Authentication'
+        disable: 'Disable Email Authentication'
+        enabled: 'Email authentication has been enabled.'
+        disabled: 'Email authentication has been disabled.'
+    code_prompt: 'Enter your authentication code:'
+    code_field: 'Authentication Code'
+
+pagination:
+    previous: 'Previous'
+    next: 'Next'
+    page_info: 'Page {current} of {total}'
+
+reset_password:
+    request:
+        heading: 'Reset Password'
+        instructions: 'Enter your email address and we will send you a link to reset your password.'
+        submit: 'Send Reset Email'
+    check_email:
+        heading: 'Check Your Email'
+        instructions: 'If an account matching your email exists, an email has been sent with a link to reset your password. This link will expire in %expiry%.'
+    reset:
+        heading: 'Reset Your Password'
+        submit: 'Set New Password'
+    success: 'Your password has been reset. You can now log in.'
+    error: 'There was a problem with your password reset request. Please try again.'
+    throttled: 'A reset link was already sent to that address recently. Please check your email (including spam), or wait before requesting another.'
+
+flash:
+    success: 'Success'
+    error: 'Error'
+    warning: 'Warning'

@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'work.select_heading'|trans }}{% endblock %}
+
+{% block body %}
+<h1 class="h3 mb-4">{{ 'work.select_heading'|trans }}</h1>
+<p class="text-muted">{{ 'work.select_prompt'|trans }}</p>
+
+<form method="get" action="{{ path('app_work_select') }}" class="mb-4">
+    <div class="input-group">
+        <input type="search" name="q" value="{{ query }}"
+               class="form-control" placeholder="Search by title..."
+               aria-label="Search works">
+        <button type="submit" class="btn btn-outline-secondary">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            Search
+        </button>
+    </div>
+</form>
+
+{% if query is not empty %}
+    {% if works is empty %}
+        <p class="text-muted">No works found. <a href="{{ path('app_work_new') }}">{{ 'work.create_new'|trans }}</a></p>
+    {% else %}
+        <div class="list-group mb-3">
+            {% for work in works %}
+                <a href="{{ path('app_reading_entry_new', {workId: work.id}) }}"
+                   class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>{{ work.title }}</strong>
+                            {% if work.authors is not empty %}
+                                <span class="text-muted ms-2">
+                                    by {{ work.authors|map(a => a.name)|join(', ') }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <span class="badge bg-secondary ms-2">{{ work.type.value }}</span>
+                    </div>
+                    {% if work.series %}
+                        <small class="text-muted">{{ work.series.name }}</small>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endif %}
+
+<a href="{{ path('app_work_new') }}" class="btn btn-primary">
+    <i class="fa fa-plus" aria-hidden="true"></i>
+    {{ 'work.create_new'|trans }}
+</a>
+{% endblock %}

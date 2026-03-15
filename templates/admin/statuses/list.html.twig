@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'admin.statuses.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ 'admin.statuses.heading'|trans }}</h1>
+    <a href="{{ path('app_admin_status_new') }}" class="btn btn-primary">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+        {{ 'action.add'|trans }}
+    </a>
+</div>
+
+{% if statuses is empty %}
+    <p class="text-muted">No statuses created yet.</p>
+{% else %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'admin.statuses.field.name'|trans }}</th>
+                    <th scope="col">{{ 'admin.statuses.field.is_finished'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for status in statuses %}
+                    <tr>
+                        <td>{{ status.name }}</td>
+                        <td>
+                            {% if status.finished %}
+                                <span class="badge bg-success">Yes</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+
+<a href="{{ path('app_admin_index') }}" class="btn btn-outline-secondary mt-3">
+    &larr; {{ 'nav.admin'|trans }}
+</a>
+{% endblock %}

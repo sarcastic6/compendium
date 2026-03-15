@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'admin.heading'|trans }}{% endblock %}
+
+{% block body %}
+<h1 class="h3 mb-4">{{ 'admin.heading'|trans }}</h1>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5 card-title">{{ 'admin.statuses.heading'|trans }}</h2>
+                <a href="{{ path('app_admin_status_list') }}" class="btn btn-outline-primary btn-sm">
+                    Manage Statuses
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5 card-title">{{ 'admin.metadata_types.heading'|trans }}</h2>
+                <a href="{{ path('app_admin_metadata_type_list') }}" class="btn btn-outline-primary btn-sm">
+                    Manage Metadata Types
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

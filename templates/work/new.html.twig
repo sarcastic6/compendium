@@ -1,0 +1,96 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'work.new_heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ 'work.new_heading'|trans }}</h1>
+    <a href="{{ path('app_work_select') }}" class="btn btn-outline-secondary">
+        {{ 'work.select_heading'|trans }}
+    </a>
+</div>
+
+{{ form_start(form, {'attr': {'novalidate': true}}) }}
+
+<div class="row g-3">
+    <div class="col-md-6">
+        {{ form_row(form.type) }}
+        {{ form_row(form.title) }}
+        {{ form_row(form.summary) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_row(form.sourceType) }}
+        {{ form_row(form.link) }}
+        {{ form_row(form.series) }}
+        {{ form_row(form.placeInSeries) }}
+        {{ form_row(form.language) }}
+    </div>
+    <div class="col-md-3">
+        {{ form_row(form.publishedDate) }}
+    </div>
+    <div class="col-md-3">
+        {{ form_row(form.lastUpdatedDate) }}
+    </div>
+    <div class="col-md-3">
+        {{ form_row(form.words) }}
+    </div>
+    <div class="col-md-3">
+        {{ form_row(form.chapters) }}
+    </div>
+</div>
+
+<hr>
+
+{# Authors — dynamic collection #}
+<div class="mb-4"
+     data-collection-widget
+     data-prototype="{{ form_widget(form.authors.vars.prototype)|e('html_attr') }}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">{{ 'work.field.authors'|trans }}</h2>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-collection-add>
+            <i class="fa fa-plus" aria-hidden="true"></i>
+            {{ 'work.field.add_author'|trans }}
+        </button>
+    </div>
+    <div data-collection-entries>
+        {% for authorField in form.authors %}
+            <div class="collection-item d-flex gap-2 align-items-start mb-2">
+                {{ form_widget(authorField) }}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<hr>
+
+{# Metadata — dynamic collection #}
+<div class="mb-4"
+     data-collection-widget
+     data-prototype="{{ form_widget(form.metadata.vars.prototype)|e('html_attr') }}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">{{ 'work.field.metadata'|trans }}</h2>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-collection-add>
+            <i class="fa fa-plus" aria-hidden="true"></i>
+            {{ 'work.field.add_metadata'|trans }}
+        </button>
+    </div>
+    <div data-collection-entries>
+        {% for metadataEntry in form.metadata %}
+            <div class="collection-item d-flex gap-2 align-items-start mb-2">
+                {{ form_widget(metadataEntry) }}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<hr>
+
+{{ form_row(form.starred) }}
+
+<div class="d-flex gap-2 mt-3">
+    <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
+    <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary">{{ 'action.cancel'|trans }}</a>
+</div>
+
+{{ form_end(form) }}
+{% endblock %}
