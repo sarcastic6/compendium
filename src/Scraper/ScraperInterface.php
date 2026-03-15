@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace App\Scraper;
 
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
+
 /**
  * Contract for all source-specific work metadata scrapers.
+ *
+ * The #[AutoconfigureTag] attribute ensures all implementing services are
+ * tagged with this interface's FQCN, allowing ScraperRegistry to collect
+ * them via #[AutowireIterator].
  *
  * CRITICAL GUARDRAIL — METADATA ONLY:
  * Implementations must NEVER extract, store, or process any story or chapter
@@ -14,6 +20,7 @@ namespace App\Scraper;
  * URL. Code that navigates to chapter pages or reads prose content violates
  * this contract and must not be merged.
  */
+#[AutoconfigureTag]
 interface ScraperInterface
 {
     /**
