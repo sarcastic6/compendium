@@ -49,12 +49,19 @@ class Ao3Scraper implements ScraperInterface
     {
         $normalizedUrl = $this->normalizeUrl($url);
 
+        $this->logger->debug('AO3 scraper: fetching URL', ['url' => $normalizedUrl]);
+
         try {
             $response = $this->httpClient->request('GET', $normalizedUrl, [
                 'headers' => ['User-Agent' => self::USER_AGENT],
             ]);
 
             $statusCode = $response->getStatusCode();
+            $this->logger->debug('AO3 scraper: received response', [
+                'url' => $normalizedUrl,
+                'http_status' => $statusCode,
+            ]);
+
             if ($statusCode !== 200) {
                 throw new ScrapingException(
                     $normalizedUrl,
@@ -64,9 +71,18 @@ class Ao3Scraper implements ScraperInterface
             }
 
             $html = $response->getContent();
+            $this->logger->debug('AO3 scraper: fetched HTML', [
+                'url' => $normalizedUrl,
+                'bytes' => strlen($html),
+            ]);
         } catch (ScrapingException $e) {
             throw $e;
         } catch (\Throwable $e) {
+            $this->logger->error('AO3 scraper: HTTP request failed', [
+                'url' => $normalizedUrl,
+                'error' => $e->getMessage(),
+                'exception_class' => $e::class,
+            ]);
             throw new ScrapingException(
                 $normalizedUrl,
                 sprintf('Failed to fetch AO3 URL: %s', $e->getMessage()),

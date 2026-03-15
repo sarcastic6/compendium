@@ -8,6 +8,7 @@ use App\Form\ImportUrlFormType;
 use App\Repository\WorkRepository;
 use App\Scraper\ScraperRegistry;
 use App\Scraper\ScrapingException;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +22,7 @@ class ImportController extends AbstractController
     public function __construct(
         private readonly ScraperRegistry $scraperRegistry,
         private readonly WorkRepository $workRepository,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -45,6 +47,11 @@ class ImportController extends AbstractController
             try {
                 $scraped = $scraper->scrape($url);
             } catch (ScrapingException $e) {
+                $this->logger->error('Import scrape failed', [
+                    'url' => $url,
+                    'http_status' => $e->getHttpStatus(),
+                    'error' => $e->getMessage(),
+                ]);
                 $this->addFlash('error', 'import.error.scrape_failed');
 
                 return $this->render('import/url.html.twig', ['form' => $form]);
