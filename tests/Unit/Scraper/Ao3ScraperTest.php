@@ -69,7 +69,9 @@ class Ao3ScraperTest extends TestCase
         $scraper = $this->makeScraper($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
-        $this->assertSame(['TestAuthor'], $dto->authors);
+        $this->assertCount(1, $dto->authors);
+        $this->assertSame('TestAuthor', $dto->authors[0]['name']);
+        $this->assertStringContainsString('/users/TestAuthor', $dto->authors[0]['link'] ?? '');
     }
 
     public function test_scrape_complete_work_summary(): void
@@ -130,21 +132,22 @@ class Ao3ScraperTest extends TestCase
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertArrayHasKey('Rating', $dto->metadata);
-        $this->assertContains('General Audiences', $dto->metadata['Rating']);
+        $this->assertContains('General Audiences', array_column($dto->metadata['Rating'], 'name'));
+        $this->assertStringContainsString('/tags/', $dto->metadata['Rating'][0]['link'] ?? '');
 
         $this->assertArrayHasKey('Fandom', $dto->metadata);
-        $this->assertContains('Test Fandom', $dto->metadata['Fandom']);
+        $this->assertContains('Test Fandom', array_column($dto->metadata['Fandom'], 'name'));
 
         $this->assertArrayHasKey('Relationship', $dto->metadata);
-        $this->assertContains('Character A/Character B', $dto->metadata['Relationship']);
+        $this->assertContains('Character A/Character B', array_column($dto->metadata['Relationship'], 'name'));
 
         $this->assertArrayHasKey('Character', $dto->metadata);
-        $this->assertContains('Character A', $dto->metadata['Character']);
-        $this->assertContains('Character B', $dto->metadata['Character']);
+        $this->assertContains('Character A', array_column($dto->metadata['Character'], 'name'));
+        $this->assertContains('Character B', array_column($dto->metadata['Character'], 'name'));
 
         $this->assertArrayHasKey('Tag', $dto->metadata);
-        $this->assertContains('Fluff', $dto->metadata['Tag']);
-        $this->assertContains('Happy Ending', $dto->metadata['Tag']);
+        $this->assertContains('Fluff', array_column($dto->metadata['Tag'], 'name'));
+        $this->assertContains('Happy Ending', array_column($dto->metadata['Tag'], 'name'));
     }
 
     // --- scrape(): ongoing work (chapters "X/?") ---
@@ -176,8 +179,9 @@ class Ao3ScraperTest extends TestCase
         $dto = $scraper->scrape('https://archiveofourown.org/works/33333');
 
         $this->assertCount(2, $dto->authors);
-        $this->assertContains('AuthorOne', $dto->authors);
-        $this->assertContains('AuthorTwo', $dto->authors);
+        $authorNames = array_column($dto->authors, 'name');
+        $this->assertContains('AuthorOne', $authorNames);
+        $this->assertContains('AuthorTwo', $authorNames);
     }
 
     // --- scrape(): series work ---
@@ -200,7 +204,8 @@ class Ao3ScraperTest extends TestCase
         $dto = $scraper->scrape('https://archiveofourown.org/works/55555');
 
         $this->assertSame('Minimal Work Title', $dto->title);
-        $this->assertSame(['MinimalAuthor'], $dto->authors);
+        $this->assertCount(1, $dto->authors);
+        $this->assertSame('MinimalAuthor', $dto->authors[0]['name']);
         $this->assertNull($dto->summary);
         $this->assertNull($dto->language);
         $this->assertSame(500, $dto->words);

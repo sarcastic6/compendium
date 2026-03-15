@@ -172,7 +172,7 @@ class Ao3Scraper implements ScraperInterface
         }
     }
 
-    /** @return list<string> */
+    /** @return list<array{name: string, link: string|null}> */
     private function parseAuthors(Crawler $crawler): array
     {
         try {
@@ -180,7 +180,11 @@ class Ao3Scraper implements ScraperInterface
             $crawler->filter('a[rel="author"]')->each(function (Crawler $node) use (&$authors): void {
                 $name = trim($node->text());
                 if ($name !== '') {
-                    $authors[] = $name;
+                    $href = $node->attr('href');
+                    $authors[] = [
+                        'name' => $name,
+                        'link' => $href !== null ? 'https://' . self::AO3_HOST . $href : null,
+                    ];
                 }
             });
 
@@ -382,8 +386,9 @@ class Ao3Scraper implements ScraperInterface
 
     /**
      * Returns metadata grouped by AO3 category name.
+     * Each entry is {name: string, link: string|null}.
      *
-     * @return array<string, list<string>>
+     * @return array<string, list<array{name: string, link: string|null}>>
      */
     private function parseMetadata(Crawler $crawler): array
     {
@@ -403,9 +408,13 @@ class Ao3Scraper implements ScraperInterface
             try {
                 $tags = [];
                 $crawler->filter($selector)->each(function (Crawler $node) use (&$tags): void {
-                    $tag = trim($node->text());
-                    if ($tag !== '') {
-                        $tags[] = $tag;
+                    $name = trim($node->text());
+                    if ($name !== '') {
+                        $href = $node->attr('href');
+                        $tags[] = [
+                            'name' => $name,
+                            'link' => $href !== null ? 'https://' . self::AO3_HOST . $href : null,
+                        ];
                     }
                 });
 

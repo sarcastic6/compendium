@@ -43,9 +43,9 @@ class WorkFormDto
 
     public bool $starred = false;
 
-    /** @var array<int, array{name: string}> */
+    /** @var array<int, array{name: string, link: string|null}> */
     public array $authors = [];
 
-    /** @var array<int, array{metadataTypeId: int, name: string}> */
+    /** @var array<int, array{metadataType: \App\Entity\MetadataType, name: string, link: string|null}> */
     public array $metadata = [];
 }

@@ -97,11 +97,7 @@ class WorkFormType extends AbstractType
             ])
             ->add('authors', CollectionType::class, [
                 'label' => 'work.field.authors',
-                'entry_type' => TextType::class,
-                'entry_options' => [
-                    'label' => false,
-                    'attr' => ['placeholder' => 'work.field.author_name'],
-                ],
+                'entry_type' => AuthorEntryType::class,
                 'allow_add' => true,
                 'allow_delete' => true,
                 'prototype' => true,

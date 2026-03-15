@@ -175,7 +175,7 @@ class ImportFlowTest extends AbstractFunctionalTest
         // Manually inject a ScrapedWorkDto into the session
         $scraped = new ScrapedWorkDto();
         $scraped->title = 'Pre-filled Title';
-        $scraped->authors = ['Pre-filled Author'];
+        $scraped->authors = [['name' => 'Pre-filled Author', 'link' => null]];
         $scraped->workType = 'Fanfiction';
         $scraped->sourceType = 'AO3';
 

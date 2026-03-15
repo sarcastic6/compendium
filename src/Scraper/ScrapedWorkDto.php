@@ -10,13 +10,13 @@ namespace App\Scraper;
  *
  * The metadata array is keyed by the source's category name
  * (e.g. 'Rating', 'Warning', 'Fandom', 'Relationship', 'Character', 'Tag').
- * Each value is a list of tag strings for that category.
+ * Each value is a list of {name, link} entries for that category.
  */
 class ScrapedWorkDto
 {
     public ?string $title = null;
 
-    /** @var list<string> */
+    /** @var list<array{name: string, link: string|null}> */
     public array $authors = [];
 
     public ?string $summary = null;
@@ -49,8 +49,9 @@ class ScrapedWorkDto
 
     /**
      * Metadata tags keyed by the source category name.
+     * Each entry is {name: string, link: string|null}.
      *
-     * @var array<string, list<string>>
+     * @var array<string, list<array{name: string, link: string|null}>>
      */
     public array $metadata = [];
 

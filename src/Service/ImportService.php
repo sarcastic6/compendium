@@ -79,10 +79,10 @@ class ImportService
         }
 
         // Authors
-        foreach ($scraped->authors as $authorName) {
-            $name = trim($authorName);
+        foreach ($scraped->authors as $authorEntry) {
+            $name = trim($authorEntry['name']);
             if ($name !== '') {
-                $dto->authors[] = $name;
+                $dto->authors[] = ['name' => $name, 'link' => $authorEntry['link']];
             }
         }
 
@@ -129,8 +129,8 @@ class ImportService
                 );
             }
 
-            foreach ($tagNames as $tagName) {
-                $name = trim((string) $tagName);
+            foreach ($tagNames as $tagEntry) {
+                $name = trim((string) $tagEntry['name']);
                 if ($name === '') {
                     continue;
                 }
@@ -138,6 +138,7 @@ class ImportService
                 $dto->metadata[] = [
                     'metadataType' => $metadataType,
                     'name' => $name,
+                    'link' => $tagEntry['link'],
                 ];
             }
         }

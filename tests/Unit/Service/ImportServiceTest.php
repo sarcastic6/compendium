@@ -56,7 +56,7 @@ class ImportServiceTest extends TestCase
     {
         $dto = new ScrapedWorkDto();
         $dto->title = 'Test Work';
-        $dto->authors = ['TestAuthor'];
+        $dto->authors = [['name' => 'TestAuthor', 'link' => 'https://archiveofourown.org/users/TestAuthor/pseuds/TestAuthor']];
         $dto->summary = 'A test summary.';
         $dto->words = 10000;
         $dto->chapters = 5;
@@ -131,7 +131,9 @@ class ImportServiceTest extends TestCase
     {
         $result = $this->service->mapToWorkFormDto($this->makeScraped());
 
-        $this->assertSame(['TestAuthor'], $result->dto->authors);
+        $this->assertCount(1, $result->dto->authors);
+        $this->assertSame('TestAuthor', $result->dto->authors[0]['name']);
+        $this->assertStringContainsString('/users/TestAuthor', $result->dto->authors[0]['link'] ?? '');
     }
 
     public function test_maps_published_date(): void
@@ -235,7 +237,7 @@ class ImportServiceTest extends TestCase
         $this->metadataTypeRepo->method('findOneBy')->willReturn($ratingType);
 
         $scraped = $this->makeScraped();
-        $scraped->metadata = ['Rating' => ['General Audiences']];
+        $scraped->metadata = ['Rating' => [['name' => 'General Audiences', 'link' => 'https://archiveofourown.org/tags/General+Audiences/works']]];
 
         $result = $this->service->mapToWorkFormDto($scraped);
 
@@ -255,7 +257,7 @@ class ImportServiceTest extends TestCase
 
         $scraped = $this->makeScraped();
         // AO3 calls them "Relationship"; our DB uses "Pairing"
-        $scraped->metadata = ['Relationship' => ['Character A/Character B']];
+        $scraped->metadata = ['Relationship' => [['name' => 'Character A/Character B', 'link' => null]]];
 
         $result = $this->service->mapToWorkFormDto($scraped);
 
@@ -268,7 +270,7 @@ class ImportServiceTest extends TestCase
         $this->metadataTypeRepo->method('findOneBy')->willReturn(null);
 
         $scraped = $this->makeScraped();
-        $scraped->metadata = ['UnknownCategory' => ['SomeTag']];
+        $scraped->metadata = ['UnknownCategory' => [['name' => 'SomeTag', 'link' => null]]];
 
         $result = $this->service->mapToWorkFormDto($scraped);
 
@@ -286,7 +288,7 @@ class ImportServiceTest extends TestCase
         $this->metadataTypeRepo->method('findOneBy')->willReturn($ratingType);
 
         $scraped = $this->makeScraped();
-        $scraped->metadata = ['Rating' => ['  ', 'General Audiences', '']];
+        $scraped->metadata = ['Rating' => [['name' => '  ', 'link' => null], ['name' => 'General Audiences', 'link' => null], ['name' => '', 'link' => null]]];
 
         $result = $this->service->mapToWorkFormDto($scraped);
 

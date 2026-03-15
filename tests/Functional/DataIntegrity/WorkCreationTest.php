@@ -51,7 +51,7 @@ class WorkCreationTest extends AbstractFunctionalTest
                 'type' => 'Book',
                 'title' => 'Book with Existing Author',
                 'sourceType' => 'Manual',
-                'authors' => ['Jane Doe'],
+                'authors' => [['name' => 'Jane Doe']],
                 '_token' => $csrfToken,
             ],
         ]);

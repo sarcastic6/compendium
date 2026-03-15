@@ -44,12 +44,13 @@ class WorkService
         $work->setSourceType($dto->sourceType);
         $work->setStarred($dto->starred);
 
-        foreach ($dto->authors as $authorName) {
-            $name = trim((string) $authorName);
+        foreach ($dto->authors as $authorEntry) {
+            $name = trim((string) ($authorEntry['name'] ?? ''));
+            $link = $authorEntry['link'] ?? null;
             if ($name === '') {
                 continue;
             }
-            $work->addAuthor($this->findOrCreateAuthor($name));
+            $work->addAuthor($this->findOrCreateAuthor($name, $link));
         }
 
         $this->applyMetadata($work, $dto->metadata);
@@ -61,7 +62,7 @@ class WorkService
     }
 
     /**
-     * @param array<int, array{metadataType: MetadataType, name: string}> $metadataEntries
+     * @param array<int, array{metadataType: MetadataType, name: string, link: string|null}> $metadataEntries
      */
     private function applyMetadata(Work $work, array $metadataEntries): void
     {
@@ -71,6 +72,7 @@ class WorkService
         foreach ($metadataEntries as $entry) {
             $metadataType = $entry['metadataType'] ?? null;
             $name = isset($entry['name']) ? trim((string) $entry['name']) : '';
+            $link = isset($entry['link']) && $entry['link'] !== '' ? (string) $entry['link'] : null;
 
             if (!($metadataType instanceof MetadataType) || $name === '') {
                 continue;
@@ -91,24 +93,24 @@ class WorkService
 
             $typeCount[$typeId] = ($typeCount[$typeId] ?? 0) + 1;
 
-            $work->addMetadata($this->findOrCreateMetadata($name, $metadataType));
+            $work->addMetadata($this->findOrCreateMetadata($name, $metadataType, $link));
         }
     }
 
-    private function findOrCreateAuthor(string $name): Author
+    private function findOrCreateAuthor(string $name, ?string $link): Author
     {
         $existing = $this->authorRepository->findOneBy(['name' => $name]);
         if ($existing !== null) {
             return $existing;
         }
 
-        $author = new Author($name);
+        $author = new Author($name, $link);
         $this->entityManager->persist($author);
 
         return $author;
     }
 
-    private function findOrCreateMetadata(string $name, MetadataType $type): Metadata
+    private function findOrCreateMetadata(string $name, MetadataType $type, ?string $link): Metadata
     {
         $existing = $this->metadataRepository->findOneBy([
             'name' => $name,
@@ -118,7 +120,7 @@ class WorkService
             return $existing;
         }
 
-        $metadata = new Metadata($name, $type);
+        $metadata = new Metadata($name, $type, $link);
         $this->entityManager->persist($metadata);
 
         return $metadata;
