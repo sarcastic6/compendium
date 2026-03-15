@@ -7,6 +7,8 @@ namespace App\Controller;
 use App\Dto\WorkFormDto;
 use App\Form\WorkFormType;
 use App\Repository\WorkRepository;
+use App\Scraper\ScrapedWorkDto;
+use App\Service\ImportService;
 use App\Service\WorkService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,6 +23,7 @@ class WorkController extends AbstractController
     public function __construct(
         private readonly WorkService $workService,
         private readonly WorkRepository $workRepository,
+        private readonly ImportService $importService,
     ) {
     }
 
@@ -30,7 +33,7 @@ class WorkController extends AbstractController
     #[Route('/new', name: 'app_work_new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
     {
-        $dto = new WorkFormDto();
+        $dto = $this->consumeImportSession($request);
         $form = $this->createForm(WorkFormType::class, $dto);
         $form->handleRequest($request);
 
@@ -48,6 +51,31 @@ class WorkController extends AbstractController
         return $this->render('work/new.html.twig', [
             'form' => $form,
         ]);
+    }
+
+    /**
+     * Reads a ScrapedWorkDto from the session (if present), maps it to a WorkFormDto,
+     * flashes any mapping warnings, and clears the session key.
+     * Returns a blank WorkFormDto if no import data is in the session.
+     */
+    private function consumeImportSession(Request $request): WorkFormDto
+    {
+        $session = $request->getSession();
+        $scraped = $session->get('import_scraped_work');
+
+        if (!($scraped instanceof ScrapedWorkDto)) {
+            return new WorkFormDto();
+        }
+
+        $session->remove('import_scraped_work');
+
+        $result = $this->importService->mapToWorkFormDto($scraped);
+
+        foreach ($result->warnings as $warning) {
+            $this->addFlash('warning', $warning);
+        }
+
+        return $result->dto;
     }
 
     /**
