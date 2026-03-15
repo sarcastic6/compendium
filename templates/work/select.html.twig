@@ -9,18 +9,18 @@
 <form method="get" action="{{ path('app_work_select') }}" class="mb-4">
     <div class="input-group">
         <input type="search" name="q" value="{{ query }}"
-               class="form-control" placeholder="Search by title..."
-               aria-label="Search works">
+               class="form-control" placeholder="{{ 'work.select_search_placeholder'|trans }}"
+               aria-label="{{ 'work.select_search'|trans }}">
         <button type="submit" class="btn btn-outline-secondary">
             <i class="fa fa-search" aria-hidden="true"></i>
-            Search
+            {{ 'work.select_search'|trans }}
         </button>
     </div>
 </form>
 
 {% if query is not empty %}
     {% if works is empty %}
-        <p class="text-muted">No works found. <a href="{{ path('app_work_new') }}">{{ 'work.create_new'|trans }}</a></p>
+        <p class="text-muted">{{ 'work.select_no_results'|trans }} <a href="{{ path('app_work_new') }}">{{ 'work.create_new'|trans }}</a></p>
     {% else %}
         <div class="list-group mb-3">
             {% for work in works %}
@@ -32,7 +32,7 @@
                             </a>
                             {% if work.authors is not empty %}
                                 <span class="text-muted ms-2">
-                                    by {{ work.authors|map(a => a.name)|join(', ') }}
+                                    {{ 'work.select_author_by'|trans }} {{ work.authors|map(a => a.name)|join(', ') }}
                                 </span>
                             {% endif %}
                             {% if work.series %}

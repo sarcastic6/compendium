@@ -23,8 +23,8 @@
         <table class="table table-hover align-middle table-responsive-card">
             <thead class="table-light">
                 <tr>
-                    <th scope="col">Title</th>
-                    <th scope="col">Author(s)</th>
+                    <th scope="col">{{ 'reading.entry.col_title'|trans }}</th>
+                    <th scope="col">{{ 'reading.entry.col_authors'|trans }}</th>
                     <th scope="col">{{ 'reading.field.status'|trans }}</th>
                     <th scope="col">{{ 'reading.field.date_finished'|trans }}</th>
                     <th scope="col">★</th>
@@ -34,7 +34,7 @@
             <tbody>
                 {% for entry in entries %}
                     <tr>
-                        <td data-label="Title">
+                        <td data-label="{{ 'reading.entry.col_title'|trans }}">
                             {% if entry.work.deleted %}
                                 <span class="entry-deleted-work">
                                     {{ 'reading.entry.work_deleted'|trans }}
@@ -46,7 +46,7 @@
                                 {% endif %}
                             {% endif %}
                         </td>
-                        <td data-label="Author(s)">
+                        <td data-label="{{ 'reading.entry.col_authors'|trans }}">
                             {% if not entry.work.deleted %}
                                 {{ entry.work.authors|map(a => a.name)|join(', ')|default('—') }}
                             {% endif %}
