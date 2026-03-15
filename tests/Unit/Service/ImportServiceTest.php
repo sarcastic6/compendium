@@ -165,7 +165,7 @@ class ImportServiceTest extends TestCase
         $this->assertEmpty($result->warnings);
     }
 
-    public function test_adds_warning_when_language_not_found(): void
+    public function test_auto_creates_language_when_not_found(): void
     {
         $this->languageRepo->method('findOneBy')->willReturn(null);
 
@@ -174,9 +174,11 @@ class ImportServiceTest extends TestCase
 
         $result = $this->service->mapToWorkFormDto($scraped);
 
-        $this->assertNull($result->dto->language);
+        $this->assertNotNull($result->dto->language);
+        $this->assertSame('Klingon', $result->dto->language->getName());
         $this->assertNotEmpty($result->warnings);
         $this->assertStringContainsString('Klingon', implode(' ', $result->warnings));
+        $this->assertStringContainsString('auto-created', implode(' ', $result->warnings));
     }
 
     // --- Series handling ---
@@ -261,7 +263,7 @@ class ImportServiceTest extends TestCase
         $this->assertSame($pairingType, $result->dto->metadata[0]['metadataType']);
     }
 
-    public function test_adds_warning_when_metadata_type_not_found(): void
+    public function test_auto_creates_metadata_type_when_not_found(): void
     {
         $this->metadataTypeRepo->method('findOneBy')->willReturn(null);
 
@@ -270,9 +272,12 @@ class ImportServiceTest extends TestCase
 
         $result = $this->service->mapToWorkFormDto($scraped);
 
-        $this->assertEmpty($result->dto->metadata);
+        $this->assertCount(1, $result->dto->metadata);
+        $this->assertSame('UnknownCategory', $result->dto->metadata[0]['metadataType']->getName());
+        $this->assertSame('SomeTag', $result->dto->metadata[0]['name']);
         $this->assertNotEmpty($result->warnings);
         $this->assertStringContainsString('UnknownCategory', implode(' ', $result->warnings));
+        $this->assertStringContainsString('auto-created', implode(' ', $result->warnings));
     }
 
     public function test_skips_empty_tag_names(): void

@@ -6,6 +6,8 @@ namespace App\Service;
 
 use App\Dto\ImportResult;
 use App\Dto\WorkFormDto;
+use App\Entity\Language;
+use App\Entity\MetadataType;
 use App\Entity\Series;
 use App\Enum\SourceType;
 use App\Enum\WorkType;
@@ -20,10 +22,10 @@ use Doctrine\ORM\EntityManagerInterface;
  *
  * Mapping strategy:
  * - Scalar fields copied directly (title, summary, words, chapters, dates, link, sourceType)
- * - Language: looked up by name; null + warning if not found (languages are admin-managed)
+ * - Language: looked up by name; auto-created with informational notice if not found
  * - Series: looked up by name; auto-created if not found (consistent with Author pattern)
  * - Metadata: AO3 category names mapped to MetadataType names via synonym map;
- *             skipped with warning if MetadataType not found in database
+ *             auto-created with informational notice if MetadataType not found in database
  */
 class ImportService
 {
@@ -84,17 +86,19 @@ class ImportService
             }
         }
 
-        // Language — lookup only, no auto-create (admin-managed reference data)
+        // Language — find or auto-create if not found
         if ($scraped->language !== null) {
             $language = $this->languageRepository->findOneBy(['name' => $scraped->language]);
-            if ($language !== null) {
-                $dto->language = $language;
-            } else {
+            if ($language === null) {
+                $language = new Language($scraped->language);
+                $this->entityManager->persist($language);
+                $this->entityManager->flush();
                 $warnings[] = sprintf(
-                    "Language '%s' was not found in the database and was not set. Create it under Admin first.",
+                    "Language '%s' was auto-created during import.",
                     $scraped->language,
                 );
             }
+            $dto->language = $language;
         }
 
         // Series — lookup by name; auto-create if not found
@@ -116,11 +120,13 @@ class ImportService
 
             $metadataType = $this->metadataTypeRepository->findOneBy(['name' => $typeName]);
             if ($metadataType === null) {
+                $metadataType = new MetadataType($typeName, true);
+                $this->entityManager->persist($metadataType);
+                $this->entityManager->flush();
                 $warnings[] = sprintf(
-                    "Metadata type '%s' was not found. Tags of this type were skipped.",
+                    "Metadata type '%s' was auto-created during import.",
                     $typeName,
                 );
-                continue;
             }
 
             foreach ($tagNames as $tagName) {
