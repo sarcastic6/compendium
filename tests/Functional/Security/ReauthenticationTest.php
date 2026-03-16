@@ -6,6 +6,7 @@ namespace App\Tests\Functional\Security;
 
 use App\Entity\User;
 use App\Tests\Functional\AbstractFunctionalTest;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
  * Verifies that sensitive profile changes require the current password.
@@ -21,6 +22,9 @@ class ReauthenticationTest extends AbstractFunctionalTest
     public function test_password_change_rejected_without_current_password(): void
     {
         $user = $this->createUser(password: self::PASSWORD);
+        $userId = $user->getId();
+        $originalHash = $user->getPasswordHash();
+
         $this->logIn($this->client, $user->getEmail(), self::PASSWORD);
         $this->client->followRedirect();
 
@@ -33,12 +37,19 @@ class ReauthenticationTest extends AbstractFunctionalTest
 
         // Symfony 7 returns 422 when form-level validation (NotBlank) fails.
         $this->assertResponseStatusCodeSame(422);
-        $this->assertSelectorExists('.invalid-feedback');
+
+        $this->em->clear();
+        $fresh = $this->em->find(User::class, $userId);
+        $this->assertNotNull($fresh);
+        $this->assertSame($originalHash, $fresh->getPasswordHash(), 'Password hash must not change when currentPassword is missing');
     }
 
     public function test_password_change_rejected_with_wrong_current_password(): void
     {
         $user = $this->createUser(password: self::PASSWORD);
+        $userId = $user->getId();
+        $originalHash = $user->getPasswordHash();
+
         $this->logIn($this->client, $user->getEmail(), self::PASSWORD);
         $this->client->followRedirect();
 
@@ -51,12 +62,19 @@ class ReauthenticationTest extends AbstractFunctionalTest
 
         // Form is valid but the controller rejects the wrong password and re-renders (200).
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorExists('.alert-danger');
+
+        $this->em->clear();
+        $fresh = $this->em->find(User::class, $userId);
+        $this->assertNotNull($fresh);
+        $this->assertSame($originalHash, $fresh->getPasswordHash(), 'Password hash must not change when currentPassword is wrong');
     }
 
     public function test_password_change_succeeds_with_correct_current_password(): void
     {
         $user = $this->createUser(password: self::PASSWORD);
+        $userId = $user->getId();
+        $originalHash = $user->getPasswordHash();
+
         $this->logIn($this->client, $user->getEmail(), self::PASSWORD);
         $this->client->followRedirect();
 
@@ -68,8 +86,18 @@ class ReauthenticationTest extends AbstractFunctionalTest
         ]);
 
         $this->assertResponseRedirects('/profile');
-        $this->client->followRedirect();
-        $this->assertSelectorExists('.alert-success');
+
+        $this->em->clear();
+        $fresh = $this->em->find(User::class, $userId);
+        $this->assertNotNull($fresh);
+        $this->assertNotSame($originalHash, $fresh->getPasswordHash(), 'Password hash must change after a successful password change');
+
+        /** @var UserPasswordHasherInterface $hasher */
+        $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
+        $this->assertTrue(
+            $hasher->isPasswordValid($fresh, 'NewValidPass99!'),
+            'New password must be valid after a successful password change',
+        );
     }
 
     // --- Email change ---
@@ -91,7 +119,6 @@ class ReauthenticationTest extends AbstractFunctionalTest
 
         // The profile form has no NotBlank on currentPassword — controller re-renders with 200 + flash.
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorExists('.alert-danger');
 
         $fresh = $this->em->find(User::class, $userId);
         $this->assertNotNull($fresh);
@@ -116,9 +143,8 @@ class ReauthenticationTest extends AbstractFunctionalTest
         ]);
 
         $this->assertResponseRedirects('/profile');
-        $this->client->followRedirect();
-        $this->assertSelectorExists('.alert-success');
 
+        $this->em->clear();
         $fresh = $this->em->find(User::class, $userId);
         $this->assertNotNull($fresh);
         $this->assertSame('Updated Name', $fresh->getName());
