@@ -21,7 +21,7 @@ class ChangePasswordFormType extends AbstractType
                 'label' => 'profile.field.current_password',
                 'mapped' => false,
                 'constraints' => [
-                    new NotBlank(['message' => 'auth.password.not_blank']),
+                    new NotBlank(message: 'auth.password.not_blank'),
                 ],
             ])
             ->add('plainPassword', RepeatedType::class, [
@@ -31,7 +31,7 @@ class ChangePasswordFormType extends AbstractType
                 'second_options' => ['label' => 'auth.register.password_confirm'],
                 'invalid_message' => 'auth.password.mismatch',
                 'constraints' => [
-                    new NotBlank(['message' => 'auth.password.not_blank']),
+                    new NotBlank(message: 'auth.password.not_blank'),
                     new StrongPassword(),
                 ],
             ]);

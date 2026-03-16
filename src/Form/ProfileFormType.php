@@ -24,7 +24,7 @@ class ProfileFormType extends AbstractType
                 'label' => 'profile.field.name',
                 'constraints' => [
                     new NotBlank(),
-                    new Length(['max' => 255]),
+                    new Length(max: 255),
                 ],
             ])
             ->add('email', EmailType::class, [
