@@ -6,9 +6,11 @@ namespace App\Controller;
 
 use App\Dto\ReadingEntryFormDto;
 use App\Entity\ReadingEntry;
+use App\Entity\Status;
 use App\Entity\User;
 use App\Form\ReadingEntryFormType;
 use App\Repository\ReadingEntryRepository;
+use App\Repository\StatusRepository;
 use App\Repository\WorkRepository;
 use App\Service\ReadingEntryService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,6 +28,7 @@ class ReadingEntryController extends AbstractController
         private readonly ReadingEntryService $readingEntryService,
         private readonly ReadingEntryRepository $readingEntryRepository,
         private readonly WorkRepository $workRepository,
+        private readonly StatusRepository $statusRepository,
         private readonly EntityManagerInterface $entityManager,
     ) {
     }
@@ -39,15 +42,32 @@ class ReadingEntryController extends AbstractController
         $page = max(1, $request->query->getInt('page', 1));
         $limit = 25;
 
-        $total = $this->readingEntryRepository->countByUser($user);
-        $entries = $this->readingEntryRepository->findByUser($user, $page, $limit);
+        $filterParams = [
+            'status' => $request->query->get('status', ''),
+            'q' => $request->query->get('q', ''),
+            'author' => $request->query->get('author', ''),
+            'starred' => $request->query->get('starred', ''),
+            'rating' => $request->query->get('rating', ''),
+            'dateFrom' => $request->query->get('dateFrom', ''),
+            'dateTo' => $request->query->get('dateTo', ''),
+        ];
+
+        $hasFilters = array_filter($filterParams) !== [];
+
+        $total = $this->readingEntryRepository->countByUserFiltered($user, $filterParams);
+        $entries = $this->readingEntryRepository->findByUserFiltered($user, $filterParams, $page, $limit);
         $totalPages = (int) ceil($total / $limit);
+
+        $allStatuses = $this->statusRepository->findAll();
 
         return $this->render('reading_entry/list.html.twig', [
             'entries' => $entries,
             'page' => $page,
             'total_pages' => $totalPages,
             'total' => $total,
+            'filters' => $filterParams,
+            'has_filters' => $hasFilters,
+            'statuses' => $allStatuses,
         ]);
     }
 
@@ -112,5 +132,114 @@ class ReadingEntryController extends AbstractController
             'form' => $form,
             'work' => $work,
         ]);
+    }
+
+    #[Route('/{id}/edit', name: 'app_reading_entry_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+    public function edit(Request $request, int $id): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $entry = $this->readingEntryRepository->findByIdForUser($id, $user);
+        if ($entry === null) {
+            throw $this->createNotFoundException();
+        }
+
+        $dto = ReadingEntryFormDto::fromEntity($entry);
+        $form = $this->createForm(ReadingEntryFormType::class, $dto, [
+            'work' => $entry->getWork(),
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $this->readingEntryService->updateFromDto($entry, $dto);
+                $this->addFlash('success', 'reading.entry.updated');
+
+                return $this->redirectToRoute('app_reading_entry_show', ['id' => $entry->getId()]);
+            } catch (\InvalidArgumentException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
+        }
+
+        return $this->render('reading_entry/edit.html.twig', [
+            'form' => $form,
+            'entry' => $entry,
+        ]);
+    }
+
+    #[Route('/{id}/delete', name: 'app_reading_entry_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function delete(Request $request, int $id): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $entry = $this->readingEntryRepository->findByIdForUser($id, $user);
+        if ($entry === null) {
+            throw $this->createNotFoundException();
+        }
+
+        if (!$this->isCsrfTokenValid('delete-entry-' . $id, $request->request->get('_token'))) {
+            $this->addFlash('error', 'security.csrf_invalid');
+
+            return $this->redirectToRoute('app_reading_entry_show', ['id' => $id]);
+        }
+
+        $this->entityManager->remove($entry);
+        $this->entityManager->flush();
+
+        $this->addFlash('success', 'reading.entry.deleted');
+
+        return $this->redirectToRoute('app_reading_entry_list');
+    }
+
+    #[Route('/bulk/status', name: 'app_reading_entry_bulk_status', methods: ['POST'])]
+    public function bulkStatus(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isCsrfTokenValid('bulk-action', $request->request->get('_token'))) {
+            $this->addFlash('error', 'security.csrf_invalid');
+
+            return $this->redirectToRoute('app_reading_entry_list');
+        }
+
+        $ids = array_map('intval', (array) $request->request->all('ids'));
+        $statusId = $request->request->getInt('status_id');
+
+        $status = $this->statusRepository->find($statusId);
+        if ($status === null) {
+            $this->addFlash('error', 'reading.entry.status_not_found');
+
+            return $this->redirectToRoute('app_reading_entry_list');
+        }
+
+        $count = $this->readingEntryService->bulkUpdateStatus($user, $ids, $status);
+
+        $this->addFlash('success', 'reading.bulk.status_updated');
+
+        return $this->redirectToRoute('app_reading_entry_list', $request->query->all());
+    }
+
+    #[Route('/bulk/delete', name: 'app_reading_entry_bulk_delete', methods: ['POST'])]
+    public function bulkDelete(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isCsrfTokenValid('bulk-action', $request->request->get('_token'))) {
+            $this->addFlash('error', 'security.csrf_invalid');
+
+            return $this->redirectToRoute('app_reading_entry_list');
+        }
+
+        $ids = array_map('intval', (array) $request->request->all('ids'));
+
+        $count = $this->readingEntryService->bulkDelete($user, $ids);
+
+        $this->addFlash('success', 'reading.bulk.entries_deleted');
+
+        return $this->redirectToRoute('app_reading_entry_list', $request->query->all());
     }
 }

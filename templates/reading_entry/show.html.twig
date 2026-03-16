@@ -20,9 +20,22 @@
             {% endif %}
         {% endif %}
     </div>
-    <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary flex-shrink-0 ms-3">
-        &larr; {{ 'reading.entry.back_to_list'|trans }}
-    </a>
+    <div class="d-flex flex-wrap gap-2 flex-shrink-0 ms-3">
+        <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil" aria-hidden="true"></i>
+            {{ 'reading.entry.edit'|trans }}
+        </a>
+        <button type="button" class="btn btn-outline-danger btn-sm"
+                data-bs-toggle="modal" data-bs-target="#deleteModal"
+                data-entry-id="{{ entry.id }}"
+                data-delete-url="{{ path('app_reading_entry_delete', {id: entry.id}) }}">
+            <i class="bi bi-trash" aria-hidden="true"></i>
+            {{ 'reading.entry.delete'|trans }}
+        </button>
+        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary btn-sm">
+            &larr; {{ 'reading.entry.back_to_list'|trans }}
+        </a>
+    </div>
 </div>
 
 <div class="row g-3 mb-4">
@@ -99,4 +112,44 @@
         </a>
     </div>
 {% endif %}
+
+{# Delete confirmation modal — CSRF token protects against cross-site deletion #}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">{{ 'reading.entry.delete_confirm'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'action.cancel'|trans }}"></button>
+            </div>
+            <div class="modal-body">
+                {{ 'reading.entry.delete_confirm_message'|trans }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    {{ 'action.cancel'|trans }}
+                </button>
+                <form id="deleteForm" method="post" action="">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete-entry-' ~ entry.id) }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash" aria-hidden="true"></i>
+                        {{ 'action.delete'|trans }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var deleteUrl = button.getAttribute('data-delete-url');
+            document.getElementById('deleteForm').action = deleteUrl;
+        });
+    }
+});
+</script>
 {% endblock %}

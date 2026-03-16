@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Dto\ReadingEntryFormDto;
 use App\Entity\ReadingEntry;
 use App\Entity\Status;
 use App\Entity\User;
@@ -64,5 +65,78 @@ class ReadingEntryService
 
         $this->entityManager->persist($entry);
         $this->entityManager->flush();
+    }
+
+    /**
+     * Applies all DTO fields to an existing entry, then validates and saves.
+     * User and Work are immutable on edit — only reading-log fields can change.
+     *
+     * @throws \InvalidArgumentException on validation failure
+     */
+    public function updateFromDto(ReadingEntry $entry, ReadingEntryFormDto $dto): void
+    {
+        $entry->setStatus($dto->status);
+        $entry->setDateStarted($dto->dateStarted);
+        $entry->setDateFinished($dto->dateFinished);
+        $entry->setLastReadChapter($dto->lastReadChapter);
+        $entry->setReviewStars($dto->reviewStars);
+        $entry->setSpiceStars($dto->spiceStars);
+        $entry->setMainPairing($dto->mainPairing);
+        $entry->setComments($dto->comments);
+        $entry->setStarred($dto->starred);
+
+        $this->validateAndSave($entry);
+    }
+
+    /**
+     * Updates the status of the given entry IDs, restricted to the specified user.
+     * Any IDs not owned by the user are silently ignored — no cross-user modification.
+     *
+     * @param int[] $ids
+     */
+    public function bulkUpdateStatus(User $user, array $ids, Status $status): int
+    {
+        if ($ids === []) {
+            return 0;
+        }
+
+        $entries = $this->entityManager->getRepository(ReadingEntry::class)->findBy([
+            'user' => $user,
+            'id' => $ids,
+        ]);
+
+        foreach ($entries as $entry) {
+            $entry->setStatus($status);
+        }
+
+        $this->entityManager->flush();
+
+        return count($entries);
+    }
+
+    /**
+     * Hard-deletes the given entry IDs, restricted to the specified user.
+     * Any IDs not owned by the user are silently ignored — no cross-user deletion.
+     *
+     * @param int[] $ids
+     */
+    public function bulkDelete(User $user, array $ids): int
+    {
+        if ($ids === []) {
+            return 0;
+        }
+
+        $entries = $this->entityManager->getRepository(ReadingEntry::class)->findBy([
+            'user' => $user,
+            'id' => $ids,
+        ]);
+
+        foreach ($entries as $entry) {
+            $this->entityManager->remove($entry);
+        }
+
+        $this->entityManager->flush();
+
+        return count($entries);
     }
 }
