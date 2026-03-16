@@ -96,16 +96,15 @@ class ReadingEntryController extends AbstractController
             $entry->setComments($dto->comments);
             $entry->setStarred($dto->starred);
 
-            $this->entityManager->persist($entry);
-
             try {
+                // persist() is called inside validateAndSave() — after validation — so invalid entries
+                // are never added to the unit of work.
                 $this->readingEntryService->validateAndSave($entry);
                 $this->addFlash('success', 'reading.entry.added');
 
                 return $this->redirectToRoute('app_reading_entry_list');
             } catch (\InvalidArgumentException $e) {
                 $this->addFlash('error', $e->getMessage());
-                $this->entityManager->detach($entry);
             }
         }
 

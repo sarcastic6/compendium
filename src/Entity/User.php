@@ -49,6 +49,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EmailTw
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $mfaSecret = null;
 
+    /**
+     * Transient (not persisted): plain-text TOTP secret, decrypted from $mfaSecret by UserTotpDecryptListener on postLoad.
+     * Set directly in MfaSetupController during TOTP verification before the secret is saved to the DB.
+     */
+    private ?string $decryptedMfaSecret = null;
+
     /** Comma-separated list of enabled MFA methods, e.g. "email,totp". */
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $mfaMethods = null;
@@ -191,6 +197,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EmailTw
         return $this;
     }
 
+    public function setDecryptedMfaSecret(?string $decryptedMfaSecret): static
+    {
+        $this->decryptedMfaSecret = $decryptedMfaSecret;
+
+        return $this;
+    }
+
     public function getMfaMethods(): ?string
     {
         return $this->mfaMethods;
@@ -232,7 +245,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EmailTw
     {
         return $this->mfaMethods !== null
             && in_array('totp', explode(',', $this->mfaMethods), true)
-            && $this->mfaSecret !== null;
+            && $this->decryptedMfaSecret !== null;
     }
 
     public function getTotpAuthenticationUsername(): string
@@ -242,11 +255,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EmailTw
 
     public function getTotpAuthenticationConfiguration(): ?TotpConfigurationInterface
     {
-        if ($this->mfaSecret === null) {
+        if ($this->decryptedMfaSecret === null) {
             return null;
         }
 
-        return new TotpConfiguration($this->mfaSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
+        return new TotpConfiguration($this->decryptedMfaSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
     }
 
     public function getCreatedAt(): DateTimeImmutable

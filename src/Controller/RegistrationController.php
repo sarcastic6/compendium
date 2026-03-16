@@ -38,16 +38,11 @@ class RegistrationController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $plainPassword = $form->get('plainPassword')->getData();
-            $passwordHash = $this->passwordHasher->hashPassword(
-                new User($form->get('name')->getData(), $form->get('email')->getData(), ''),
-                $plainPassword,
-            );
 
-            $user = new User(
-                $form->get('name')->getData(),
-                $form->get('email')->getData(),
-                $passwordHash,
-            );
+            // Create the user once with a placeholder hash, then immediately overwrite it.
+            // hashPassword() only needs the User object to satisfy PasswordAuthenticatedUserInterface — it does not read passwordHash.
+            $user = new User($form->get('name')->getData(), $form->get('email')->getData(), 'placeholder');
+            $user->setPasswordHash($this->passwordHasher->hashPassword($user, $plainPassword));
 
             $this->entityManager->persist($user);
             $this->entityManager->flush();

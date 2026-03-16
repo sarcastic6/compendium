@@ -125,6 +125,8 @@ admin:
 profile:
     heading: 'My Profile'
     saved: 'Profile saved.'
+    current_password:
+        invalid: 'Current password is incorrect.'
     password_changed: 'Password changed.'
     change_password: 'Change Password'
     field:
@@ -133,6 +135,9 @@ profile:
         current_password: 'Current Password'
         new_password: 'New Password'
         new_password_confirm: 'Confirm New Password'
+
+security:
+    csrf_invalid: 'Invalid security token. Please try again.'
 
 mfa:
     heading: '2FA Setup'
@@ -143,6 +148,7 @@ mfa:
         enabled: 'Authenticator app has been enabled.'
         disabled: 'Authenticator app has been disabled.'
         invalid_code: 'Invalid verification code. Please try again.'
+        session_expired: 'Your setup session has expired. Please start again.'
         scan_qr: 'Scan this QR code with your authenticator app, then enter the 6-digit code below to confirm.'
         verify_code: 'Verification Code'
     email:

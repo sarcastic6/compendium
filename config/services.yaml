@@ -25,3 +25,9 @@ services:
     App\EventListener\SqliteForeignKeyListener:
         tags:
             - { name: doctrine.event_listener, event: postConnect }
+
+    App\Service\TotpSecretEncryptionService:
+        arguments:
+            # env(base64:...) decodes the base64-encoded env var to raw bytes before injection.
+            # Generate a key: php -r "echo base64_encode(random_bytes(32)) . PHP_EOL;"
+            $encryptionKey: '%env(base64:TOTP_ENCRYPTION_KEY)%'

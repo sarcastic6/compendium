@@ -31,7 +31,9 @@ class ReadingEntryService
     }
 
     /**
-     * Validates and saves a ReadingEntry after the form has been populated.
+     * Validates then persists and flushes a ReadingEntry after the form has been populated.
+     * persist() is called only after all validation passes — never before — so invalid entries
+     * never enter the Doctrine unit of work.
      *
      * Star validation and mainPairing type check are done here because:
      * - Stars: the DB CHECK constraint exists but won't produce friendly messages
@@ -60,6 +62,7 @@ class ReadingEntryService
             }
         }
 
+        $this->entityManager->persist($entry);
         $this->entityManager->flush();
     }
 }

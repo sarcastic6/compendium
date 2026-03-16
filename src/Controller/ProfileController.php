@@ -32,10 +32,23 @@ class ProfileController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
+        $originalEmail = $user->getEmail();
+
         $profileForm = $this->createForm(ProfileFormType::class, $user);
         $profileForm->handleRequest($request);
 
         if ($profileForm->isSubmitted() && $profileForm->isValid()) {
+            // Re-authentication is required only when changing the email address, since
+            // a stolen session could otherwise silently lock out the legitimate account holder.
+            if ($user->getEmail() !== $originalEmail) {
+                $currentPassword = (string) $profileForm->get('currentPassword')->getData();
+                if ($currentPassword === '' || !$this->passwordHasher->isPasswordValid($user, $currentPassword)) {
+                    $this->addFlash('error', 'profile.current_password.invalid');
+
+                    return $this->render('profile/index.html.twig', ['profileForm' => $profileForm]);
+                }
+            }
+
             $this->entityManager->flush();
             $this->addFlash('success', 'profile.saved');
 
@@ -57,11 +70,14 @@ class ProfileController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $newHash = $this->passwordHasher->hashPassword(
-                $user,
-                $form->get('plainPassword')->getData(),
-            );
-            $user->setPasswordHash($newHash);
+            $currentPassword = (string) $form->get('currentPassword')->getData();
+            if (!$this->passwordHasher->isPasswordValid($user, $currentPassword)) {
+                $this->addFlash('error', 'profile.current_password.invalid');
+
+                return $this->render('profile/change_password.html.twig', ['form' => $form]);
+            }
+
+            $user->setPasswordHash($this->passwordHasher->hashPassword($user, $form->get('plainPassword')->getData()));
             $this->entityManager->flush();
 
             $this->addFlash('success', 'profile.password_changed');
