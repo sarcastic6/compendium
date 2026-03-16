@@ -120,6 +120,7 @@ class ReauthenticationTest extends AbstractFunctionalTest
         // The profile form has no NotBlank on currentPassword — controller re-renders with 200 + flash.
         $this->assertResponseIsSuccessful();
 
+        $this->em->clear();
         $fresh = $this->em->find(User::class, $userId);
         $this->assertNotNull($fresh);
         $this->assertSame('original@example.com', $fresh->getEmail(), 'Email must not change without correct current password');
