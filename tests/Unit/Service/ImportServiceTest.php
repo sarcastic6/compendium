@@ -7,12 +7,10 @@ namespace App\Tests\Unit\Service;
 use App\Dto\ImportResult;
 use App\Entity\Language;
 use App\Entity\MetadataType;
-use App\Entity\Series;
 use App\Enum\SourceType;
 use App\Enum\WorkType;
 use App\Repository\LanguageRepository;
 use App\Repository\MetadataTypeRepository;
-use App\Repository\SeriesRepository;
 use App\Scraper\ScrapedWorkDto;
 use App\Service\ImportService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,9 +24,6 @@ class ImportServiceTest extends TestCase
     /** @var LanguageRepository&MockObject */
     private LanguageRepository $languageRepo;
 
-    /** @var SeriesRepository&MockObject */
-    private SeriesRepository $seriesRepo;
-
     /** @var MetadataTypeRepository&MockObject */
     private MetadataTypeRepository $metadataTypeRepo;
 
@@ -40,13 +35,11 @@ class ImportServiceTest extends TestCase
         // Use createStub() for dependencies that don't need call-count verification.
         // createMock() is used only in tests that assert persist()/flush() expectations.
         $this->languageRepo = $this->createStub(LanguageRepository::class);
-        $this->seriesRepo = $this->createStub(SeriesRepository::class);
         $this->metadataTypeRepo = $this->createStub(MetadataTypeRepository::class);
         $this->em = $this->createStub(EntityManagerInterface::class);
 
         $this->service = new ImportService(
             $this->languageRepo,
-            $this->seriesRepo,
             $this->metadataTypeRepo,
             $this->em,
         );
@@ -184,49 +177,30 @@ class ImportServiceTest extends TestCase
     }
 
     // --- Series handling ---
+    // Series find-or-create and source link upsert are delegated to WorkService.
+    // ImportService only passes the raw name + URL through the DTO.
 
-    public function test_sets_series_when_found_in_db(): void
+    public function test_maps_series_name_and_url_to_dto(): void
     {
-        $series = new Series('Existing Series');
-        $this->seriesRepo->method('findOneBy')->willReturn($series);
-
         $scraped = $this->makeScraped();
-        $scraped->seriesName = 'Existing Series';
-        $scraped->placeInSeries = 1;
-
-        $result = $this->service->mapToWorkFormDto($scraped);
-
-        $this->assertSame($series, $result->dto->series);
-        $this->assertSame(1, $result->dto->placeInSeries);
-    }
-
-    public function test_auto_creates_series_when_not_found(): void
-    {
-        $seriesRepo = $this->createStub(SeriesRepository::class);
-        $seriesRepo->method('findOneBy')->willReturn(null);
-
-        // Use createMock for em so we can verify persist+flush are called
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->once())->method('persist');
-        $em->expects($this->once())->method('flush');
-
-        $service = new ImportService(
-            $this->languageRepo,
-            $seriesRepo,
-            $this->metadataTypeRepo,
-            $em,
-        );
-
-        $scraped = $this->makeScraped();
-        $scraped->seriesName = 'New Series';
+        $scraped->seriesName = 'My Series';
         $scraped->seriesUrl = 'https://archiveofourown.org/series/99999';
         $scraped->placeInSeries = 2;
 
-        $result = $service->mapToWorkFormDto($scraped);
+        $result = $this->service->mapToWorkFormDto($scraped);
 
-        $this->assertNotNull($result->dto->series);
-        $this->assertSame('New Series', $result->dto->series->getName());
+        $this->assertSame('My Series', $result->dto->seriesName);
+        $this->assertSame('https://archiveofourown.org/series/99999', $result->dto->seriesUrl);
         $this->assertSame(2, $result->dto->placeInSeries);
+    }
+
+    public function test_series_fields_are_null_when_no_series(): void
+    {
+        $result = $this->service->mapToWorkFormDto($this->makeScraped());
+
+        $this->assertNull($result->dto->seriesName);
+        $this->assertNull($result->dto->seriesUrl);
+        $this->assertNull($result->dto->placeInSeries);
     }
 
     // --- Metadata mapping ---

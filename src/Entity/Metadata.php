@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\MetadataRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: MetadataRepository::class)]
@@ -26,14 +28,15 @@ class Metadata
     #[ORM\JoinColumn(name: 'metadata_type_id', nullable: false, onDelete: 'RESTRICT')]
     private MetadataType $metadataType;
 
-    #[ORM\Column(length: 1024, nullable: true)]
-    private ?string $link = null;
+    /** @var Collection<int, MetadataSourceLink> */
+    #[ORM\OneToMany(targetEntity: MetadataSourceLink::class, mappedBy: 'metadata', cascade: ['persist'])]
+    private Collection $sourceLinks;
 
-    public function __construct(string $name, MetadataType $metadataType, ?string $link = null)
+    public function __construct(string $name, MetadataType $metadataType)
     {
         $this->name = $name;
         $this->metadataType = $metadataType;
-        $this->link = $link;
+        $this->sourceLinks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -65,14 +68,17 @@ class Metadata
         return $this;
     }
 
-    public function getLink(): ?string
+    /** @return Collection<int, MetadataSourceLink> */
+    public function getSourceLinks(): Collection
     {
-        return $this->link;
+        return $this->sourceLinks;
     }
 
-    public function setLink(?string $link): static
+    public function addSourceLink(MetadataSourceLink $sourceLink): static
     {
-        $this->link = $link;
+        if (!$this->sourceLinks->contains($sourceLink)) {
+            $this->sourceLinks->add($sourceLink);
+        }
 
         return $this;
     }

@@ -7,7 +7,6 @@ namespace App\Dto;
 use App\Enum\SourceType;
 use App\Enum\WorkType;
 use App\Entity\Language;
-use App\Entity\Series;
 use DateTimeImmutable;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Url;
@@ -22,7 +21,12 @@ class WorkFormDto
 
     public ?string $summary = null;
 
-    public ?Series $series = null;
+    /** Series name — WorkService does find-or-create. Null means no series. */
+    public ?string $seriesName = null;
+
+    /** Series source URL — populated by scraper only, null for manual entry. */
+    #[Url(requireTld: false)]
+    public ?string $seriesUrl = null;
 
     public ?int $placeInSeries = null;
 

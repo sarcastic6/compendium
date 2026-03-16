@@ -6,7 +6,6 @@ namespace App\Form;
 
 use App\Dto\WorkFormDto;
 use App\Entity\Language;
-use App\Entity\Series;
 use App\Enum\SourceType;
 use App\Enum\WorkType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -15,6 +14,7 @@ use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -42,12 +42,12 @@ class WorkFormType extends AbstractType
                 'required' => false,
                 'attr' => ['rows' => 4],
             ])
-            ->add('series', EntityType::class, [
+            ->add('seriesName', TextType::class, [
                 'label' => 'work.field.series',
-                'class' => Series::class,
-                'choice_label' => 'name',
                 'required' => false,
-                'placeholder' => '',
+            ])
+            ->add('seriesUrl', HiddenType::class, [
+                'required' => false,
             ])
             ->add('placeInSeries', IntegerType::class, [
                 'label' => 'work.field.place_in_series',

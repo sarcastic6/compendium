@@ -34,7 +34,6 @@ class WorkRepository extends ServiceEntityRepository
     public function findWithAllRelations(int $id): ?Work
     {
         return $this->createQueryBuilder('w')
-            ->leftJoin('w.authors', 'a')->addSelect('a')
             ->leftJoin('w.metadata', 'm')->addSelect('m')
             ->leftJoin('m.metadataType', 'mt')->addSelect('mt')
             ->leftJoin('w.series', 's')->addSelect('s')

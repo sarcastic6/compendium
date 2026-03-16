@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\DataIntegrity;
 
-use App\Entity\Author;
 use App\Entity\Metadata;
+use App\Entity\MetadataType;
 use App\Entity\Work;
 use App\Enum\WorkType;
-use App\Repository\AuthorRepository;
 use App\Tests\Functional\AbstractFunctionalTest;
 
 class WorkCreationTest extends AbstractFunctionalTest
@@ -34,11 +33,40 @@ class WorkCreationTest extends AbstractFunctionalTest
         $this->assertSame(WorkType::Book, $work->getType());
     }
 
-    public function test_duplicate_author_names_reuse_existing_author(): void
+    public function test_author_is_stored_as_metadata_with_author_type(): void
     {
-        $existing = new Author('Jane Doe');
+        $this->createUser('alice@example.com', 'Alice', 'CorrectHorse99!');
+        $this->logIn($this->client, 'alice@example.com', 'CorrectHorse99!');
+        $this->client->followRedirect();
+
+        $crawler = $this->client->request('GET', '/work/new');
+        $csrfToken = $crawler->filter('input[name="work_form[_token]"]')->attr('value');
+        $this->client->request('POST', '/work/new', [
+            'work_form' => [
+                'type' => 'Book',
+                'title' => 'Book with Author',
+                'sourceType' => 'Manual',
+                'authors' => [['name' => 'Jane Doe']],
+                '_token' => $csrfToken,
+            ],
+        ]);
+
+        $this->em->clear();
+        $work = $this->em->getRepository(Work::class)->findOneBy(['title' => 'Book with Author']);
+        $this->assertNotNull($work);
+        $this->assertCount(1, $work->getAuthors());
+        $this->assertSame('Jane Doe', $work->getAuthors()->first()->getName());
+        $this->assertSame('Author', $work->getAuthors()->first()->getMetadataType()->getName());
+    }
+
+    public function test_duplicate_author_names_reuse_existing_metadata_entry(): void
+    {
+        $authorType = new MetadataType('Author', true);
+        $this->em->persist($authorType);
+        $existing = new Metadata('Jane Doe', $authorType);
         $this->em->persist($existing);
         $this->em->flush();
+        $existingId = $existing->getId();
 
         $this->createUser('alice@example.com', 'Alice', 'CorrectHorse99!');
         $this->logIn($this->client, 'alice@example.com', 'CorrectHorse99!');
@@ -57,14 +85,11 @@ class WorkCreationTest extends AbstractFunctionalTest
         ]);
 
         $this->em->clear();
-        /** @var AuthorRepository $authorRepo */
-        $authorRepo = $this->em->getRepository(Author::class);
-        $authors = $authorRepo->findBy(['name' => 'Jane Doe']);
+        $authorType = $this->em->getRepository(MetadataType::class)->findOneBy(['name' => 'Author']);
+        $this->assertNotNull($authorType);
+        $authors = $this->em->getRepository(Metadata::class)->findBy(['name' => 'Jane Doe', 'metadataType' => $authorType]);
         $this->assertCount(1, $authors);
-
-        $work = $this->em->getRepository(Work::class)->findOneBy(['title' => 'Book with Existing Author']);
-        $this->assertNotNull($work);
-        $this->assertCount(1, $work->getAuthors());
+        $this->assertSame($existingId, $authors[0]->getId());
     }
 
     public function test_metadata_is_created_and_attached_to_work(): void

@@ -21,7 +21,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
 
     /**
      * Fetches a paginated list of reading entries for a user, with JOIN FETCH
-     * to avoid N+1 queries on Work (and its authors) and Status.
+     * to avoid N+1 queries on Work and Status.
      *
      * The SoftDeleteFilter is temporarily disabled so that reading entries
      * that reference soft-deleted works still appear (with a visual indicator).
@@ -45,8 +45,6 @@ class ReadingEntryRepository extends ServiceEntityRepository
             return $this->createQueryBuilder('re')
                 ->innerJoin('re.work', 'w')
                 ->addSelect('w')
-                ->leftJoin('w.authors', 'a')
-                ->addSelect('a')
                 ->innerJoin('re.status', 's')
                 ->addSelect('s')
                 ->where('re.user = :user')
@@ -84,8 +82,6 @@ class ReadingEntryRepository extends ServiceEntityRepository
             return $this->createQueryBuilder('re')
                 ->innerJoin('re.work', 'w')
                 ->addSelect('w')
-                ->leftJoin('w.authors', 'a')
-                ->addSelect('a')
                 ->innerJoin('re.status', 's')
                 ->addSelect('s')
                 ->leftJoin('re.mainPairing', 'mp')

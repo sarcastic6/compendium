@@ -74,11 +74,6 @@ class Work
     #[ORM\Column(type: 'datetime_immutable')]
     private DateTimeImmutable $updatedAt;
 
-    /** @var Collection<int, Author> */
-    #[ORM\ManyToMany(targetEntity: Author::class)]
-    #[ORM\JoinTable(name: 'work_authors')]
-    private Collection $authors;
-
     /** @var Collection<int, Metadata> */
     #[ORM\ManyToMany(targetEntity: Metadata::class)]
     #[ORM\JoinTable(name: 'works_metadata')]
@@ -88,7 +83,6 @@ class Work
     {
         $this->type = $type;
         $this->title = $title;
-        $this->authors = new ArrayCollection();
         $this->metadata = new ArrayCollection();
         $this->createdAt = new DateTimeImmutable();
         $this->updatedAt = new DateTimeImmutable();
@@ -295,28 +289,6 @@ class Work
         return $this->updatedAt;
     }
 
-    /** @return Collection<int, Author> */
-    public function getAuthors(): Collection
-    {
-        return $this->authors;
-    }
-
-    public function addAuthor(Author $author): static
-    {
-        if (!$this->authors->contains($author)) {
-            $this->authors->add($author);
-        }
-
-        return $this;
-    }
-
-    public function removeAuthor(Author $author): static
-    {
-        $this->authors->removeElement($author);
-
-        return $this;
-    }
-
     /** @return Collection<int, Metadata> */
     public function getMetadata(): Collection
     {
@@ -337,5 +309,18 @@ class Work
         $this->metadata->removeElement($metadata);
 
         return $this;
+    }
+
+    /**
+     * Returns metadata entries with type 'Author'.
+     * Authors are stored as metadata — this is a convenience helper for templates.
+     *
+     * @return Collection<int, Metadata>
+     */
+    public function getAuthors(): Collection
+    {
+        return $this->metadata->filter(
+            static fn (Metadata $m) => $m->getMetadataType()->getName() === 'Author',
+        );
     }
 }

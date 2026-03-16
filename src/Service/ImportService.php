@@ -8,12 +8,10 @@ use App\Dto\ImportResult;
 use App\Dto\WorkFormDto;
 use App\Entity\Language;
 use App\Entity\MetadataType;
-use App\Entity\Series;
 use App\Enum\SourceType;
 use App\Enum\WorkType;
 use App\Repository\LanguageRepository;
 use App\Repository\MetadataTypeRepository;
-use App\Repository\SeriesRepository;
 use App\Scraper\ScrapedWorkDto;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -22,8 +20,9 @@ use Doctrine\ORM\EntityManagerInterface;
  *
  * Mapping strategy:
  * - Scalar fields copied directly (title, summary, words, chapters, dates, link, sourceType)
+ * - Authors: copied directly to dto->authors; WorkService translates to metadata with type='Author'
  * - Language: looked up by name; auto-created with informational notice if not found
- * - Series: looked up by name; auto-created if not found (consistent with Author pattern)
+ * - Series: name + URL passed as raw strings; WorkService does find-or-create + source link upsert
  * - Metadata: AO3 category names mapped to MetadataType names via synonym map;
  *             auto-created with informational notice if MetadataType not found in database
  */
@@ -40,7 +39,6 @@ class ImportService
 
     public function __construct(
         private readonly LanguageRepository $languageRepository,
-        private readonly SeriesRepository $seriesRepository,
         private readonly MetadataTypeRepository $metadataTypeRepository,
         private readonly EntityManagerInterface $entityManager,
     ) {
@@ -101,15 +99,10 @@ class ImportService
             $dto->language = $language;
         }
 
-        // Series — lookup by name; auto-create if not found
+        // Series — pass name + URL as raw strings; WorkService does find-or-create + source link upsert
         if ($scraped->seriesName !== null) {
-            $series = $this->seriesRepository->findOneBy(['name' => $scraped->seriesName]);
-            if ($series === null) {
-                $series = new Series($scraped->seriesName, $scraped->seriesUrl);
-                $this->entityManager->persist($series);
-                $this->entityManager->flush();
-            }
-            $dto->series = $series;
+            $dto->seriesName = $scraped->seriesName;
+            $dto->seriesUrl = $scraped->seriesUrl;
             $dto->placeInSeries = $scraped->placeInSeries;
         }
 

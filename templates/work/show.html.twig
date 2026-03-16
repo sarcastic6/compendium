@@ -24,12 +24,7 @@
                 <dt class="col-sm-4">{{ 'work.field.authors'|trans }}</dt>
                 <dd class="col-sm-8">
                     {% for author in work.authors %}
-                        {% if author.link %}
-                            <a href="{{ author.link }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
-                        {% else %}
-                            {{ author.name }}
-                        {% endif %}
-                        {%- if not loop.last %}, {% endif %}
+                        {{ author.name }}{%- if not loop.last %}, {% endif %}
                     {% endfor %}
                 </dd>
             {% endif %}
@@ -54,11 +49,7 @@
             {% if work.series %}
                 <dt class="col-sm-4">{{ 'work.field.series'|trans }}</dt>
                 <dd class="col-sm-8">
-                    {% if work.series.link %}
-                        <a href="{{ work.series.link }}" target="_blank" rel="noopener noreferrer">{{ work.series.name }}</a>
-                    {% else %}
-                        {{ work.series.name }}
-                    {% endif %}
+                    {{ work.series.name }}
                     {% if work.placeInSeries %}
                         (#{{ work.placeInSeries }})
                     {% endif %}
