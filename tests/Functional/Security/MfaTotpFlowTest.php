@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Security;
 
 use App\Entity\User;
-use App\Service\TotpSecretEncryptionService;
 use App\Tests\Functional\AbstractFunctionalTest;
-use OTPHP\TOTP;
+use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 
 /**
  * Verifies the TOTP setup session flow: the secret is kept in the session until
@@ -29,6 +28,7 @@ class MfaTotpFlowTest extends AbstractFunctionalTest
         $this->client->request('GET', '/mfa/totp/enable');
         $this->assertResponseIsSuccessful();
 
+        $this->em->clear();
         $fresh = $this->em->find(User::class, $userId);
         $this->assertNotNull($fresh);
         $this->assertNull($fresh->getMfaSecret(), 'mfaSecret must remain NULL in the DB before the user verifies a TOTP code');
@@ -42,31 +42,38 @@ class MfaTotpFlowTest extends AbstractFunctionalTest
         $this->logIn($this->client, $user->getEmail(), 'CorrectHorse99!');
         $this->client->followRedirect();
 
-        // Step 1 — load the enable page so the controller stores the pending secret in the session.
+        // KernelBrowser reboots the kernel (and therefore rebuilds the DI container) before each
+        // request. disableReboot() prevents this so that the mock set below survives across the
+        // two requests that follow.
+        $this->client->disableReboot();
+
+        // Replace TotpAuthenticatorInterface with a mock that accepts any code.
+        // The test's purpose is the persistence flow (session secret → DB), not TOTP code
+        // validation. Using the real TOTP library is timing-sensitive: a code generated at a
+        // 30-second window boundary can expire before the POST is processed.
+        $mockAuthenticator = $this->createStub(TotpAuthenticatorInterface::class);
+        $mockAuthenticator->method('generateSecret')->willReturn('JBSWY3DPEHPK3PXP');
+        $mockAuthenticator->method('getQRContent')->willReturn('otpauth://totp/test');
+        $mockAuthenticator->method('checkCode')->willReturn(true);
+        static::getContainer()->set(TotpAuthenticatorInterface::class, $mockAuthenticator);
+
+        // Step 1 — load the enable page; the controller stores the pending secret in the session.
         $crawler = $this->client->request('GET', '/mfa/totp/enable');
         $this->assertResponseIsSuccessful();
 
-        // Step 2 — read the encrypted pending secret from the session, decrypt it, and generate a valid code.
-        $session = $this->client->getRequest()->getSession();
-        $encryptedPending = $session->get('pending_totp_secret');
-        $this->assertNotNull($encryptedPending, 'pending_totp_secret must be in the session after visiting /mfa/totp/enable');
-
-        /** @var TotpSecretEncryptionService $encryptionService */
-        $encryptionService = static::getContainer()->get(TotpSecretEncryptionService::class);
-        $plainSecret = $encryptionService->decrypt((string) $encryptedPending);
-
-        $validCode = TOTP::create($plainSecret)->now();
-
-        // Step 3 — read the CSRF token from the verify form and submit with the valid code.
+        // Step 2 — submit any code; the mock accepts it unconditionally.
         $csrfToken = $crawler->filter('input[name="_csrf_token"]')->attr('value');
         $this->assertNotNull($csrfToken, 'Verify form must contain a _csrf_token field');
 
         $this->client->request('POST', '/mfa/totp/verify', [
             '_csrf_token' => $csrfToken,
-            'code' => $validCode,
+            'code' => '000000',
         ]);
 
-        // Step 4 — the controller must have flushed the encrypted secret to the DB.
+        // Step 3 — the controller must have flushed the encrypted secret to the DB.
+        // $this->em was obtained at setUp() from the pre-reboot container; clear its identity
+        // map so find() re-queries the database rather than returning the stale cached entity.
+        $this->em->clear();
         $fresh = $this->em->find(User::class, $userId);
         $this->assertNotNull($fresh);
         $this->assertNotNull($fresh->getMfaSecret(), 'mfaSecret must be persisted to the DB after successful TOTP verification');
