@@ -185,6 +185,504 @@ class ReadingEntryRepository extends ServiceEntityRepository
      *
      * @param array<string, mixed> $filterParams
      */
+    // -------------------------------------------------------------------------
+    // Aggregate / statistics query methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns distinct years in which the user recorded a dateFinished, sorted
+     * descending (most recent first). Used to populate the year-filter dropdown.
+     *
+     * PHP grouping is used for DB portability (avoids YEAR() / EXTRACT()).
+     *
+     * @return int[]
+     */
+    public function findAvailableYears(User $user): array
+    {
+        $rows = $this->createQueryBuilder('re')
+            ->select('re.dateFinished')
+            ->where('re.user = :user')
+            ->andWhere('re.dateFinished IS NOT NULL')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getArrayResult();
+
+        $years = [];
+        foreach ($rows as $row) {
+            $date = $row['dateFinished'];
+            if ($date instanceof \DateTimeInterface) {
+                $years[(int) $date->format('Y')] = true;
+            }
+        }
+
+        $years = array_keys($years);
+        rsort($years);
+
+        return $years;
+    }
+
+    /**
+     * Entry count grouped by status name for the given user.
+     * When $year is provided, only counts entries with dateFinished in that year.
+     *
+     * @return array<string, int>
+     */
+    public function countByStatus(User $user, ?int $year = null): array
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('s.name as statusName, COUNT(re.id) as cnt')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->setParameter('user', $user)
+            ->groupBy('s.id, s.name');
+
+        $this->applyYearFilter($qb, $year);
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(string) $row['statusName']] = (int) $row['cnt'];
+        }
+
+        arsort($result);
+
+        return $result;
+    }
+
+    /**
+     * Entry count grouped by work type (Book/Fanfiction) for the given user.
+     * When $year is provided, only counts entries with dateFinished in that year.
+     *
+     * The SoftDeleteFilter is disabled so entries referencing soft-deleted works
+     * still contribute to the type count.
+     *
+     * @return array<string, int>
+     */
+    public function countByWorkType(User $user, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            $qb = $this->createQueryBuilder('re')
+                ->select('w.type as workType, COUNT(re.id) as cnt')
+                ->innerJoin('re.work', 'w')
+                ->where('re.user = :user')
+                ->setParameter('user', $user)
+                ->groupBy('w.type');
+
+            $this->applyYearFilter($qb, $year);
+
+            $rows = $qb->getQuery()->getArrayResult();
+            $result = [];
+            foreach ($rows as $row) {
+                $workType = $row['workType'];
+                $typeName = $workType instanceof \App\Enum\WorkType
+                    ? $workType->value
+                    : (string) $workType;
+                $result[$typeName] = (int) $row['cnt'];
+            }
+
+            arsort($result);
+
+            return $result;
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
+     * Aggregate word count stats for finished entries (status.isFinished = true).
+     * Only entries whose work has a non-NULL word count are counted.
+     *
+     * Returns:
+     *   - totalWords:   sum of word counts across matched entries
+     *   - averageWords: average word count (null if no entries match)
+     *   - entryCount:   count of matched entries (denominator for averageWords)
+     *
+     * The SoftDeleteFilter is disabled so soft-deleted works still count.
+     * The entryCount may be less than the total finished count when some works
+     * have no word count; the template should display a contextual subtitle.
+     *
+     * @return array{totalWords: int, averageWords: float|null, entryCount: int}
+     */
+    public function getWordCountStats(User $user, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            $base = $this->createQueryBuilder('re')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.isFinished = :finished')
+                ->andWhere('w.words IS NOT NULL')
+                ->setParameter('user', $user)
+                ->setParameter('finished', true);
+
+            $this->applyYearFilter($base, $year);
+
+            // Three separate scalar queries to avoid hydration-mode complexity.
+            // COALESCE is defensive; the IS NOT NULL filter above already excludes NULLs.
+            $totalWords = (int) ((clone $base)
+                ->select('SUM(COALESCE(w.words, 0))')
+                ->getQuery()
+                ->getSingleScalarResult() ?? 0);
+
+            $avgRaw = (clone $base)
+                ->select('AVG(w.words)')
+                ->getQuery()
+                ->getSingleScalarResult();
+
+            $entryCount = (int) (clone $base)
+                ->select('COUNT(re.id)')
+                ->getQuery()
+                ->getSingleScalarResult();
+
+            return [
+                'totalWords' => $totalWords,
+                'averageWords' => $avgRaw !== null ? round((float) $avgRaw) : null,
+                'entryCount' => $entryCount,
+            ];
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
+     * Counts finished entries (status.isFinished = true) per month for the
+     * given year. Returns array<int, int> keyed 1–12, zero-filled.
+     *
+     * PHP grouping is used instead of MONTH() for DB portability.
+     *
+     * @return array<int, int>
+     */
+    public function countByMonth(User $user, int $year): array
+    {
+        $yearStart = new \DateTimeImmutable("$year-01-01");
+        $yearEnd = new \DateTimeImmutable("$year-12-31");
+
+        $rows = $this->createQueryBuilder('re')
+            ->select('re.dateFinished')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->andWhere('s.isFinished = :finished')
+            ->andWhere('re.dateFinished >= :yearStart')
+            ->andWhere('re.dateFinished <= :yearEnd')
+            ->setParameter('user', $user)
+            ->setParameter('finished', true)
+            ->setParameter('yearStart', $yearStart)
+            ->setParameter('yearEnd', $yearEnd)
+            ->getQuery()
+            ->getArrayResult();
+
+        $counts = array_fill_keys(range(1, 12), 0);
+        foreach ($rows as $row) {
+            $date = $row['dateFinished'];
+            if ($date instanceof \DateTimeInterface) {
+                $counts[(int) $date->format('n')]++;
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Counts finished entries (status.isFinished = true) per calendar year.
+     * Returns array<int, int> keyed by year, sorted ascending.
+     * Used for the all-time trend chart.
+     *
+     * PHP grouping is used instead of YEAR() for DB portability.
+     *
+     * @return array<int, int>
+     */
+    public function countByYear(User $user): array
+    {
+        $rows = $this->createQueryBuilder('re')
+            ->select('re.dateFinished')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->andWhere('s.isFinished = :finished')
+            ->andWhere('re.dateFinished IS NOT NULL')
+            ->setParameter('user', $user)
+            ->setParameter('finished', true)
+            ->getQuery()
+            ->getArrayResult();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $date = $row['dateFinished'];
+            if ($date instanceof \DateTimeInterface) {
+                $year = (int) $date->format('Y');
+                $counts[$year] = ($counts[$year] ?? 0) + 1;
+            }
+        }
+
+        ksort($counts);
+
+        return $counts;
+    }
+
+    /**
+     * Histogram of reviewStars (1–5) for the given user.
+     * Returns array<int, int> keyed by star rating; only keys with at least
+     * one entry are included (not zero-filled).
+     *
+     * @return array<int, int>
+     */
+    public function getRatingDistribution(User $user, ?int $year = null): array
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('re.reviewStars as stars, COUNT(re.id) as cnt')
+            ->where('re.user = :user')
+            ->andWhere('re.reviewStars IS NOT NULL')
+            ->setParameter('user', $user)
+            ->groupBy('re.reviewStars')
+            ->orderBy('re.reviewStars', 'ASC');
+
+        $this->applyYearFilter($qb, $year);
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) $row['stars']] = (int) $row['cnt'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Histogram of spiceStars (1–5) for the given user.
+     *
+     * @return array<int, int>
+     */
+    public function getSpiceDistribution(User $user, ?int $year = null): array
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('re.spiceStars as stars, COUNT(re.id) as cnt')
+            ->where('re.user = :user')
+            ->andWhere('re.spiceStars IS NOT NULL')
+            ->setParameter('user', $user)
+            ->groupBy('re.spiceStars')
+            ->orderBy('re.spiceStars', 'ASC');
+
+        $this->applyYearFilter($qb, $year);
+
+        $rows = $qb->getQuery()->getArrayResult();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) $row['stars']] = (int) $row['cnt'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Top $limit metadata entries of the given type, ranked by how many of the
+     * user's reading entries reference a work with that metadata.
+     *
+     * CRITICAL: The query is anchored on reading_entries WHERE user = :user.
+     * Without this anchor, counts would include other users' entries referencing
+     * the same (global) works, producing inflated results.
+     *
+     * The SoftDeleteFilter is disabled so entries referencing soft-deleted works
+     * still contribute to metadata counts.
+     *
+     * @return array<array{name: string, count: int}>
+     */
+    public function getTopMetadata(
+        User $user,
+        string $typeName,
+        int $limit,
+        ?int $year = null,
+    ): array {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            $qb = $this->createQueryBuilder('re')
+                ->select('m.name as name, COUNT(re.id) as cnt')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->where('re.user = :user')
+                ->andWhere('mt.name = :typeName')
+                ->setParameter('user', $user)
+                ->setParameter('typeName', $typeName)
+                ->groupBy('m.id, m.name')
+                ->orderBy('COUNT(re.id)', 'DESC')
+                ->setMaxResults($limit);
+
+            $this->applyYearFilter($qb, $year);
+
+            $rows = $qb->getQuery()->getArrayResult();
+
+            return array_map(
+                static fn (array $row) => ['name' => (string) $row['name'], 'count' => (int) $row['cnt']],
+                $rows,
+            );
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
+     * Count of starred reading entries for the given user.
+     */
+    public function countStarred(User $user, ?int $year = null): int
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('COUNT(re.id)')
+            ->where('re.user = :user')
+            ->andWhere('re.starred = :starred')
+            ->setParameter('user', $user)
+            ->setParameter('starred', true);
+
+        $this->applyYearFilter($qb, $year);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Average reviewStars for entries that have a rating, for the given user.
+     * Returns null when no rated entries exist.
+     */
+    public function getAverageRating(User $user, ?int $year = null): ?float
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('AVG(re.reviewStars)')
+            ->where('re.user = :user')
+            ->andWhere('re.reviewStars IS NOT NULL')
+            ->setParameter('user', $user);
+
+        $this->applyYearFilter($qb, $year);
+
+        $result = $qb->getQuery()->getSingleScalarResult();
+
+        return $result !== null ? round((float) $result, 1) : null;
+    }
+
+    /**
+     * Count of entries where status.isFinished = true for the given user.
+     * When $year is provided, also filters on dateFinished within that year.
+     */
+    public function countFinished(User $user, ?int $year = null): int
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('COUNT(re.id)')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->andWhere('s.isFinished = :finished')
+            ->setParameter('user', $user)
+            ->setParameter('finished', true);
+
+        $this->applyYearFilter($qb, $year);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Count of "started" entries: entries where dateStarted IS NOT NULL OR
+     * status.isFinished = true (any finished entry is implicitly started).
+     * Used as the denominator for the finish rate.
+     *
+     * When $year is provided, also filters on dateFinished within that year.
+     */
+    public function countStarted(User $user, ?int $year = null): int
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('COUNT(re.id)')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->andWhere('(re.dateStarted IS NOT NULL OR s.isFinished = :finished)')
+            ->setParameter('user', $user)
+            ->setParameter('finished', true);
+
+        $this->applyYearFilter($qb, $year);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Returns the names of metadata types for which the user has at least one
+     * reading entry (through the work → works_metadata → metadata chain).
+     * Used to populate the rankings link section on the dashboard.
+     *
+     * The SoftDeleteFilter is disabled so soft-deleted works still contribute.
+     *
+     * @return string[]
+     */
+    public function findAvailableMetadataTypeNames(User $user, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            $qb = $this->createQueryBuilder('re')
+                ->select('mt.name as typeName')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->where('re.user = :user')
+                ->setParameter('user', $user)
+                ->groupBy('mt.id, mt.name')
+                ->orderBy('mt.name', 'ASC');
+
+            $this->applyYearFilter($qb, $year);
+
+            $rows = $qb->getQuery()->getArrayResult();
+
+            return array_column($rows, 'typeName');
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Applies a year filter on dateFinished to a QueryBuilder.
+     * When $year is null this is a no-op (all-time view).
+     */
+    private function applyYearFilter(QueryBuilder $qb, ?int $year): void
+    {
+        if ($year === null) {
+            return;
+        }
+
+        $qb->andWhere('re.dateFinished >= :yearStart')
+            ->andWhere('re.dateFinished <= :yearEnd')
+            ->setParameter('yearStart', new \DateTimeImmutable("$year-01-01"))
+            ->setParameter('yearEnd', new \DateTimeImmutable("$year-12-31"));
+    }
+
     private function applyFilters(QueryBuilder $qb, array $filterParams): void
     {
         if (!empty($filterParams['status'])) {

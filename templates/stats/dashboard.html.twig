@@ -1,0 +1,279 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'stats.dashboard.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="h3 mb-0">{{ 'stats.dashboard.heading'|trans }}</h1>
+
+    {# Year filter — onchange submits immediately, no button needed #}
+    <form method="get" action="{{ path('app_stats_dashboard') }}" class="d-flex align-items-center gap-2">
+        <label for="year-filter" class="form-label mb-0 text-nowrap small">
+            <i class="fa-solid fa-filter"></i>
+        </label>
+        <select id="year-filter" name="year" class="form-select form-select-sm" style="width: auto"
+                onchange="this.form.submit()" aria-label="{{ 'stats.filter.all_time'|trans }}">
+            <option value="">{{ 'stats.filter.all_time'|trans }}</option>
+            {% for y in summary.availableYears %}
+                <option value="{{ y }}"{% if y == year %} selected{% endif %}>
+                    {{- 'stats.filter.finished_in'|trans({'%year%': y}) -}}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+{% if summary.entryCount == 0 and year is null %}
+    <div class="alert alert-info">{{ 'stats.dashboard.empty'|trans }}</div>
+{% else %}
+
+{# ── Summary cards ──────────────────────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+
+    {# Entry count #}
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">{{ year ? summary.finishedCount : summary.entryCount }}</div>
+                <div class="small text-muted mt-1">
+                    {% if year %}
+                        {{ 'stats.card.finished_in'|trans({'%year%': year}) }}
+                    {% else %}
+                        {{ 'stats.card.total_entries'|trans }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Total words #}
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">
+                    {{ summary.wordCountStats.totalWords|number_format }}
+                </div>
+                <div class="small text-muted mt-1">
+                    {% if year %}
+                        {{ 'stats.card.words_in'|trans({'%year%': year}) }}
+                    {% else %}
+                        {{ 'stats.card.total_words'|trans }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Average words #}
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">
+                    {% if summary.wordCountStats.averageWords is not null %}
+                        {{ summary.wordCountStats.averageWords|number_format }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+                <div class="small text-muted mt-1">{{ 'stats.card.avg_words'|trans }}</div>
+                {% if summary.wordCountStats.entryCount > 0 and summary.wordCountStats.entryCount < summary.finishedCount %}
+                    <div class="small text-muted mt-1" style="font-size: 0.7rem">
+                        {{ 'stats.card.avg_words_subtitle'|trans({'%count%': summary.wordCountStats.entryCount}) }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Finish rate #}
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">{{ summary.finishRate }}%</div>
+                <div class="small text-muted mt-1">{{ 'stats.card.finish_rate'|trans }}</div>
+            </div>
+        </div>
+    </div>
+
+    {# Average rating #}
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">
+                    {% if summary.averageRating is not null %}
+                        ★ {{ summary.averageRating }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+                <div class="small text-muted mt-1">{{ 'stats.card.avg_rating'|trans }}</div>
+            </div>
+        </div>
+    </div>
+
+    {# Favorites #}
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">{{ summary.starredCount }}</div>
+                <div class="small text-muted mt-1">{{ 'stats.card.favorites'|trans }}</div>
+            </div>
+        </div>
+    </div>
+
+</div>{# end summary cards #}
+
+{# ── Trend chart (Phase 4b wires up the canvas) ─────────────────────────── #}
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                {{ year ? 'stats.chart.monthly_trend'|trans : 'stats.chart.yearly_trend'|trans }}
+            </div>
+            <div class="card-body">
+                {% if trendData is empty %}
+                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                {% else %}
+                    <canvas id="trend-chart" height="80"
+                        data-controller="chart"
+                        data-chart-type-value="bar"
+                        data-chart-labels-value="{{ trendData|keys|map(k => year ? ('stats.month.' ~ k)|trans : k)|json_encode }}"
+                        data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': trendData|values, 'backgroundColor': 'rgba(13,110,253,0.7)'}]|json_encode }}"
+                    ></canvas>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Status & type breakdown ─────────────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+
+    {# Status breakdown #}
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                {{ 'stats.card.by_status'|trans }}
+                <canvas id="status-chart" width="60" height="60"
+                    data-controller="chart"
+                    data-chart-type-value="doughnut"
+                    data-chart-labels-value="{{ summary.byStatus|keys|json_encode }}"
+                    data-chart-datasets-value="{{ [{'data': summary.byStatus|values}]|json_encode }}"
+                ></canvas>
+            </div>
+            <div class="card-body p-0">
+                {% if summary.byStatus is empty %}
+                    <p class="text-muted p-3 mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                {% else %}
+                    <table class="table table-sm table-hover mb-0">
+                        <tbody>
+                        {% for status, count in summary.byStatus %}
+                            <tr>
+                                <td>{{ status }}</td>
+                                <td class="text-end fw-semibold">{{ count }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Work type breakdown #}
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                {{ 'stats.card.by_work_type'|trans }}
+                <canvas id="type-chart" width="60" height="60"
+                    data-controller="chart"
+                    data-chart-type-value="pie"
+                    data-chart-labels-value="{{ summary.byWorkType|keys|json_encode }}"
+                    data-chart-datasets-value="{{ [{'data': summary.byWorkType|values}]|json_encode }}"
+                ></canvas>
+            </div>
+            <div class="card-body p-0">
+                {% if summary.byWorkType is empty %}
+                    <p class="text-muted p-3 mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                {% else %}
+                    <table class="table table-sm table-hover mb-0">
+                        <tbody>
+                        {% for type, count in summary.byWorkType %}
+                            <tr>
+                                <td>{{ type }}</td>
+                                <td class="text-end fw-semibold">{{ count }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>{# end breakdown #}
+
+{# ── Rating distributions ────────────────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+
+    {# Review stars distribution #}
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">{{ 'stats.chart.rating_distribution'|trans }}</div>
+            <div class="card-body">
+                {% if ratingDistributions.review is empty %}
+                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                {% else %}
+                    <canvas id="rating-chart" height="120"
+                        data-controller="chart"
+                        data-chart-type-value="bar"
+                        data-chart-labels-value="{{ ratingDistributions.review|keys|map(k => '★' ~ k)|json_encode }}"
+                        data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': ratingDistributions.review|values, 'backgroundColor': 'rgba(255,193,7,0.8)'}]|json_encode }}"
+                        data-chart-options-value="{{ {'indexAxis': 'y', 'plugins': {'legend': {'display': false}}}|json_encode }}"
+                    ></canvas>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Spice stars distribution #}
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">{{ 'stats.chart.spice_distribution'|trans }}</div>
+            <div class="card-body">
+                {% if ratingDistributions.spice is empty %}
+                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                {% else %}
+                    <canvas id="spice-chart" height="120"
+                        data-controller="chart"
+                        data-chart-type-value="bar"
+                        data-chart-labels-value="{{ ratingDistributions.spice|keys|map(k => '🌶' ~ k)|json_encode }}"
+                        data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': ratingDistributions.spice|values, 'backgroundColor': 'rgba(220,53,69,0.7)'}]|json_encode }}"
+                        data-chart-options-value="{{ {'indexAxis': 'y', 'plugins': {'legend': {'display': false}}}|json_encode }}"
+                    ></canvas>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>{# end rating distributions #}
+
+{# ── Rankings links (Phase 4c — only shown when metadata types have data) ── #}
+{% if rankingTypes is not empty %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header">{{ 'stats.rankings.available'|trans }}</div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2">
+            {% for typeName in rankingTypes %}
+                <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
+                   class="btn btn-outline-secondary btn-sm">
+                    {{ typeName }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}{# end non-empty state #}
+{% endblock %}

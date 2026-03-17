@@ -3,6 +3,7 @@ nav:
     home: 'My List'
     new_entry: 'New Entry'
     import: 'Import'
+    stats: 'Stats'
     admin: 'Admin'
     profile: 'Profile'
     logout: 'Log out'
@@ -196,6 +197,57 @@ pagination:
     previous: 'Previous'
     next: 'Next'
     page_info: 'Page {current} of {total}'
+
+stats:
+    dashboard:
+        heading: 'Reading Statistics'
+        empty: 'No reading entries yet. Start logging your reads!'
+    filter:
+        all_time: 'All Time'
+        finished_in: 'Finished in %year%'
+    card:
+        total_entries: 'Total Entries'
+        finished_in: 'Finished in %year%'
+        total_words: 'Total Words'
+        words_in: 'Words in %year%'
+        avg_words: 'Avg. Words'
+        avg_words_subtitle: 'across %count% works with word counts'
+        finish_rate: 'Finish Rate'
+        avg_rating: 'Avg. Rating'
+        no_rating: 'No ratings'
+        favorites: 'Favorites'
+        by_status: 'By Status'
+        by_work_type: 'By Type'
+        no_data: 'No data'
+    month:
+        1: 'Jan'
+        2: 'Feb'
+        3: 'Mar'
+        4: 'Apr'
+        5: 'May'
+        6: 'Jun'
+        7: 'Jul'
+        8: 'Aug'
+        9: 'Sep'
+        10: 'Oct'
+        11: 'Nov'
+        12: 'Dec'
+    chart:
+        monthly_trend: 'Monthly Trend'
+        yearly_trend: 'Yearly Trend'
+        entries: 'Entries'
+        status_breakdown: 'Status Breakdown'
+        type_breakdown: 'Type Breakdown'
+        rating_distribution: 'Rating Distribution'
+        spice_distribution: 'Spice Distribution'
+    rankings:
+        heading: 'Rankings: %type%'
+        back_to_dashboard: 'Back to Stats'
+        col_rank: '#'
+        col_name: 'Name'
+        col_count: 'Entries'
+        empty: 'No data for this category.'
+        available: 'Rankings by Category'
 
 reset_password:
     request:
