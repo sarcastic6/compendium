@@ -465,7 +465,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Histogram of spiceStars (1–5) for the given user.
+     * Histogram of spiceStars (0–5) for the given user.
      *
      * @return array<int, int>
      */

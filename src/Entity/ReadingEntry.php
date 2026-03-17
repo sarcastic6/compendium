@@ -53,10 +53,11 @@ class ReadingEntry
     private ?int $reviewStars = null;
 
     /**
-     * Must be between 1 and 5 inclusive. Database CHECK constraint exists, but validation
-     * is also enforced at the application level in ReadingEntryService.
+     * Must be between 0 and 5 inclusive. 0 means 'ice cold' (no spice); NULL means not rated.
+     * Database CHECK constraint exists, but validation is also enforced at the application level
+     * in ReadingEntryService.
      */
-    #[ORM\Column(nullable: true, options: ['check' => 'spice_stars BETWEEN 1 AND 5'])]
+    #[ORM\Column(nullable: true, options: ['check' => 'spice_stars BETWEEN 0 AND 5'])]
     private ?int $spiceStars = null;
 
     /**
