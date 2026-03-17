@@ -623,6 +623,41 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Count of distinct works across all entries for the given user.
+     * When $year is provided, counts only works from entries finished that year.
+     */
+    public function countUniqueWorks(User $user, ?int $year = null): int
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('COUNT(DISTINCT re.work)')
+            ->where('re.user = :user')
+            ->setParameter('user', $user);
+
+        $this->applyYearFilter($qb, $year);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Average spiceStars for entries that have a spice rating (including 0 = ice
+     * cold), for the given user. Returns null when no rated entries exist.
+     */
+    public function getAverageSpice(User $user, ?int $year = null): ?float
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('AVG(re.spiceStars)')
+            ->where('re.user = :user')
+            ->andWhere('re.spiceStars IS NOT NULL')
+            ->setParameter('user', $user);
+
+        $this->applyYearFilter($qb, $year);
+
+        $result = $qb->getQuery()->getSingleScalarResult();
+
+        return $result !== null ? round((float) $result, 1) : null;
+    }
+
+    /**
      * Returns the names of metadata types for which the user has at least one
      * reading entry (through the work → works_metadata → metadata chain).
      * Used to populate the rankings link section on the dashboard.

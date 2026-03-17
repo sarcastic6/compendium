@@ -46,6 +46,16 @@
         </div>
     </div>
 
+    {# Unique works #}
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">{{ summary.uniqueWorkCount }}</div>
+                <div class="small text-muted mt-1">{{ 'stats.card.unique_works'|trans }}</div>
+            </div>
+        </div>
+    </div>
+
     {# Total words #}
     <div class="col-6 col-md-4 col-xl-2">
         <div class="card h-100 text-center shadow-sm">
@@ -107,6 +117,22 @@
                     {% endif %}
                 </div>
                 <div class="small text-muted mt-1">{{ 'stats.card.avg_rating'|trans }}</div>
+            </div>
+        </div>
+    </div>
+
+    {# Average spice #}
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">
+                    {% if summary.averageSpice is not null %}
+                        🌶 {{ summary.averageSpice }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+                <div class="small text-muted mt-1">{{ 'stats.card.avg_spice'|trans }}</div>
             </div>
         </div>
     </div>

@@ -31,10 +31,12 @@ class StatisticsService
      *
      * @return array{
      *   entryCount: int,
+     *   uniqueWorkCount: int,
      *   finishedCount: int,
      *   wordCountStats: array{totalWords: int, averageWords: float|null, entryCount: int},
      *   finishRate: float,
      *   averageRating: float|null,
+     *   averageSpice: float|null,
      *   starredCount: int,
      *   byStatus: array<string, int>,
      *   byWorkType: array<string, int>,
@@ -50,10 +52,12 @@ class StatisticsService
             'entryCount' => $year !== null
                 ? $finished
                 : $this->readingEntryRepository->countByUser($user),
+            'uniqueWorkCount' => $this->readingEntryRepository->countUniqueWorks($user, $year),
             'finishedCount' => $finished,
             'wordCountStats' => $this->readingEntryRepository->getWordCountStats($user, $year),
             'finishRate' => $this->calculateFinishRate($finished, $started),
             'averageRating' => $this->readingEntryRepository->getAverageRating($user, $year),
+            'averageSpice' => $this->readingEntryRepository->getAverageSpice($user, $year),
             'starredCount' => $this->readingEntryRepository->countStarred($user, $year),
             'byStatus' => $this->readingEntryRepository->countByStatus($user, $year),
             'byWorkType' => $this->readingEntryRepository->countByWorkType($user, $year),
