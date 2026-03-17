@@ -45,19 +45,18 @@ class ReadingEntry
     private ?int $lastReadChapter = null;
 
     /**
-     * Must be between 1 and 5 inclusive. Database CHECK constraint exists, but validation
-     * is also enforced at the application level in ReadingEntryService to provide user-friendly
-     * error messages before hitting the database.
+     * Must be between 1 and 5 inclusive. Enforced at the application level in ReadingEntryService.
+     * DBAL 4.x does not support CHECK constraints — no database-level constraint exists for this field.
      */
-    #[ORM\Column(nullable: true, options: ['check' => 'review_stars BETWEEN 1 AND 5'])]
+    #[ORM\Column(nullable: true)]
     private ?int $reviewStars = null;
 
     /**
      * Must be between 0 and 5 inclusive. 0 means 'ice cold' (no spice); NULL means not rated.
-     * Database CHECK constraint exists, but validation is also enforced at the application level
-     * in ReadingEntryService.
+     * Enforced at the application level in ReadingEntryService.
+     * DBAL 4.x does not support CHECK constraints — no database-level constraint exists for this field.
      */
-    #[ORM\Column(nullable: true, options: ['check' => 'spice_stars BETWEEN 0 AND 5'])]
+    #[ORM\Column(nullable: true)]
     private ?int $spiceStars = null;
 
     /**

@@ -37,21 +37,22 @@ class ReadingEntryService
      * never enter the Doctrine unit of work.
      *
      * Star validation and mainPairing type check are done here because:
-     * - Stars: the DB CHECK constraint exists but won't produce friendly messages
+     * - Stars: DBAL 4.x does not support CHECK constraints, so there is no database-level guard
      * - mainPairing: the FK type constraint can't be expressed at the DB level (requires a join through metadata_type)
      *
      * @throws \InvalidArgumentException on validation failure
      */
     public function validateAndSave(ReadingEntry $entry): void
     {
-        // reviewStars must be 1-5 or null — DB CHECK constraint exists,
-        // but we validate here for user-friendly error messages.
+        // reviewStars must be 1-5 or null. No database-level constraint exists (DBAL 4.x does
+        // not support CHECK constraints), so this is the sole enforcement point.
         if ($entry->getReviewStars() !== null && ($entry->getReviewStars() < 1 || $entry->getReviewStars() > 5)) {
             throw new \InvalidArgumentException('reading.entry.stars.out_of_range');
         }
 
         // spiceStars must be 0-5 or null — 0 means 'ice cold' (no spice), null means not rated.
-        // DB CHECK constraint exists, but we validate here for user-friendly error messages.
+        // No database-level constraint exists (DBAL 4.x does not support CHECK constraints),
+        // so this is the sole enforcement point.
         if ($entry->getSpiceStars() !== null && ($entry->getSpiceStars() < 0 || $entry->getSpiceStars() > 5)) {
             throw new \InvalidArgumentException('reading.entry.stars.out_of_range');
         }
