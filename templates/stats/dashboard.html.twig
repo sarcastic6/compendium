@@ -218,34 +218,28 @@
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-header">{{ 'stats.card.top_reads'|trans }}</div>
-            <div class="card-body">
-                <table class="table table-sm mb-0">
-                    <tbody>
-                    {% for key, spotlight in topMetadata %}
-                        <tr>
-                            <td class="text-muted text-nowrap">{{ ('stats.card.top_' ~ key)|trans }}</td>
-                            <td>
-                                {% if spotlight %}
-                                    {{ spotlight.name }}
-                                    {% if spotlight.ties is not empty %}
-                                        <button type="button"
-                                                class="btn btn-link btn-sm p-0 ms-1 align-baseline"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modal-top-{{ key }}">
-                                            +{{ spotlight.ties|length }}
-                                        </button>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="text-muted">—</span>
+            <div class="card-body d-flex flex-column gap-3">
+                {% for key, spotlight in topMetadata %}
+                    <div>
+                        <div class="text-muted small mb-1">{{ ('stats.card.top_' ~ key)|trans }}</div>
+                        <div>
+                            {% if spotlight %}
+                                {{ spotlight.name }}
+                                <span class="text-muted small ms-1">· {{ spotlight.count }} reads</span>
+                                {% if spotlight.ties is not empty %}
+                                    <button type="button"
+                                            class="btn btn-link btn-sm p-0 ms-1 align-baseline"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modal-top-{{ key }}">
+                                        +{{ spotlight.ties|length }}
+                                    </button>
                                 {% endif %}
-                            </td>
-                            <td class="text-end text-muted small">
-                                {% if spotlight %}{{ spotlight.count }}{% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -255,7 +249,7 @@
         {% if spotlight and spotlight.ties is not empty %}
             <div class="modal fade" id="modal-top-{{ key }}" tabindex="-1"
                  aria-labelledby="modal-top-{{ key }}-label" aria-hidden="true">
-                <div class="modal-dialog modal-sm">
+                <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="modal-top-{{ key }}-label">
@@ -264,21 +258,13 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                     aria-label="{{ 'action.close'|trans }}"></button>
                         </div>
-                        <div class="modal-body p-0">
-                            <table class="table table-sm mb-0">
-                                <tbody>
-                                    <tr class="table-active">
-                                        <td>{{ spotlight.name }}</td>
-                                        <td class="text-end fw-semibold">{{ spotlight.count }}</td>
-                                    </tr>
-                                    {% for tie in spotlight.ties %}
-                                        <tr>
-                                            <td>{{ tie.name }}</td>
-                                            <td class="text-end fw-semibold">{{ tie.count }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <div class="modal-body d-flex flex-column gap-2">
+                            {% for entry in [{'name': spotlight.name, 'count': spotlight.count}]|merge(spotlight.ties) %}
+                                <div>
+                                    {{ entry.name }}
+                                    <span class="text-muted small ms-1">· {{ entry.count }} reads</span>
+                                </div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
