@@ -165,7 +165,7 @@
                         data-chart-type-value="line"
                         data-chart-labels-value="{{ trendData|keys|map(k => year ? ('stats.month.' ~ k)|trans : k)|json_encode }}"
                         data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': trendData|values, 'backgroundColor': 'rgba(13,110,253,0.2)', 'borderColor': 'rgba(13,110,253,1)', 'fill': true, 'tension': 0.3}]|json_encode }}"
-                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}}|json_encode }}"
+                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}, 'aspectRatio': 4}|json_encode }}"
                         data-chart-urls-value="{{ chartUrls.trend|json_encode }}"
                     ></canvas>
                 {% endif %}
