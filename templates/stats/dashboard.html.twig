@@ -222,13 +222,14 @@
                 {% for key, spotlight in topMetadata %}
                     <div>
                         <div class="text-muted small mb-1">{{ ('stats.card.top_' ~ key)|trans }}</div>
-                        <div>
+                        <div class="d-flex align-items-baseline gap-1">
                             {% if spotlight %}
-                                {{ spotlight.name }}
-                                <span class="text-muted small ms-1">· {{ spotlight.count }} {{ spotlight.count == 1 ? 'read' : 'reads' }}</span>
+                                <span>{{ spotlight.name }}</span>
+                                <span class="text-muted small">· {{ spotlight.count }} {{ spotlight.count == 1 ? 'read' : 'reads' }}</span>
                                 {% if spotlight.ties is not empty %}
                                     <button type="button"
-                                            class="btn btn-link btn-sm p-0 ms-1 align-baseline"
+                                            class="btn btn-link btn-sm p-0"
+                                            style="min-height: 0; line-height: inherit;"
                                             data-bs-toggle="modal"
                                             data-bs-target="#modal-top-{{ key }}">
                                         +{{ spotlight.ties|length }}
