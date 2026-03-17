@@ -62,7 +62,7 @@
                     <option value="">{{ 'reading.filter.any_rating'|trans }}</option>
                     {% for i in 1..5 %}
                         <option value="{{ i }}" {% if filters.rating == (i ~ '') %}selected{% endif %}>
-                            {% for j in 1..i %}★{% endfor %}
+                            {% for j in 1..i %}⭐{% endfor %}
                         </option>
                     {% endfor %}
                 </select>
@@ -155,7 +155,7 @@
                         <th scope="col">{{ 'reading.entry.col_authors'|trans }}</th>
                         <th scope="col">{{ 'reading.field.status'|trans }}</th>
                         <th scope="col">{{ 'reading.field.date_finished'|trans }}</th>
-                        <th scope="col">★</th>
+                        <th scope="col">{{ 'reading.field.review_stars'|trans }}</th>
                         <th scope="col"></th>
                     </tr>
                 </thead>
@@ -192,10 +192,10 @@
                             <td data-label="{{ 'reading.field.date_finished'|trans }}">
                                 {{ entry.dateFinished ? entry.dateFinished|date('Y-m-d') : '—' }}
                             </td>
-                            <td data-label="★">
+                            <td data-label="{{ 'reading.field.review_stars'|trans }}">
                                 {% if entry.reviewStars %}
                                     <span class="stars-display" aria-label="{{ entry.reviewStars }} stars">
-                                        {% for i in range(1, entry.reviewStars) %}★{% endfor %}
+                                        {% for i in range(1, entry.reviewStars) %}⭐{% endfor %}
                                     </span>
                                 {% else %}
                                     —

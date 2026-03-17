@@ -53,14 +53,14 @@ class ReadingEntryFormType extends AbstractType
             ->add('reviewStars', ChoiceType::class, [
                 'label' => 'reading.field.review_stars',
                 'choices' => [1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5],
-                'choice_label' => static fn (int $v) => str_repeat('★', $v),
+                'choice_label' => static fn (int $v) => str_repeat('⭐', $v),
                 'placeholder' => '',
                 'required' => false,
             ])
             ->add('spiceStars', ChoiceType::class, [
                 'label' => 'reading.field.spice_stars',
                 'choices' => [0 => 0, 1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5],
-                'choice_label' => static fn (int $v) => $v === 0 ? '🧊' : str_repeat('🌶', $v),
+                'choice_label' => static fn (int $v) => $v === 0 ? '🧊' : str_repeat('🌶️', $v),
                 'placeholder' => '',
                 'required' => false,
             ])
