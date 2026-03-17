@@ -437,9 +437,8 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Histogram of reviewStars (1–5) for the given user.
-     * Returns array<int, int> keyed by star rating; only keys with at least
-     * one entry are included (not zero-filled).
+     * Histogram of reviewStars (1–5) for the given user, zero-filled for all
+     * values 1–5 so the chart always shows the full scale.
      *
      * @return array<int, int>
      */
@@ -456,7 +455,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
         $this->applyYearFilter($qb, $year);
 
         $rows = $qb->getQuery()->getArrayResult();
-        $result = [];
+        $result = array_fill_keys(range(1, 5), 0);
         foreach ($rows as $row) {
             $result[(int) $row['stars']] = (int) $row['cnt'];
         }
@@ -465,7 +464,8 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Histogram of spiceStars (0–5) for the given user.
+     * Histogram of spiceStars (0–5) for the given user, zero-filled for all
+     * values 0–5 so the chart always shows the full scale.
      *
      * @return array<int, int>
      */
@@ -482,7 +482,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
         $this->applyYearFilter($qb, $year);
 
         $rows = $qb->getQuery()->getArrayResult();
-        $result = [];
+        $result = array_fill_keys(range(0, 5), 0);
         foreach ($rows as $row) {
             $result[(int) $row['stars']] = (int) $row['cnt'];
         }
