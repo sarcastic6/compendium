@@ -225,7 +225,7 @@
                         <div>
                             {% if spotlight %}
                                 {{ spotlight.name }}
-                                <span class="text-muted small ms-1">· {{ spotlight.count }} reads</span>
+                                <span class="text-muted small ms-1">· {{ spotlight.count }} {{ spotlight.count == 1 ? 'read' : 'reads' }}</span>
                                 {% if spotlight.ties is not empty %}
                                     <button type="button"
                                             class="btn btn-link btn-sm p-0 ms-1 align-baseline"
@@ -262,7 +262,7 @@
                             {% for entry in [{'name': spotlight.name, 'count': spotlight.count}]|merge(spotlight.ties) %}
                                 <div>
                                     {{ entry.name }}
-                                    <span class="text-muted small ms-1">· {{ entry.count }} reads</span>
+                                    <span class="text-muted small ms-1">· {{ entry.count }} {{ entry.count == 1 ? 'read' : 'reads' }}</span>
                                 </div>
                             {% endfor %}
                         </div>
