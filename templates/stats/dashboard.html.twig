@@ -214,42 +214,77 @@
         </div>
     </div>
 
-    {# Work type breakdown #}
+    {# Top metadata spotlight #}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header">{{ 'stats.card.by_work_type'|trans }}</div>
+            <div class="card-header">{{ 'stats.card.top_reads'|trans }}</div>
             <div class="card-body">
-                {% if summary.byWorkType is empty %}
-                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
-                {% else %}
-                    <div class="row">
-                        <div class="col-5 d-flex align-items-center justify-content-center">
-                            <canvas
-                                data-controller="chart"
-                                data-chart-type-value="pie"
-                                data-chart-labels-value="{{ summary.byWorkType|keys|json_encode }}"
-                                data-chart-datasets-value="{{ [{'data': summary.byWorkType|values}]|json_encode }}"
-                                data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
-                                data-chart-urls-value="{{ chartUrls.workType|json_encode }}"
-                            ></canvas>
+                <table class="table table-sm mb-0">
+                    <tbody>
+                    {% for key, spotlight in topMetadata %}
+                        <tr>
+                            <td class="text-muted text-nowrap">{{ ('stats.card.top_' ~ key)|trans }}</td>
+                            <td>
+                                {% if spotlight %}
+                                    {{ spotlight.name }}
+                                    {% if spotlight.ties is not empty %}
+                                        <button type="button"
+                                                class="btn btn-link btn-sm p-0 ms-1 align-baseline"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modal-top-{{ key }}">
+                                            +{{ spotlight.ties|length }}
+                                        </button>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-muted small">
+                                {% if spotlight %}{{ spotlight.count }}{% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# Tie modals — one per spotlight row, only rendered when ties exist #}
+    {% for key, spotlight in topMetadata %}
+        {% if spotlight and spotlight.ties is not empty %}
+            <div class="modal fade" id="modal-top-{{ key }}" tabindex="-1"
+                 aria-labelledby="modal-top-{{ key }}-label" aria-hidden="true">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modal-top-{{ key }}-label">
+                                {{ 'stats.modal.tied_at_first'|trans({'%type%': ('stats.card.top_' ~ key)|trans}) }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="{{ 'action.close'|trans }}"></button>
                         </div>
-                        <div class="col-7">
+                        <div class="modal-body p-0">
                             <table class="table table-sm mb-0">
                                 <tbody>
-                                {% for type, count in summary.byWorkType %}
-                                    <tr>
-                                        <td>{{ type }}</td>
-                                        <td class="text-end fw-semibold">{{ count }}</td>
+                                    <tr class="table-active">
+                                        <td>{{ spotlight.name }}</td>
+                                        <td class="text-end fw-semibold">{{ spotlight.count }}</td>
                                     </tr>
-                                {% endfor %}
+                                    {% for tie in spotlight.ties %}
+                                        <tr>
+                                            <td>{{ tie.name }}</td>
+                                            <td class="text-end fw-semibold">{{ tie.count }}</td>
+                                        </tr>
+                                    {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                {% endif %}
+                </div>
             </div>
-        </div>
-    </div>
+        {% endif %}
+    {% endfor %}
 
 </div>{# end breakdown #}
 

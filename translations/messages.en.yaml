@@ -18,6 +18,7 @@ action:
     edit: 'Edit'
     delete: 'Delete'
     confirm: 'Confirm'
+    close: 'Close'
 
 auth:
     login:
@@ -221,6 +222,10 @@ stats:
         by_status: 'By Status'
         by_work_type: 'By Type'
         no_data: 'No data'
+        top_reads: 'Top Reads'
+        top_fandom: 'Fandom'
+        top_pairing: 'Pairing'
+        top_rating: 'Rating'
     month:
         1: 'Jan'
         2: 'Feb'
@@ -242,6 +247,8 @@ stats:
         type_breakdown: 'Type Breakdown'
         rating_distribution: 'Review Distribution'
         spice_distribution: 'Spice Distribution'
+    modal:
+        tied_at_first: 'Tied #1 — %type%'
     rankings:
         heading: 'Rankings: %type%'
         back_to_dashboard: 'Back to Stats'

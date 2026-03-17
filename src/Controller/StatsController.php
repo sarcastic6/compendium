@@ -40,6 +40,12 @@ class StatsController extends AbstractController
 
         $chartUrls = $this->buildChartUrls($summary, $trendData, $ratingDistributions, $year);
 
+        $topMetadata = [
+            'fandom' => $this->statisticsService->getTopMetadataSpotlight($user, 'Fandom', $year),
+            'pairing' => $this->statisticsService->getTopMetadataSpotlight($user, 'Pairing', $year),
+            'rating' => $this->statisticsService->getTopMetadataSpotlight($user, 'Rating', $year),
+        ];
+
         return $this->render('stats/dashboard.html.twig', [
             'summary' => $summary,
             'trendData' => $trendData,
@@ -47,6 +53,7 @@ class StatsController extends AbstractController
             'rankingTypes' => $rankingTypes,
             'year' => $year,
             'chartUrls' => $chartUrls,
+            'topMetadata' => $topMetadata,
         ]);
     }
 
@@ -88,7 +95,7 @@ class StatsController extends AbstractController
      * @param array<string, mixed>     $summary
      * @param array<int, int>          $trendData
      * @param array{review: array<int,int>, spice: array<int,int>} $ratingDistributions
-     * @return array{trend: string[], status: array<string|null>, workType: string[], rating: string[], spice: string[]}
+     * @return array{trend: string[], status: array<string|null>, rating: string[], spice: string[]}
      */
     private function buildChartUrls(
         array $summary,
@@ -132,12 +139,6 @@ class StatsController extends AbstractController
                 : null;
         }
 
-        // Work type chart
-        $typeUrls = [];
-        foreach (array_keys($summary['byWorkType']) as $typeName) {
-            $typeUrls[] = $this->generateUrl('app_reading_entry_list', array_merge(['type' => $typeName], $yearScope));
-        }
-
         // Review stars distribution
         $ratingUrls = [];
         foreach (array_keys($ratingDistributions['review']) as $stars) {
@@ -153,7 +154,6 @@ class StatsController extends AbstractController
         return [
             'trend' => $trendUrls,
             'status' => $statusUrls,
-            'workType' => $typeUrls,
             'rating' => $ratingUrls,
             'spice' => $spiceUrls,
         ];

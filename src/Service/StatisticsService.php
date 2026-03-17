@@ -39,7 +39,6 @@ class StatisticsService
      *   averageSpice: float|null,
      *   starredCount: int,
      *   byStatus: array<string, int>,
-     *   byWorkType: array<string, int>,
      *   availableYears: int[],
      * }
      */
@@ -60,7 +59,6 @@ class StatisticsService
             'averageSpice' => $this->readingEntryRepository->getAverageSpice($user, $year),
             'starredCount' => $this->readingEntryRepository->countStarred($user, $year),
             'byStatus' => $this->readingEntryRepository->countByStatus($user, $year),
-            'byWorkType' => $this->readingEntryRepository->countByWorkType($user, $year),
             'availableYears' => $this->readingEntryRepository->findAvailableYears($user),
         ];
     }
@@ -130,6 +128,43 @@ class StatisticsService
     public function getAvailableRankingTypes(User $user, ?int $year): array
     {
         return $this->readingEntryRepository->findAvailableMetadataTypeNames($user, $year);
+    }
+
+    /**
+     * Returns the most-read metadata entry for a given type name, plus any
+     * other entries that tie for first place.
+     *
+     * IMPORTANT — counts by reading entries, not distinct works: re-reads of the
+     * same work count separately. This reflects where the user's reading time
+     * actually went rather than breadth of exposure.
+     *
+     * Returns null when the metadata type does not exist or has no entries.
+     *
+     * The "ties" key contains entries tied for first place beyond the first one
+     * returned, so ties|length is the "+N" overflow count shown in the UI.
+     *
+     * @return array{name: string, count: int, ties: array<array{name: string, count: int}>}|null
+     */
+    public function getTopMetadataSpotlight(User $user, string $typeName, ?int $year): ?array
+    {
+        // Fetch enough rows to detect ties; >50-way ties at #1 are implausible.
+        $rows = $this->readingEntryRepository->getTopMetadata($user, $typeName, 50, $year);
+
+        if ($rows === []) {
+            return null;
+        }
+
+        $topCount = $rows[0]['count'];
+        $ties = array_values(array_filter(
+            array_slice($rows, 1),
+            static fn (array $row): bool => $row['count'] === $topCount,
+        ));
+
+        return [
+            'name' => $rows[0]['name'],
+            'count' => $topCount,
+            'ties' => $ties,
+        ];
     }
 
     private function calculateFinishRate(int $finished, int $started): float
