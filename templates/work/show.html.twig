@@ -83,12 +83,6 @@
                 <dd class="col-sm-7">{{ work.lastUpdatedDate|date('Y-m-d') }}</dd>
             {% endif %}
 
-            <dt class="col-sm-5">{{ 'work.show.field.created_at'|trans }}</dt>
-            <dd class="col-sm-7 text-muted">{{ work.createdAt|date('Y-m-d') }}</dd>
-
-            <dt class="col-sm-5">{{ 'work.show.field.updated_at'|trans }}</dt>
-            <dd class="col-sm-7 text-muted">{{ work.updatedAt|date('Y-m-d') }}</dd>
-
         </dl>
     </div>
 </div>
@@ -101,27 +95,44 @@
 <hr>
 
 {# Metadata grouped by type #}
-{% if work.metadata is empty %}
-    <p class="text-muted">{{ 'work.show.no_metadata'|trans }}</p>
-{% else %}
-    {# Build grouped map: {typeName: [metadata items]} #}
-    {% set grouped = {} %}
-    {% for item in work.metadata %}
-        {% set key = item.metadataType.name %}
+{# Authors are excluded here — they are already shown in the core details section above. #}
+{# Known types are rendered in this preferred order; any unrecognized types follow at the end. #}
+{% set metadataTypeOrder = ['Warning', 'Rating', 'Category', 'Fandom', 'Pairing', 'Character', 'Tag'] %}
+
+{% set grouped = {} %}
+{% for item in work.metadata %}
+    {% set key = item.metadataType.name %}
+    {% if key != 'Author' %}
         {% if key not in grouped|keys %}
             {% set grouped = grouped|merge({(key): []}) %}
         {% endif %}
         {% set grouped = grouped|merge({(key): grouped[key]|merge([item])}) %}
-    {% endfor %}
+    {% endif %}
+{% endfor %}
 
+{% if grouped is empty %}
+    <p class="text-muted">{{ 'work.show.no_metadata'|trans }}</p>
+{% else %}
     <div class="row g-2">
+        {% for typeName in metadataTypeOrder %}
+            {% if typeName in grouped|keys %}
+                <div class="col-12">
+                    <span class="fw-semibold me-2">{{ typeName }}:</span>
+                    {% for item in grouped[typeName] %}
+                        <span class="badge bg-secondary me-1">{{ item.name }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
         {% for typeName, items in grouped %}
-            <div class="col-12">
-                <span class="fw-semibold me-2">{{ typeName }}:</span>
-                {% for item in items %}
-                    <span class="badge bg-secondary me-1">{{ item.name }}</span>
-                {% endfor %}
-            </div>
+            {% if typeName not in metadataTypeOrder %}
+                <div class="col-12">
+                    <span class="fw-semibold me-2">{{ typeName }}:</span>
+                    {% for item in items %}
+                        <span class="badge bg-secondary me-1">{{ item.name }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
         {% endfor %}
     </div>
 {% endif %}
