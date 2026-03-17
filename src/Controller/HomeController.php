@@ -14,7 +14,7 @@ class HomeController extends AbstractController
     public function index(): Response
     {
         if ($this->getUser() !== null) {
-            return $this->redirectToRoute('app_reading_entry_list');
+            return $this->redirectToRoute('app_stats_dashboard');
         }
 
         return $this->redirectToRoute('app_login');
