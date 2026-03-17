@@ -77,7 +77,7 @@
                 </div>
                 <div class="small text-muted mt-1">{{ 'stats.card.avg_words'|trans }}</div>
                 {% if summary.wordCountStats.entryCount > 0 and summary.wordCountStats.entryCount < summary.finishedCount %}
-                    <div class="small text-muted mt-1" style="font-size: 0.7rem">
+                    <div class="text-muted mt-1" style="font-size: 0.7rem">
                         {{ 'stats.card.avg_words_subtitle'|trans({'%count%': summary.wordCountStats.entryCount}) }}
                     </div>
                 {% endif %}
@@ -123,7 +123,7 @@
 
 </div>{# end summary cards #}
 
-{# ── Trend chart (Phase 4b wires up the canvas) ─────────────────────────── #}
+{# ── Trend chart ─────────────────────────────────────────────────────────── #}
 <div class="row g-3 mb-4">
     <div class="col-12">
         <div class="card shadow-sm">
@@ -134,11 +134,12 @@
                 {% if trendData is empty %}
                     <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
                 {% else %}
-                    <canvas id="trend-chart" height="80"
+                    <canvas id="trend-chart"
                         data-controller="chart"
                         data-chart-type-value="bar"
                         data-chart-labels-value="{{ trendData|keys|map(k => year ? ('stats.month.' ~ k)|trans : k)|json_encode }}"
                         data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': trendData|values, 'backgroundColor': 'rgba(13,110,253,0.7)'}]|json_encode }}"
+                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
                     ></canvas>
                 {% endif %}
             </div>
@@ -152,29 +153,34 @@
     {# Status breakdown #}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                {{ 'stats.card.by_status'|trans }}
-                <canvas id="status-chart" width="60" height="60"
-                    data-controller="chart"
-                    data-chart-type-value="doughnut"
-                    data-chart-labels-value="{{ summary.byStatus|keys|json_encode }}"
-                    data-chart-datasets-value="{{ [{'data': summary.byStatus|values}]|json_encode }}"
-                ></canvas>
-            </div>
-            <div class="card-body p-0">
+            <div class="card-header">{{ 'stats.card.by_status'|trans }}</div>
+            <div class="card-body">
                 {% if summary.byStatus is empty %}
-                    <p class="text-muted p-3 mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
                 {% else %}
-                    <table class="table table-sm table-hover mb-0">
-                        <tbody>
-                        {% for status, count in summary.byStatus %}
-                            <tr>
-                                <td>{{ status }}</td>
-                                <td class="text-end fw-semibold">{{ count }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                    <div class="row">
+                        <div class="col-5 d-flex align-items-center justify-content-center">
+                            <canvas
+                                data-controller="chart"
+                                data-chart-type-value="doughnut"
+                                data-chart-labels-value="{{ summary.byStatus|keys|json_encode }}"
+                                data-chart-datasets-value="{{ [{'data': summary.byStatus|values}]|json_encode }}"
+                                data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
+                            ></canvas>
+                        </div>
+                        <div class="col-7">
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                {% for status, count in summary.byStatus %}
+                                    <tr>
+                                        <td>{{ status }}</td>
+                                        <td class="text-end fw-semibold">{{ count }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 {% endif %}
             </div>
         </div>
@@ -183,29 +189,34 @@
     {# Work type breakdown #}
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                {{ 'stats.card.by_work_type'|trans }}
-                <canvas id="type-chart" width="60" height="60"
-                    data-controller="chart"
-                    data-chart-type-value="pie"
-                    data-chart-labels-value="{{ summary.byWorkType|keys|json_encode }}"
-                    data-chart-datasets-value="{{ [{'data': summary.byWorkType|values}]|json_encode }}"
-                ></canvas>
-            </div>
-            <div class="card-body p-0">
+            <div class="card-header">{{ 'stats.card.by_work_type'|trans }}</div>
+            <div class="card-body">
                 {% if summary.byWorkType is empty %}
-                    <p class="text-muted p-3 mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
                 {% else %}
-                    <table class="table table-sm table-hover mb-0">
-                        <tbody>
-                        {% for type, count in summary.byWorkType %}
-                            <tr>
-                                <td>{{ type }}</td>
-                                <td class="text-end fw-semibold">{{ count }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                    <div class="row">
+                        <div class="col-5 d-flex align-items-center justify-content-center">
+                            <canvas
+                                data-controller="chart"
+                                data-chart-type-value="pie"
+                                data-chart-labels-value="{{ summary.byWorkType|keys|json_encode }}"
+                                data-chart-datasets-value="{{ [{'data': summary.byWorkType|values}]|json_encode }}"
+                                data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
+                            ></canvas>
+                        </div>
+                        <div class="col-7">
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                {% for type, count in summary.byWorkType %}
+                                    <tr>
+                                        <td>{{ type }}</td>
+                                        <td class="text-end fw-semibold">{{ count }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 {% endif %}
             </div>
         </div>
@@ -224,7 +235,7 @@
                 {% if ratingDistributions.review is empty %}
                     <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
                 {% else %}
-                    <canvas id="rating-chart" height="120"
+                    <canvas
                         data-controller="chart"
                         data-chart-type-value="bar"
                         data-chart-labels-value="{{ ratingDistributions.review|keys|map(k => '★' ~ k)|json_encode }}"
@@ -244,7 +255,7 @@
                 {% if ratingDistributions.spice is empty %}
                     <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
                 {% else %}
-                    <canvas id="spice-chart" height="120"
+                    <canvas
                         data-controller="chart"
                         data-chart-type-value="bar"
                         data-chart-labels-value="{{ ratingDistributions.spice|keys|map(k => '🌶' ~ k)|json_encode }}"
@@ -258,7 +269,7 @@
 
 </div>{# end rating distributions #}
 
-{# ── Rankings links (Phase 4c — only shown when metadata types have data) ── #}
+{# ── Rankings links ──────────────────────────────────────────────────────── #}
 {% if rankingTypes is not empty %}
 <div class="card shadow-sm mb-4">
     <div class="card-header">{{ 'stats.rankings.available'|trans }}</div>

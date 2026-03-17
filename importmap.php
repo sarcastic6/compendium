@@ -50,4 +50,13 @@ return [
         'version' => '1.13.1',
         'type' => 'css',
     ],
+    'chart.js' => [
+        'version' => '4.5.1',
+    ],
+    '@kurkle/color' => [
+        'version' => '0.3.4',
+    ],
+    'chart.js/auto' => [
+        'version' => '4.5.1',
+    ],
 ];
