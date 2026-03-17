@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\MetadataTypeRepository;
+use App\Repository\StatusRepository;
 use App\Service\StatisticsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,6 +21,7 @@ class StatsController extends AbstractController
     public function __construct(
         private readonly StatisticsService $statisticsService,
         private readonly MetadataTypeRepository $metadataTypeRepository,
+        private readonly StatusRepository $statusRepository,
     ) {
     }
 
@@ -36,12 +38,15 @@ class StatsController extends AbstractController
         $ratingDistributions = $this->statisticsService->getRatingDistributions($user, $year);
         $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
 
+        $chartUrls = $this->buildChartUrls($summary, $trendData, $ratingDistributions, $year);
+
         return $this->render('stats/dashboard.html.twig', [
             'summary' => $summary,
             'trendData' => $trendData,
             'ratingDistributions' => $ratingDistributions,
             'rankingTypes' => $rankingTypes,
             'year' => $year,
+            'chartUrls' => $chartUrls,
         ]);
     }
 
@@ -70,6 +75,88 @@ class StatsController extends AbstractController
             'year' => $year,
             'availableYears' => $availableYears,
         ]);
+    }
+
+    /**
+     * Builds the per-label URL arrays used to make each chart segment clickable.
+     *
+     * Each array is ordered to match the chart's label/data arrays so that
+     * clicking the Nth bar/slice navigates to urls[N].
+     *
+     * When $year is set, all list links are scoped to that year via dateFrom/dateTo.
+     *
+     * @param array<string, mixed>     $summary
+     * @param array<int, int>          $trendData
+     * @param array{review: array<int,int>, spice: array<int,int>} $ratingDistributions
+     * @return array{trend: string[], status: array<string|null>, workType: string[], rating: string[], spice: string[]}
+     */
+    private function buildChartUrls(
+        array $summary,
+        array $trendData,
+        array $ratingDistributions,
+        ?int $year,
+    ): array {
+        $yearScope = $year !== null
+            ? ['dateFrom' => "$year-01-01", 'dateTo' => "$year-12-31"]
+            : [];
+
+        // Trend chart: each bar is either a year (all-time) or a month (year view)
+        $trendUrls = [];
+        foreach (array_keys($trendData) as $key) {
+            if ($year !== null) {
+                $monthStr = str_pad((string) $key, 2, '0', \STR_PAD_LEFT);
+                $monthStart = new \DateTimeImmutable("$year-$monthStr-01");
+                $monthEnd = $monthStart->modify('last day of this month');
+                $trendUrls[] = $this->generateUrl('app_reading_entry_list', [
+                    'dateFrom' => $monthStart->format('Y-m-d'),
+                    'dateTo' => $monthEnd->format('Y-m-d'),
+                ]);
+            } else {
+                $trendUrls[] = $this->generateUrl('app_reading_entry_list', [
+                    'dateFrom' => "$key-01-01",
+                    'dateTo' => "$key-12-31",
+                ]);
+            }
+        }
+
+        // Status chart: map name → ID for the list's ?status= filter
+        $statusIdByName = [];
+        foreach ($this->statusRepository->findAll() as $status) {
+            $statusIdByName[$status->getName()] = $status->getId();
+        }
+        $statusUrls = [];
+        foreach (array_keys($summary['byStatus']) as $statusName) {
+            $id = $statusIdByName[$statusName] ?? null;
+            $statusUrls[] = $id !== null
+                ? $this->generateUrl('app_reading_entry_list', array_merge(['status' => $id], $yearScope))
+                : null;
+        }
+
+        // Work type chart
+        $typeUrls = [];
+        foreach (array_keys($summary['byWorkType']) as $typeName) {
+            $typeUrls[] = $this->generateUrl('app_reading_entry_list', array_merge(['type' => $typeName], $yearScope));
+        }
+
+        // Review stars distribution
+        $ratingUrls = [];
+        foreach (array_keys($ratingDistributions['review']) as $stars) {
+            $ratingUrls[] = $this->generateUrl('app_reading_entry_list', array_merge(['rating' => $stars], $yearScope));
+        }
+
+        // Spice stars distribution
+        $spiceUrls = [];
+        foreach (array_keys($ratingDistributions['spice']) as $spice) {
+            $spiceUrls[] = $this->generateUrl('app_reading_entry_list', array_merge(['spice' => $spice], $yearScope));
+        }
+
+        return [
+            'trend' => $trendUrls,
+            'status' => $statusUrls,
+            'workType' => $typeUrls,
+            'rating' => $ratingUrls,
+            'spice' => $spiceUrls,
+        ];
     }
 
     /**

@@ -140,6 +140,7 @@
                         data-chart-labels-value="{{ trendData|keys|map(k => year ? ('stats.month.' ~ k)|trans : k)|json_encode }}"
                         data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': trendData|values, 'backgroundColor': 'rgba(13,110,253,0.7)'}]|json_encode }}"
                         data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
+                        data-chart-urls-value="{{ chartUrls.trend|json_encode }}"
                     ></canvas>
                 {% endif %}
             </div>
@@ -166,6 +167,7 @@
                                 data-chart-labels-value="{{ summary.byStatus|keys|json_encode }}"
                                 data-chart-datasets-value="{{ [{'data': summary.byStatus|values}]|json_encode }}"
                                 data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
+                                data-chart-urls-value="{{ chartUrls.status|json_encode }}"
                             ></canvas>
                         </div>
                         <div class="col-7">
@@ -202,6 +204,7 @@
                                 data-chart-labels-value="{{ summary.byWorkType|keys|json_encode }}"
                                 data-chart-datasets-value="{{ [{'data': summary.byWorkType|values}]|json_encode }}"
                                 data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
+                                data-chart-urls-value="{{ chartUrls.workType|json_encode }}"
                             ></canvas>
                         </div>
                         <div class="col-7">
@@ -241,6 +244,7 @@
                         data-chart-labels-value="{{ ratingDistributions.review|keys|map(k => '★' ~ k)|json_encode }}"
                         data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': ratingDistributions.review|values, 'backgroundColor': 'rgba(255,193,7,0.8)'}]|json_encode }}"
                         data-chart-options-value="{{ {'indexAxis': 'y', 'plugins': {'legend': {'display': false}}}|json_encode }}"
+                        data-chart-urls-value="{{ chartUrls.rating|json_encode }}"
                     ></canvas>
                 {% endif %}
             </div>
@@ -261,6 +265,7 @@
                         data-chart-labels-value="{{ ratingDistributions.spice|keys|map(k => k == 0 ? '🧊' : '🌶' ~ k)|json_encode }}"
                         data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': ratingDistributions.spice|values, 'backgroundColor': 'rgba(220,53,69,0.7)'}]|json_encode }}"
                         data-chart-options-value="{{ {'indexAxis': 'y', 'plugins': {'legend': {'display': false}}}|json_encode }}"
+                        data-chart-urls-value="{{ chartUrls.spice|json_encode }}"
                     ></canvas>
                 {% endif %}
             </div>

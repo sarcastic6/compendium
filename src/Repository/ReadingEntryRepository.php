@@ -726,5 +726,21 @@ class ReadingEntryRepository extends ServiceEntityRepository
             $qb->andWhere('re.dateFinished <= :filter_date_to')
                 ->setParameter('filter_date_to', new \DateTimeImmutable($filterParams['dateTo']));
         }
+
+        // Spice stars: 0 is a valid value so check !== '' rather than !empty
+        if (isset($filterParams['spice']) && $filterParams['spice'] !== '') {
+            $qb->andWhere('re.spiceStars = :filter_spice')
+                ->setParameter('filter_spice', (int) $filterParams['spice']);
+        }
+
+        if (!empty($filterParams['type'])) {
+            // Validate against the WorkType enum to silently ignore invalid values.
+            // The 'w' alias for Work is always joined before applyFilters is called.
+            $workType = \App\Enum\WorkType::tryFrom($filterParams['type']);
+            if ($workType !== null) {
+                $qb->andWhere('w.type = :filter_type')
+                    ->setParameter('filter_type', $workType);
+            }
+        }
     }
 }

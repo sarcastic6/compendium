@@ -50,6 +50,8 @@ class ReadingEntryController extends AbstractController
             'rating' => $request->query->get('rating', ''),
             'dateFrom' => $request->query->get('dateFrom', ''),
             'dateTo' => $request->query->get('dateTo', ''),
+            'spice' => $request->query->get('spice', ''),
+            'type' => $request->query->get('type', ''),
         ];
 
         $hasFilters = array_filter($filterParams) !== [];
