@@ -1,5 +1,14 @@
 {% extends 'base.html.twig' %}
 
+{% macro metadataBadge(item, sourceType) %}
+    {% set link = item.getLinkForSource(sourceType) %}
+    {% if link %}
+        <a href="{{ link }}" target="_blank" rel="noopener noreferrer" class="badge bg-secondary me-1 text-decoration-none">{{ item.name }}</a>
+    {% else %}
+        <span class="badge bg-secondary me-1">{{ item.name }}</span>
+    {% endif %}
+{% endmacro %}
+
 {% block title %}{{ work.title }}{% endblock %}
 
 {% block body %}
@@ -24,7 +33,13 @@
                 <dt class="col-sm-4">{{ 'work.field.authors'|trans }}</dt>
                 <dd class="col-sm-8">
                     {% for author in work.authors %}
-                        {{ author.name }}{%- if not loop.last %}, {% endif %}
+                        {% set authorLink = author.getLinkForSource(work.sourceType) %}
+                        {% if authorLink %}
+                            <a href="{{ authorLink }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
+                        {% else %}
+                            {{ author.name }}
+                        {% endif %}
+                        {%- if not loop.last %}, {% endif %}
                     {% endfor %}
                 </dd>
             {% endif %}
@@ -119,7 +134,7 @@
                 <div class="col-12">
                     <span class="fw-semibold me-2">{{ typeName }}:</span>
                     {% for item in grouped[typeName] %}
-                        <span class="badge bg-secondary me-1">{{ item.name }}</span>
+                        {{ _self.metadataBadge(item, work.sourceType) }}
                     {% endfor %}
                 </div>
             {% endif %}
@@ -129,7 +144,7 @@
                 <div class="col-12">
                     <span class="fw-semibold me-2">{{ typeName }}:</span>
                     {% for item in items %}
-                        <span class="badge bg-secondary me-1">{{ item.name }}</span>
+                        {{ _self.metadataBadge(item, work.sourceType) }}
                     {% endfor %}
                 </div>
             {% endif %}

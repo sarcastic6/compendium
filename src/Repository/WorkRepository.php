@@ -36,6 +36,7 @@ class WorkRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('w')
             ->leftJoin('w.metadata', 'm')->addSelect('m')
             ->leftJoin('m.metadataType', 'mt')->addSelect('mt')
+            ->leftJoin('m.sourceLinks', 'msl')->addSelect('msl')
             ->leftJoin('w.series', 's')->addSelect('s')
             ->leftJoin('w.language', 'l')->addSelect('l')
             ->where('w.id = :id')
