@@ -226,6 +226,7 @@ stats:
         top_fandom: 'Fandom'
         top_pairing: 'Pairing'
         top_rating: 'Rating'
+        top_category: 'Category'
     month:
         1: 'Jan'
         2: 'Feb'
