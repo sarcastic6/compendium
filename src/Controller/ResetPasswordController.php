@@ -92,7 +92,7 @@ class ResetPasswordController extends AbstractController
             return $this->redirectToRoute('reset_password_request');
         }
 
-        $form = $this->createForm(ChangePasswordFormType::class);
+        $form = $this->createForm(ChangePasswordFormType::class, null, ['require_current_password' => false]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
