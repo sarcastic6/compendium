@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\ReadingEntry;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -384,8 +385,8 @@ class ReadingEntryRepository extends ServiceEntityRepository
             ->andWhere('re.dateFinished <= :yearEnd')
             ->setParameter('user', $user)
             ->setParameter('finished', true)
-            ->setParameter('yearStart', $yearStart)
-            ->setParameter('yearEnd', $yearEnd)
+            ->setParameter('yearStart', $yearStart, Types::DATE_IMMUTABLE)
+            ->setParameter('yearEnd', $yearEnd, Types::DATE_IMMUTABLE)
             ->getQuery()
             ->getArrayResult();
 
@@ -712,10 +713,13 @@ class ReadingEntryRepository extends ServiceEntityRepository
             return;
         }
 
+        // Types::DATE_IMMUTABLE ensures Doctrine serializes the boundary as 'Y-m-d'
+        // (not 'Y-m-d H:i:s'), so SQLite string comparison correctly includes
+        // entries on Jan 1 and Dec 31 of the selected year.
         $qb->andWhere('re.dateFinished >= :yearStart')
             ->andWhere('re.dateFinished <= :yearEnd')
-            ->setParameter('yearStart', new \DateTimeImmutable("$year-01-01"))
-            ->setParameter('yearEnd', new \DateTimeImmutable("$year-12-31"));
+            ->setParameter('yearStart', new \DateTimeImmutable("$year-01-01"), Types::DATE_IMMUTABLE)
+            ->setParameter('yearEnd', new \DateTimeImmutable("$year-12-31"), Types::DATE_IMMUTABLE);
     }
 
     private function applyFilters(QueryBuilder $qb, array $filterParams): void
