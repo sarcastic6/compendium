@@ -48,6 +48,10 @@
                                     {{ 'nav.stats'|trans }}
                                 </a>
                             </li>
+                        {% endif %}
+                    </ul>
+                    {% if is_granted('ROLE_USER') %}
+                        <ul class="navbar-nav ms-auto mb-2 mb-md-0">
                             {% if is_granted('ROLE_ADMIN') %}
                                 <li class="nav-item">
                                     <a class="nav-link{% if app.request.attributes.get('_route') starts with 'app_admin' %} active{% endif %}"
@@ -56,10 +60,6 @@
                                     </a>
                                 </li>
                             {% endif %}
-                        {% endif %}
-                    </ul>
-                    {% if is_granted('ROLE_USER') %}
-                        <ul class="navbar-nav ms-auto mb-2 mb-md-0">
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ path('app_profile') }}">
                                     {{ 'nav.profile'|trans }}
