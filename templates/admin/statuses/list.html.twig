@@ -19,7 +19,8 @@
             <thead>
                 <tr>
                     <th scope="col">{{ 'admin.statuses.field.name'|trans }}</th>
-                    <th scope="col">{{ 'admin.statuses.field.is_finished'|trans }}</th>
+                    <th scope="col">{{ 'admin.statuses.field.has_been_started'|trans }}</th>
+                    <th scope="col">{{ 'admin.statuses.field.counts_as_read'|trans }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,7 +28,14 @@
                     <tr>
                         <td>{{ status.name }}</td>
                         <td>
-                            {% if status.finished %}
+                            {% if status.hasBeenStarted %}
+                                <span class="badge bg-success">Yes</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if status.countsAsRead %}
                                 <span class="badge bg-success">Yes</span>
                             {% else %}
                                 <span class="badge bg-secondary">No</span>

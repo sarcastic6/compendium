@@ -25,8 +25,12 @@ class StatusFormType extends AbstractType
                     new Length(['max' => 100]),
                 ],
             ])
-            ->add('isFinished', CheckboxType::class, [
-                'label' => 'admin.statuses.field.is_finished',
+            ->add('hasBeenStarted', CheckboxType::class, [
+                'label' => 'admin.statuses.field.has_been_started',
+                'required' => false,
+            ])
+            ->add('countsAsRead', CheckboxType::class, [
+                'label' => 'admin.statuses.field.counts_as_read',
                 'required' => false,
             ]);
     }

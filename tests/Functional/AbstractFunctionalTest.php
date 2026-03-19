@@ -52,9 +52,9 @@ abstract class AbstractFunctionalTest extends WebTestCase
         return $user;
     }
 
-    protected function createStatus(string $name = 'Reading', bool $isFinished = false): Status
+    protected function createStatus(string $name = 'Reading', bool $hasBeenStarted = true, bool $countsAsRead = false): Status
     {
-        $status = new Status($name, $isFinished);
+        $status = new Status($name, $hasBeenStarted, $countsAsRead);
         $this->em->persist($status);
         $this->em->flush();
 

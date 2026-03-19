@@ -107,6 +107,100 @@ class StatisticsService
     }
 
     /**
+     * Returns full ranking data for a metadata type with all derived columns computed.
+     *
+     * Each item contains:
+     *   - name:       metadata entry name
+     *   - count:      total reading entries (re-reads included, year-scoped)
+     *   - countPct:   count as % of all user entries (year-scoped)
+     *   - totalWords: sum of word counts from matched reading entries (year-scoped)
+     *   - wordsPct:   totalWords as % of all user words (year-scoped)
+     *   - readCount:  finished reading entries (year-scoped)
+     *   - readPct:    readCount / count * 100 (finish rate within this item)
+     *
+     * Valid $sortColumn values: name, count, count_pct, words, words_pct, read_count, read_pct
+     * Valid $sortDir values: asc, desc
+     * Default sort: count DESC
+     *
+     * IMPORTANT: count_pct and words_pct sort identically to count and words
+     * respectively (percentage is proportional). read_pct is a distinct sort order
+     * (finish rate may differ from raw entry count).
+     *
+     * @return array<array{name: string, count: int, countPct: float, totalWords: int, wordsPct: float, readCount: int, readPct: float}>
+     */
+    public function getRankings(
+        User $user,
+        string $typeName,
+        string $sortColumn,
+        string $sortDir,
+        ?int $year,
+    ): array {
+        $rows = $this->readingEntryRepository->getMetadataRankings($user, $typeName, $year);
+
+        // Count % denominator: sum of all counts for this metadata type.
+        // This gives each item's share of appearances within this type, not a
+        // share of global reading entries. Handles multi-value types (Character,
+        // Tag, etc.) correctly — one entry contributes to multiple items, so the
+        // global entry count is the wrong denominator.
+        $totalEntries = array_sum(array_column($rows, 'count'));
+
+        // Words % denominator: total words read globally by this user (year-scoped).
+        // This gives each item's share of actual words read — "what percentage of
+        // the words you read were in works featuring this item?" Using the sum of
+        // per-item word totals would inflate the denominator for multi-value types
+        // (a 100k word fic with 3 characters would count 300k words total).
+        $totalWords = $this->readingEntryRepository->getTotalWordsSumForUser($user, $year);
+
+        $items = array_map(
+            static function (array $row) use ($totalEntries, $totalWords): array {
+                return [
+                    'name' => $row['name'],
+                    'count' => $row['count'],
+                    'countPct' => $totalEntries > 0
+                        ? round($row['count'] / $totalEntries * 100, 1)
+                        : 0.0,
+                    'totalWords' => $row['totalWords'],
+                    'wordsPct' => $totalWords > 0
+                        ? round($row['totalWords'] / $totalWords * 100, 1)
+                        : 0.0,
+                    'readCount' => $row['readCount'],
+                    'readPct' => $row['count'] > 0
+                        ? round($row['readCount'] / $row['count'] * 100, 1)
+                        : 0.0,
+                ];
+            },
+            $rows,
+        );
+
+        usort($items, static function (array $a, array $b) use ($sortColumn, $sortDir): int {
+            $valA = match ($sortColumn) {
+                'name' => $a['name'],
+                'count', 'count_pct' => $a['count'],
+                'words', 'words_pct' => $a['totalWords'],
+                'read_count' => $a['readCount'],
+                'read_pct' => $a['readPct'],
+                default => $a['count'],
+            };
+            $valB = match ($sortColumn) {
+                'name' => $b['name'],
+                'count', 'count_pct' => $b['count'],
+                'words', 'words_pct' => $b['totalWords'],
+                'read_count' => $b['readCount'],
+                'read_pct' => $b['readPct'],
+                default => $b['count'],
+            };
+
+            $cmp = is_string($valA)
+                ? strcmp($valA, $valB)
+                : ($valA <=> $valB);
+
+            return $sortDir === 'asc' ? $cmp : -$cmp;
+        });
+
+        return $items;
+    }
+
+    /**
      * Finish rate: "of the works you started, what % did you finish?"
      * Returns 0.0 when no started entries exist (avoids division by zero).
      */

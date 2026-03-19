@@ -75,13 +75,17 @@ class StatsController extends AbstractController
 
         $year = $this->parseYearParam($request);
         $availableYears = $this->statisticsService->getDashboardSummary($user, null)['availableYears'];
-        $rankings = $this->statisticsService->getTopMetadata($user, $type, 50, $year);
+        [$sortColumn, $sortDir] = $this->parseSortParams($request);
+
+        $rankings = $this->statisticsService->getRankings($user, $type, $sortColumn, $sortDir, $year);
 
         return $this->render('stats/rankings.html.twig', [
             'type' => $type,
             'rankings' => $rankings,
             'year' => $year,
             'availableYears' => $availableYears,
+            'sortColumn' => $sortColumn,
+            'sortDir' => $sortDir,
         ]);
     }
 
@@ -158,6 +162,30 @@ class StatsController extends AbstractController
             'rating' => $ratingUrls,
             'spice' => $spiceUrls,
         ];
+    }
+
+    /**
+     * Extracts and validates the ?sort= and ?dir= query parameters for rankings.
+     *
+     * Returns [sortColumn, sortDir]. Defaults to ['count', 'desc'] for invalid
+     * or missing values.
+     *
+     * @return array{string, string}
+     */
+    private function parseSortParams(Request $request): array
+    {
+        $validColumns = ['name', 'count', 'count_pct', 'words', 'words_pct', 'read_count', 'read_pct'];
+        $column = $request->query->get('sort', 'count');
+        if (!in_array($column, $validColumns, true)) {
+            $column = 'count';
+        }
+
+        $dir = $request->query->get('dir', 'desc');
+        if ($dir !== 'asc' && $dir !== 'desc') {
+            $dir = 'desc';
+        }
+
+        return [$column, $dir];
     }
 
     /**

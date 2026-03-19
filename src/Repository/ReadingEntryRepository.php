@@ -170,14 +170,59 @@ class ReadingEntryRepository extends ServiceEntityRepository
         }
     }
 
-    public function countByUser(User $user): int
+    /**
+     * Total reading entry count for the given user.
+     * When $year is provided, only counts entries with dateFinished in that year.
+     */
+    public function countByUser(User $user, ?int $year = null): int
     {
-        return (int) $this->createQueryBuilder('re')
+        $qb = $this->createQueryBuilder('re')
             ->select('COUNT(re.id)')
             ->where('re.user = :user')
-            ->setParameter('user', $user)
-            ->getQuery()
-            ->getSingleScalarResult();
+            ->setParameter('user', $user);
+
+        $this->applyYearFilter($qb, $year);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Sum of work word counts across reading entries for the given user where
+     * the user has actually read the work (status.hasBeenStarted = true).
+     * TBR entries are excluded; DNF entries are included (user read some of it).
+     *
+     * Works without a word count (NULL) are treated as zero.
+     * When $year is provided, only sums entries with dateFinished in that year.
+     *
+     * The SoftDeleteFilter is disabled so soft-deleted works still contribute.
+     */
+    public function getTotalWordsSumForUser(User $user, ?int $year = null): int
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            $qb = $this->createQueryBuilder('re')
+                ->select('SUM(COALESCE(w.words, 0))')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('started', true);
+
+            $this->applyYearFilter($qb, $year);
+
+            return (int) ($qb->getQuery()->getSingleScalarResult() ?? 0);
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
     }
 
     /**
@@ -299,7 +344,9 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Aggregate word count stats for finished entries (status.isFinished = true).
+     * Aggregate word count stats for entries where the user has actually read
+     * the work (status.hasBeenStarted = true or status.countsAsRead = true —
+     * i.e., any status other than TBR).
      * Only entries whose work has a non-NULL word count are counted.
      *
      * Returns:
@@ -327,10 +374,10 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 ->innerJoin('re.work', 'w')
                 ->innerJoin('re.status', 's')
                 ->where('re.user = :user')
-                ->andWhere('s.isFinished = :finished')
+                ->andWhere('s.hasBeenStarted = :started')
                 ->andWhere('w.words IS NOT NULL')
                 ->setParameter('user', $user)
-                ->setParameter('finished', true);
+                ->setParameter('started', true);
 
             $this->applyYearFilter($base, $year);
 
@@ -364,7 +411,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Counts finished entries (status.isFinished = true) per month for the
+     * Counts completed entries (status.countsAsRead = true) per month for the
      * given year. Returns array<int, int> keyed 1–12, zero-filled.
      *
      * PHP grouping is used instead of MONTH() for DB portability.
@@ -380,11 +427,11 @@ class ReadingEntryRepository extends ServiceEntityRepository
             ->select('re.dateFinished')
             ->innerJoin('re.status', 's')
             ->where('re.user = :user')
-            ->andWhere('s.isFinished = :finished')
+            ->andWhere('s.countsAsRead = :countsAsRead')
             ->andWhere('re.dateFinished >= :yearStart')
             ->andWhere('re.dateFinished <= :yearEnd')
             ->setParameter('user', $user)
-            ->setParameter('finished', true)
+            ->setParameter('countsAsRead', true)
             ->setParameter('yearStart', $yearStart, Types::DATE_IMMUTABLE)
             ->setParameter('yearEnd', $yearEnd, Types::DATE_IMMUTABLE)
             ->getQuery()
@@ -402,7 +449,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Counts finished entries (status.isFinished = true) per calendar year.
+     * Counts completed entries (status.countsAsRead = true) per calendar year.
      * Returns array<int, int> keyed by year, sorted ascending.
      * Used for the all-time trend chart.
      *
@@ -416,10 +463,10 @@ class ReadingEntryRepository extends ServiceEntityRepository
             ->select('re.dateFinished')
             ->innerJoin('re.status', 's')
             ->where('re.user = :user')
-            ->andWhere('s.isFinished = :finished')
+            ->andWhere('s.countsAsRead = :countsAsRead')
             ->andWhere('re.dateFinished IS NOT NULL')
             ->setParameter('user', $user)
-            ->setParameter('finished', true)
+            ->setParameter('countsAsRead', true)
             ->getQuery()
             ->getArrayResult();
 
@@ -583,7 +630,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Count of entries where status.isFinished = true for the given user.
+     * Count of entries where status.countsAsRead = true for the given user.
      * When $year is provided, also filters on dateFinished within that year.
      */
     public function countFinished(User $user, ?int $year = null): int
@@ -592,9 +639,9 @@ class ReadingEntryRepository extends ServiceEntityRepository
             ->select('COUNT(re.id)')
             ->innerJoin('re.status', 's')
             ->where('re.user = :user')
-            ->andWhere('s.isFinished = :finished')
+            ->andWhere('s.countsAsRead = :countsAsRead')
             ->setParameter('user', $user)
-            ->setParameter('finished', true);
+            ->setParameter('countsAsRead', true);
 
         $this->applyYearFilter($qb, $year);
 
@@ -602,8 +649,8 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Count of "started" entries: entries where dateStarted IS NOT NULL OR
-     * status.isFinished = true (any finished entry is implicitly started).
+     * Count of "started" entries: entries whose status has hasBeenStarted = true
+     * (Reading, On Hold, Completed, DNF — anything except TBR).
      * Used as the denominator for the finish rate.
      *
      * When $year is provided, also filters on dateFinished within that year.
@@ -614,9 +661,9 @@ class ReadingEntryRepository extends ServiceEntityRepository
             ->select('COUNT(re.id)')
             ->innerJoin('re.status', 's')
             ->where('re.user = :user')
-            ->andWhere('(re.dateStarted IS NOT NULL OR s.isFinished = :finished)')
+            ->andWhere('s.hasBeenStarted = :started')
             ->setParameter('user', $user)
-            ->setParameter('finished', true);
+            ->setParameter('started', true);
 
         $this->applyYearFilter($qb, $year);
 
@@ -656,6 +703,121 @@ class ReadingEntryRepository extends ServiceEntityRepository
         $result = $qb->getQuery()->getSingleScalarResult();
 
         return $result !== null ? round((float) $result, 1) : null;
+    }
+
+    /**
+     * Returns full ranking data for all metadata entries of the given type.
+     * No limit is applied — returns all results; caller is responsible for sorting.
+     *
+     * Each row contains:
+     *   - name:       metadata entry name
+     *   - count:      total reading entries referencing this metadata (re-reads included)
+     *   - totalWords: sum of work word counts across all matched reading entries
+     *                 (NULL word counts treated as zero; re-reads multiply the word count)
+     *   - readCount:  count of reading entries where status.countsAsRead = true
+     *
+     * Two separate queries are used (one for count+words, one for readCount) to
+     * avoid relying on CASE WHEN inside aggregate functions, which is not reliably
+     * portable across Doctrine DQL versions.
+     *
+     * IMPORTANT: The query is anchored on reading_entries WHERE user = :user to
+     * prevent cross-user inflation from shared global works.
+     *
+     * The SoftDeleteFilter is disabled so entries referencing soft-deleted works
+     * still contribute to metadata counts.
+     *
+     * @return array<array{name: string, count: int, totalWords: int, readCount: int}>
+     */
+    public function getMetadataRankings(User $user, string $typeName, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            // Query 1: entry count only (all statuses — Count # reflects all reading activity)
+            $qb = $this->createQueryBuilder('re')
+                ->select('m.id as mid, m.name as name, COUNT(re.id) as cnt')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->where('re.user = :user')
+                ->andWhere('mt.name = :typeName')
+                ->setParameter('user', $user)
+                ->setParameter('typeName', $typeName)
+                ->groupBy('m.id, m.name');
+
+            $this->applyYearFilter($qb, $year);
+
+            $mainRows = $qb->getQuery()->getArrayResult();
+
+            // Query 2: total words — only entries where the user actually read the work
+            // (hasBeenStarted = true). TBR contributes zero words; DNF counts (user read some).
+            $qb2 = $this->createQueryBuilder('re')
+                ->select('m.id as mid, SUM(COALESCE(w.words, 0)) as totalWords')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('mt.name = :typeName')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('typeName', $typeName)
+                ->setParameter('started', true)
+                ->groupBy('m.id');
+
+            $this->applyYearFilter($qb2, $year);
+
+            $wordsRows = $qb2->getQuery()->getArrayResult();
+
+            // Query 3: read count (countsAsRead entries only — excludes DNF, TBR, Reading, On Hold)
+            $qb3 = $this->createQueryBuilder('re')
+                ->select('m.id as mid, COUNT(re.id) as readCnt')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('mt.name = :typeName')
+                ->andWhere('s.countsAsRead = :countsAsRead')
+                ->setParameter('user', $user)
+                ->setParameter('typeName', $typeName)
+                ->setParameter('countsAsRead', true)
+                ->groupBy('m.id');
+
+            $this->applyYearFilter($qb3, $year);
+
+            $readRows = $qb3->getQuery()->getArrayResult();
+
+            // Index words and read counts by metadata ID for O(1) lookup
+            $wordTotals = [];
+            foreach ($wordsRows as $row) {
+                $wordTotals[(int) $row['mid']] = (int) $row['totalWords'];
+            }
+
+            $readCounts = [];
+            foreach ($readRows as $row) {
+                $readCounts[(int) $row['mid']] = (int) $row['readCnt'];
+            }
+
+            return array_map(
+                static fn (array $row): array => [
+                    'name' => (string) $row['name'],
+                    'count' => (int) $row['cnt'],
+                    'totalWords' => $wordTotals[(int) $row['mid']] ?? 0,
+                    'readCount' => $readCounts[(int) $row['mid']] ?? 0,
+                ],
+                $mainRows,
+            );
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
     }
 
     /**
