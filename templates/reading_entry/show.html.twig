@@ -43,7 +43,7 @@
         <dl class="row mb-0">
             <dt class="col-sm-5">{{ 'reading.field.status'|trans }}</dt>
             <dd class="col-sm-7">
-                <span class="badge {% if entry.status.finished %}bg-success{% else %}bg-secondary{% endif %}">
+                <span class="badge {% if entry.status.countsAsRead %}bg-success{% else %}bg-secondary{% endif %}">
                     {{ entry.status.name }}
                 </span>
             </dd>

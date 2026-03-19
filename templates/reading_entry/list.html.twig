@@ -185,7 +185,7 @@
                                 {% endif %}
                             </td>
                             <td data-label="{{ 'reading.field.status'|trans }}">
-                                <span class="badge {% if entry.status.finished %}bg-success{% else %}bg-secondary{% endif %}">
+                                <span class="badge {% if entry.status.countsAsRead %}bg-success{% else %}bg-secondary{% endif %}">
                                     {{ entry.status.name }}
                                 </span>
                             </td>
