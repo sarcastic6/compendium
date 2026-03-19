@@ -9,7 +9,7 @@
     {# Year filter — onchange submits immediately, no button needed #}
     <form method="get" action="{{ path('app_stats_dashboard') }}" class="d-flex align-items-center gap-2">
         <label for="year-filter" class="form-label mb-0 text-nowrap small">
-            <i class="fa-solid fa-filter"></i>
+            <i class="bi bi-funnel"></i>
         </label>
         <select id="year-filter" name="year" class="form-select form-select-sm" style="width: auto"
                 onchange="this.form.submit()" aria-label="{{ 'stats.filter.all_time'|trans }}">

@@ -12,7 +12,7 @@
             <input type="hidden" name="sort" value="{{ sortColumn }}">
             <input type="hidden" name="dir" value="{{ sortDir }}">
             <label for="year-filter" class="form-label mb-0 text-nowrap small">
-                <i class="fa-solid fa-filter"></i>
+                <i class="bi bi-funnel"></i>
             </label>
             <select id="year-filter" name="year" class="form-select form-select-sm" style="width: auto"
                     onchange="this.form.submit()" aria-label="{{ 'stats.filter.all_time'|trans }}">
@@ -27,7 +27,7 @@
 
         <a href="{{ path('app_stats_dashboard', {'year': year}) }}"
            class="btn btn-outline-secondary btn-sm">
-            <i class="fa-solid fa-arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
             {{ 'stats.rankings.back_to_dashboard'|trans }}
         </a>
     </div>
@@ -48,17 +48,17 @@
             {% macro sortHeader(col, label, align, extraClass, sortColumn, sortDir, rankingRoute, rankingRouteParams, year) %}
                 {% set isActive = (sortColumn == col) %}
                 {% set nextDir = (isActive and sortDir == 'desc') ? 'asc' : 'desc' %}
-                <th class="text-{{ align }}{{ extraClass ? ' ' ~ extraClass : '' }}">
+                <th class="text-{{ align }}{{ extraClass ? ' ' ~ extraClass : '' }}{{ isActive ? ' table-primary' : '' }}">
                     <a href="{{ path(rankingRoute, rankingRouteParams|merge({
                         'year': year,
                         'sort': col,
                         'dir': nextDir
-                    })) }}" class="text-decoration-none {{ isActive ? 'text-body fw-semibold' : 'text-muted' }}">
+                    })) }}" class="text-decoration-none {{ isActive ? 'fw-semibold' : 'text-muted' }}">
                         {{ label }}
                         {% if isActive %}
-                            <i class="fa-solid fa-sort-{{ sortDir == 'asc' ? 'up' : 'down' }} ms-1 small"></i>
+                            <i class="bi bi-caret-{{ sortDir == 'asc' ? 'up' : 'down' }}-fill ms-1"></i>
                         {% else %}
-                            <i class="fa-solid fa-sort ms-1 small opacity-25"></i>
+                            <i class="bi bi-chevron-expand ms-1 opacity-25"></i>
                         {% endif %}
                     </a>
                 </th>
