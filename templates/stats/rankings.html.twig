@@ -8,7 +8,7 @@
 
     <div class="d-flex align-items-center gap-2">
         {# Year filter — hidden inputs preserve sort/dir across year changes #}
-        <form method="get" action="{{ path('app_stats_rankings', {'type': type}) }}" class="d-flex align-items-center gap-2">
+        <form method="get" action="{{ path(rankingRoute, rankingRouteParams) }}" class="d-flex align-items-center gap-2">
             <input type="hidden" name="sort" value="{{ sortColumn }}">
             <input type="hidden" name="dir" value="{{ sortDir }}">
             <label for="year-filter" class="form-label mb-0 text-nowrap small">
@@ -45,16 +45,15 @@
                 - align:      'start' or 'end' (Bootstrap text-align utility suffix)
                 - extraClass: optional extra classes on the <th>
             #}
-            {% macro sortHeader(col, label, align, extraClass, sortColumn, sortDir, type, year) %}
+            {% macro sortHeader(col, label, align, extraClass, sortColumn, sortDir, rankingRoute, rankingRouteParams, year) %}
                 {% set isActive = (sortColumn == col) %}
                 {% set nextDir = (isActive and sortDir == 'desc') ? 'asc' : 'desc' %}
                 <th class="text-{{ align }}{{ extraClass ? ' ' ~ extraClass : '' }}">
-                    <a href="{{ path('app_stats_rankings', {
-                        'type': type,
+                    <a href="{{ path(rankingRoute, rankingRouteParams|merge({
                         'year': year,
                         'sort': col,
                         'dir': nextDir
-                    }) }}" class="text-decoration-none {{ isActive ? 'text-body fw-semibold' : 'text-muted' }}">
+                    })) }}" class="text-decoration-none {{ isActive ? 'text-body fw-semibold' : 'text-muted' }}">
                         {{ label }}
                         {% if isActive %}
                             <i class="fa-solid fa-sort-{{ sortDir == 'asc' ? 'up' : 'down' }} ms-1 small"></i>
@@ -72,13 +71,15 @@
                     <thead>
                         <tr>
                             <th class="ps-3" style="width: 3rem">{{ 'stats.rankings.col_rank'|trans }}</th>
-                            {{ self.sortHeader('name',      'stats.rankings.col_name'|trans,       'start', '',     sortColumn, sortDir, type, year) }}
-                            {{ self.sortHeader('count',     'stats.rankings.col_count'|trans,      'end',   '',     sortColumn, sortDir, type, year) }}
-                            {{ self.sortHeader('count_pct', 'stats.rankings.col_count_pct'|trans,  'end',   '',     sortColumn, sortDir, type, year) }}
-                            {{ self.sortHeader('words',     'stats.rankings.col_words'|trans,      'end',   '',     sortColumn, sortDir, type, year) }}
-                            {{ self.sortHeader('words_pct', 'stats.rankings.col_words_pct'|trans,  'end',   '',     sortColumn, sortDir, type, year) }}
-                            {{ self.sortHeader('read_count','stats.rankings.col_read_count'|trans, 'end',   '',     sortColumn, sortDir, type, year) }}
-                            {{ self.sortHeader('read_pct',  'stats.rankings.col_read_pct'|trans,   'end',   'pe-3', sortColumn, sortDir, type, year) }}
+                            {{ self.sortHeader('name',      'stats.rankings.col_name'|trans,       'start', '',                              sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                            {{ self.sortHeader('count',     'stats.rankings.col_count'|trans,      'end',   '',                              sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                            {{ self.sortHeader('count_pct', 'stats.rankings.col_count_pct'|trans,  'end',   '',                              sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                            {{ self.sortHeader('words',     'stats.rankings.col_words'|trans,      'end',   '',                              sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                            {{ self.sortHeader('words_pct', 'stats.rankings.col_words_pct'|trans,  'end',   showReadColumns ? '' : 'pe-3',   sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                            {% if showReadColumns %}
+                                {{ self.sortHeader('read_count','stats.rankings.col_read_count'|trans, 'end', '',     sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                                {{ self.sortHeader('read_pct',  'stats.rankings.col_read_pct'|trans,   'end', 'pe-3', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -89,9 +90,11 @@
                                 <td class="text-end">{{ item.count }}</td>
                                 <td class="text-end text-muted">{{ item.countPct }}%</td>
                                 <td class="text-end">{{ item.totalWords|number_format(0, '.', ',') }}</td>
-                                <td class="text-end text-muted">{{ item.wordsPct }}%</td>
-                                <td class="text-end">{{ item.readCount }}</td>
-                                <td class="text-end pe-3 text-muted">{{ item.readPct }}%</td>
+                                <td class="text-end text-muted {{ showReadColumns ? '' : 'pe-3' }}">{{ item.wordsPct }}%</td>
+                                {% if showReadColumns %}
+                                    <td class="text-end">{{ item.readCount }}</td>
+                                    <td class="text-end pe-3 text-muted">{{ item.readPct }}%</td>
+                                {% endif %}
                             </tr>
                         {% endfor %}
                     </tbody>

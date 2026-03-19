@@ -58,6 +58,56 @@ class StatsController extends AbstractController
         ]);
     }
 
+    #[Route('/rankings/by-status', name: 'app_stats_rankings_status')]
+    public function rankingsByStatus(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $year = $this->parseYearParam($request);
+        $availableYears = $this->statisticsService->getDashboardSummary($user, null)['availableYears'];
+        [$sortColumn, $sortDir] = $this->parseSortParams($request);
+
+        $rankings = $this->statisticsService->getStatusRankings($user, $sortColumn, $sortDir, $year);
+
+        return $this->render('stats/rankings.html.twig', [
+            'type' => 'Status',
+            'rankings' => $rankings,
+            'year' => $year,
+            'availableYears' => $availableYears,
+            'sortColumn' => $sortColumn,
+            'sortDir' => $sortDir,
+            'rankingRoute' => 'app_stats_rankings_status',
+            'rankingRouteParams' => [],
+            'showReadColumns' => false,
+        ]);
+    }
+
+    #[Route('/rankings/by-language', name: 'app_stats_rankings_language')]
+    public function rankingsByLanguage(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $year = $this->parseYearParam($request);
+        $availableYears = $this->statisticsService->getDashboardSummary($user, null)['availableYears'];
+        [$sortColumn, $sortDir] = $this->parseSortParams($request);
+
+        $rankings = $this->statisticsService->getLanguageRankings($user, $sortColumn, $sortDir, $year);
+
+        return $this->render('stats/rankings.html.twig', [
+            'type' => 'Language',
+            'rankings' => $rankings,
+            'year' => $year,
+            'availableYears' => $availableYears,
+            'sortColumn' => $sortColumn,
+            'sortDir' => $sortDir,
+            'rankingRoute' => 'app_stats_rankings_language',
+            'rankingRouteParams' => [],
+            'showReadColumns' => true,
+        ]);
+    }
+
     #[Route('/rankings/{type}', name: 'app_stats_rankings')]
     public function rankings(Request $request, string $type): Response
     {
@@ -86,6 +136,9 @@ class StatsController extends AbstractController
             'availableYears' => $availableYears,
             'sortColumn' => $sortColumn,
             'sortDir' => $sortDir,
+            'rankingRoute' => 'app_stats_rankings',
+            'rankingRouteParams' => ['type' => $type],
+            'showReadColumns' => true,
         ]);
     }
 

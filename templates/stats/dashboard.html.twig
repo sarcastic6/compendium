@@ -315,11 +315,18 @@
 </div>{# end rating distributions #}
 
 {# ── Rankings links ──────────────────────────────────────────────────────── #}
-{% if rankingTypes is not empty %}
 <div class="card shadow-sm mb-4">
     <div class="card-header">{{ 'stats.rankings.available'|trans }}</div>
     <div class="card-body">
         <div class="d-flex flex-wrap gap-2">
+            <a href="{{ path('app_stats_rankings_status', {'year': year}) }}"
+               class="btn btn-outline-secondary btn-sm">
+                {{ 'stats.rankings.type_status'|trans }}
+            </a>
+            <a href="{{ path('app_stats_rankings_language', {'year': year}) }}"
+               class="btn btn-outline-secondary btn-sm">
+                {{ 'stats.rankings.type_language'|trans }}
+            </a>
             {% for typeName in rankingTypes %}
                 <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
                    class="btn btn-outline-secondary btn-sm">
@@ -329,7 +336,6 @@
         </div>
     </div>
 </div>
-{% endif %}
 
 {% endif %}{# end non-empty state #}
 {% endblock %}

@@ -264,6 +264,8 @@ stats:
         col_read_pct: 'Read %'
         empty: 'No data for this category.'
         available: 'Rankings by Category'
+        type_status: 'Status'
+        type_language: 'Language'
 
 reset_password:
     request:

@@ -151,53 +151,7 @@ class StatisticsService
         // (a 100k word fic with 3 characters would count 300k words total).
         $totalWords = $this->readingEntryRepository->getTotalWordsSumForUser($user, $year);
 
-        $items = array_map(
-            static function (array $row) use ($totalEntries, $totalWords): array {
-                return [
-                    'name' => $row['name'],
-                    'count' => $row['count'],
-                    'countPct' => $totalEntries > 0
-                        ? round($row['count'] / $totalEntries * 100, 1)
-                        : 0.0,
-                    'totalWords' => $row['totalWords'],
-                    'wordsPct' => $totalWords > 0
-                        ? round($row['totalWords'] / $totalWords * 100, 1)
-                        : 0.0,
-                    'readCount' => $row['readCount'],
-                    'readPct' => $row['count'] > 0
-                        ? round($row['readCount'] / $row['count'] * 100, 1)
-                        : 0.0,
-                ];
-            },
-            $rows,
-        );
-
-        usort($items, static function (array $a, array $b) use ($sortColumn, $sortDir): int {
-            $valA = match ($sortColumn) {
-                'name' => $a['name'],
-                'count', 'count_pct' => $a['count'],
-                'words', 'words_pct' => $a['totalWords'],
-                'read_count' => $a['readCount'],
-                'read_pct' => $a['readPct'],
-                default => $a['count'],
-            };
-            $valB = match ($sortColumn) {
-                'name' => $b['name'],
-                'count', 'count_pct' => $b['count'],
-                'words', 'words_pct' => $b['totalWords'],
-                'read_count' => $b['readCount'],
-                'read_pct' => $b['readPct'],
-                default => $b['count'],
-            };
-
-            $cmp = is_string($valA)
-                ? strcmp($valA, $valB)
-                : ($valA <=> $valB);
-
-            return $sortDir === 'asc' ? $cmp : -$cmp;
-        });
-
-        return $items;
+        return $this->buildRankingItems($rows, $totalEntries, $totalWords, $sortColumn, $sortDir);
     }
 
     /**
@@ -259,6 +213,116 @@ class StatisticsService
             'count' => $topCount,
             'ties' => $ties,
         ];
+    }
+
+    /**
+     * Returns ranking data grouped by reading entry status, with all derived
+     * columns computed and sorted. Follows the same column semantics as getRankings.
+     *
+     * Note: Read Count and Read % are only meaningful for statuses where
+     * countsAsRead = true (typically only 'Completed'). All other statuses
+     * will show 0 for both columns — this is expected and correct.
+     *
+     * @return array<array{name: string, count: int, countPct: float, totalWords: int, wordsPct: float, readCount: int, readPct: float}>
+     */
+    public function getStatusRankings(
+        User $user,
+        string $sortColumn,
+        string $sortDir,
+        ?int $year,
+    ): array {
+        $rows = $this->readingEntryRepository->getStatusRankingsData($user, $year);
+        $totalEntries = array_sum(array_column($rows, 'count'));
+        $totalWords = $this->readingEntryRepository->getTotalWordsSumForUser($user, $year);
+
+        return $this->buildRankingItems($rows, $totalEntries, $totalWords, $sortColumn, $sortDir);
+    }
+
+    /**
+     * Returns ranking data grouped by work language, with all derived columns
+     * computed and sorted. Follows the same column semantics as getRankings.
+     *
+     * Works with no language set are excluded (INNER JOIN in the repository).
+     *
+     * @return array<array{name: string, count: int, countPct: float, totalWords: int, wordsPct: float, readCount: int, readPct: float}>
+     */
+    public function getLanguageRankings(
+        User $user,
+        string $sortColumn,
+        string $sortDir,
+        ?int $year,
+    ): array {
+        $rows = $this->readingEntryRepository->getLanguageRankingsData($user, $year);
+        $totalEntries = array_sum(array_column($rows, 'count'));
+        $totalWords = $this->readingEntryRepository->getTotalWordsSumForUser($user, $year);
+
+        return $this->buildRankingItems($rows, $totalEntries, $totalWords, $sortColumn, $sortDir);
+    }
+
+    /**
+     * Computes derived columns (percentages, read rate) and sorts the items.
+     * Shared by all ranking types (metadata, status, language).
+     *
+     * Count % uses $totalEntries as its denominator (type-scoped total).
+     * Words % uses $globalTotalWords as its denominator (user's global words read).
+     *
+     * @param array<array{name: string, count: int, totalWords: int, readCount: int}> $rows
+     * @return array<array{name: string, count: int, countPct: float, totalWords: int, wordsPct: float, readCount: int, readPct: float}>
+     */
+    private function buildRankingItems(
+        array $rows,
+        int $totalEntries,
+        int $globalTotalWords,
+        string $sortColumn,
+        string $sortDir,
+    ): array {
+        $items = array_map(
+            static function (array $row) use ($totalEntries, $globalTotalWords): array {
+                return [
+                    'name' => $row['name'],
+                    'count' => $row['count'],
+                    'countPct' => $totalEntries > 0
+                        ? round($row['count'] / $totalEntries * 100, 1)
+                        : 0.0,
+                    'totalWords' => $row['totalWords'],
+                    'wordsPct' => $globalTotalWords > 0
+                        ? round($row['totalWords'] / $globalTotalWords * 100, 1)
+                        : 0.0,
+                    'readCount' => $row['readCount'],
+                    'readPct' => $row['count'] > 0
+                        ? round($row['readCount'] / $row['count'] * 100, 1)
+                        : 0.0,
+                ];
+            },
+            $rows,
+        );
+
+        usort($items, static function (array $a, array $b) use ($sortColumn, $sortDir): int {
+            $valA = match ($sortColumn) {
+                'name' => $a['name'],
+                'count', 'count_pct' => $a['count'],
+                'words', 'words_pct' => $a['totalWords'],
+                'read_count' => $a['readCount'],
+                'read_pct' => $a['readPct'],
+                default => $a['count'],
+            };
+            $valB = match ($sortColumn) {
+                'name' => $b['name'],
+                'count', 'count_pct' => $b['count'],
+                'words', 'words_pct' => $b['totalWords'],
+                'read_count' => $b['readCount'],
+                'read_pct' => $b['readPct'],
+                default => $b['count'],
+            };
+
+            $cmp = is_string($valA)
+                ? strcmp($valA, $valB)
+                : ($valA <=> $valB);
+
+            return $sortDir === 'asc' ? $cmp : -$cmp;
+        });
+
+        return $items;
     }
 
     private function calculateFinishRate(int $finished, int $started): float

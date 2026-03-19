@@ -821,6 +821,169 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Returns ranking data grouped by reading entry status for the given user.
+     *
+     * Each row contains name, count, totalWords, and readCount.
+     * readCount is derived in PHP from the status's countsAsRead flag — no
+     * additional query needed because the flag is the same for all entries in
+     * the same status group.
+     *
+     * Works without a word count (NULL) are treated as zero.
+     * The SoftDeleteFilter is disabled so soft-deleted works still contribute.
+     *
+     * @return array<array{name: string, count: int, totalWords: int, readCount: int}>
+     */
+    public function getStatusRankingsData(User $user, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            // Query 1: entry count per status (all entries)
+            $qb = $this->createQueryBuilder('re')
+                ->select('s.id as sid, s.name as name, s.countsAsRead as countsAsRead, COUNT(re.id) as cnt')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->setParameter('user', $user)
+                ->groupBy('s.id, s.name, s.countsAsRead');
+
+            $this->applyYearFilter($qb, $year);
+
+            $mainRows = $qb->getQuery()->getArrayResult();
+
+            // Query 2: total words per status (hasBeenStarted = true only)
+            $qb2 = $this->createQueryBuilder('re')
+                ->select('s.id as sid, SUM(COALESCE(w.words, 0)) as totalWords')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('started', true)
+                ->groupBy('s.id');
+
+            $this->applyYearFilter($qb2, $year);
+
+            $wordsRows = $qb2->getQuery()->getArrayResult();
+
+            $wordTotals = [];
+            foreach ($wordsRows as $row) {
+                $wordTotals[(int) $row['sid']] = (int) $row['totalWords'];
+            }
+
+            return array_map(
+                static fn (array $row): array => [
+                    'name' => (string) $row['name'],
+                    'count' => (int) $row['cnt'],
+                    'totalWords' => $wordTotals[(int) $row['sid']] ?? 0,
+                    // readCount is derived: for a given status, every entry either
+                    // counts as read (countsAsRead = true) or none do.
+                    'readCount' => $row['countsAsRead'] ? (int) $row['cnt'] : 0,
+                ],
+                $mainRows,
+            );
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
+     * Returns ranking data grouped by work language for the given user.
+     *
+     * Works with no language set (NULL language_id) are excluded via INNER JOIN.
+     * Works without a word count (NULL) are treated as zero.
+     * The SoftDeleteFilter is disabled so soft-deleted works still contribute.
+     *
+     * @return array<array{name: string, count: int, totalWords: int, readCount: int}>
+     */
+    public function getLanguageRankingsData(User $user, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            // Query 1: entry count per language (all entries)
+            $qb = $this->createQueryBuilder('re')
+                ->select('l.id as lid, l.name as name, COUNT(re.id) as cnt')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.language', 'l')
+                ->where('re.user = :user')
+                ->setParameter('user', $user)
+                ->groupBy('l.id, l.name');
+
+            $this->applyYearFilter($qb, $year);
+
+            $mainRows = $qb->getQuery()->getArrayResult();
+
+            // Query 2: total words per language (hasBeenStarted = true only)
+            $qb2 = $this->createQueryBuilder('re')
+                ->select('l.id as lid, SUM(COALESCE(w.words, 0)) as totalWords')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.language', 'l')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('started', true)
+                ->groupBy('l.id');
+
+            $this->applyYearFilter($qb2, $year);
+
+            $wordsRows = $qb2->getQuery()->getArrayResult();
+
+            // Query 3: read count per language (countsAsRead = true)
+            $qb3 = $this->createQueryBuilder('re')
+                ->select('l.id as lid, COUNT(re.id) as readCnt')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.language', 'l')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.countsAsRead = :countsAsRead')
+                ->setParameter('user', $user)
+                ->setParameter('countsAsRead', true)
+                ->groupBy('l.id');
+
+            $this->applyYearFilter($qb3, $year);
+
+            $readRows = $qb3->getQuery()->getArrayResult();
+
+            $wordTotals = [];
+            foreach ($wordsRows as $row) {
+                $wordTotals[(int) $row['lid']] = (int) $row['totalWords'];
+            }
+
+            $readCounts = [];
+            foreach ($readRows as $row) {
+                $readCounts[(int) $row['lid']] = (int) $row['readCnt'];
+            }
+
+            return array_map(
+                static fn (array $row): array => [
+                    'name' => (string) $row['name'],
+                    'count' => (int) $row['cnt'],
+                    'totalWords' => $wordTotals[(int) $row['lid']] ?? 0,
+                    'readCount' => $readCounts[(int) $row['lid']] ?? 0,
+                ],
+                $mainRows,
+            );
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
      * Returns the names of metadata types for which the user has at least one
      * reading entry (through the work → works_metadata → metadata chain).
      * Used to populate the rankings link section on the dashboard.
