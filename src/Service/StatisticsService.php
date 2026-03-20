@@ -59,6 +59,7 @@ class StatisticsService
             'averageSpice' => $this->readingEntryRepository->getAverageSpice($user, $year),
             'starredCount' => $this->readingEntryRepository->countStarred($user, $year),
             'byStatus' => $this->readingEntryRepository->countByStatus($user, $year),
+            'byWorkType' => $this->readingEntryRepository->countByWorkType($user, $year),
             'availableYears' => $this->readingEntryRepository->findAvailableYears($user),
         ];
     }
