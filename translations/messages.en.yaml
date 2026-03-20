@@ -140,7 +140,8 @@ work:
         starred: 'Favorite'
         metadata: 'Tags & Metadata'
         add_author: 'Add Author'
-        add_metadata: 'Add'
+        add_metadata: 'Add %type%'
+        metadata_name_placeholder: 'Name'
 
 admin:
     heading: 'Admin Panel'

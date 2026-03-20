@@ -39,6 +39,12 @@ a.nav-link,
     position: relative;
 }
 
+/* Uniform width for all per-type "Add X" buttons so they align visually across sections */
+.metadata-section-add-btn {
+    min-width: 9.5rem;
+    justify-content: center;
+}
+
 /* ===== Stars Display ===== */
 
 .stars-display {

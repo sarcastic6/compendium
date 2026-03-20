@@ -42,7 +42,7 @@
 
 <hr>
 
-{# Authors — dynamic collection #}
+{# Authors — dedicated section with its own collection #}
 <div class="mb-4"
      data-collection-widget
      data-prototype="{{ form_widget(form.authors.vars.prototype)|e('html_attr') }}">
@@ -63,27 +63,38 @@
 </div>
 {% do form.authors.setRendered %}
 
-<hr>
+{# Shared prototype source for all metadata sections — hidden, used by metadata-sections.js #}
+<div id="metadata-prototype-source"
+     data-prototype="{{ form_widget(form.metadata.vars.prototype)|e('html_attr') }}"
+     data-index="{{ form.metadata|length }}"
+     style="display:none"></div>
 
-{# Metadata — dynamic collection #}
-<div class="mb-4"
-     data-collection-widget
-     data-prototype="{{ form_widget(form.metadata.vars.prototype)|e('html_attr') }}">
+{# One section per MetadataType, ordered and created by the admin.
+   Adding a new type in the admin panel automatically adds a section here. #}
+{% for metadataType in metadataTypes %}
+<hr>
+<div class="mb-4" data-metadata-section data-metadata-type-id="{{ metadataType.id }}">
     <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="h5 mb-0">{{ 'work.field.metadata'|trans }}</h2>
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-collection-add>
+        <h2 class="h5 mb-0">{{ metadataType.name }}</h2>
+        <button type="button" class="btn btn-outline-secondary btn-sm metadata-section-add-btn" data-metadata-section-add>
             <i class="bi bi-plus-lg" aria-hidden="true"></i>
-            {{ 'work.field.add_metadata'|trans }}
+            {{ 'work.field.add_metadata'|trans({'%type%': metadataType.name}) }}
         </button>
     </div>
-    <div data-collection-entries>
-        {% for metadataEntry in form.metadata %}
-            <div class="collection-item d-flex gap-2 align-items-start mb-2">
-                {{ form_widget(metadataEntry) }}
-            </div>
+    <div data-metadata-section-entries>
+        {% for entry in form.metadata %}
+            {% if entry.vars.data is not null
+                and entry.vars.data.metadataType is defined
+                and entry.vars.data.metadataType is not null
+                and entry.vars.data.metadataType.id == metadataType.id %}
+                <div class="collection-item d-flex gap-2 align-items-start mb-2">
+                    {{ form_widget(entry) }}
+                </div>
+            {% endif %}
         {% endfor %}
     </div>
 </div>
+{% endfor %}
 {% do form.metadata.setRendered %}
 
 <hr>

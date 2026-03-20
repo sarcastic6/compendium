@@ -21,6 +21,20 @@ class MetadataType
     private string $name;
 
     /**
+     * Preferred display order for metadata type sections on the work form.
+     * Types not listed here appear at the end, sorted alphabetically.
+     */
+    public const DISPLAY_ORDER = [
+        'Rating',
+        'Warning',
+        'Category',
+        'Fandom',
+        'Pairing',
+        'Character',
+        'Tag',
+    ];
+
+    /**
      * When false, a work may only have one Metadata entry of this type.
      * Enforced at the application level in WorkService — not a database constraint,
      * because the uniqueness depends on business context (work + type combination).

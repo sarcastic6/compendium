@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Dto\WorkFormDto;
+use App\Entity\MetadataType;
 use App\Form\WorkFormType;
+use App\Repository\MetadataTypeRepository;
 use App\Repository\WorkRepository;
 use App\Scraper\ScrapedWorkDto;
 use App\Service\ImportService;
@@ -24,6 +26,7 @@ class WorkController extends AbstractController
         private readonly WorkService $workService,
         private readonly WorkRepository $workRepository,
         private readonly ImportService $importService,
+        private readonly MetadataTypeRepository $metadataTypeRepository,
     ) {
     }
 
@@ -48,8 +51,25 @@ class WorkController extends AbstractController
             }
         }
 
+        $metadataTypes = $this->metadataTypeRepository->createQueryBuilder('mt')
+            ->where('mt.name != :author')
+            ->setParameter('author', 'Author')
+            ->getQuery()
+            ->getResult();
+
+        usort($metadataTypes, static function (MetadataType $a, MetadataType $b): int {
+            $order = MetadataType::DISPLAY_ORDER;
+            $posA = array_search($a->getName(), $order, true);
+            $posB = array_search($b->getName(), $order, true);
+            $posA = $posA === false ? PHP_INT_MAX : $posA;
+            $posB = $posB === false ? PHP_INT_MAX : $posB;
+
+            return $posA !== $posB ? $posA <=> $posB : strcmp($a->getName(), $b->getName());
+        });
+
         return $this->render('work/new.html.twig', [
             'form' => $form,
+            'metadataTypes' => $metadataTypes,
         ]);
     }
 
