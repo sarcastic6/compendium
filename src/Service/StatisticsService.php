@@ -290,6 +290,28 @@ class StatisticsService
     }
 
     /**
+     * Rankings grouped by the reading entry's mainPairing field.
+     *
+     * Entries with no main pairing set are excluded (INNER JOIN in the repository).
+     * Count % denominator = sum of all main-pairing counts (type-scoped).
+     * Words % denominator = user's global total words read (year-scoped).
+     *
+     * @return array<array{name: string, count: int, countPct: float, totalWords: int, wordsPct: float, readCount: int, readPct: float}>
+     */
+    public function getMainPairingRankings(
+        User $user,
+        string $sortColumn,
+        string $sortDir,
+        ?int $year,
+    ): array {
+        $rows = $this->readingEntryRepository->getMainPairingRankingsData($user, $year);
+        $totalEntries = array_sum(array_column($rows, 'count'));
+        $totalWords = $this->readingEntryRepository->getTotalWordsSumForUser($user, $year);
+
+        return $this->buildRankingItems($rows, $totalEntries, $totalWords, $sortColumn, $sortDir);
+    }
+
+    /**
      * Computes derived columns (percentages, read rate) and sorts the items.
      * Shared by all ranking types (metadata, status, language).
      *

@@ -266,6 +266,8 @@ stats:
         available: 'Rankings by Category'
         type_status: 'Status'
         type_language: 'Language'
+        type_main_pairing: 'Main Pairing'
+        type_relationships: 'Relationships'
 
 reset_password:
     request:

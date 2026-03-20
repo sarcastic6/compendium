@@ -1029,6 +1029,93 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Returns ranking row data grouped by the reading entry's mainPairing field.
+     *
+     * Uses INNER JOIN on re.mainPairing so entries without a main pairing are excluded.
+     * Three-query pattern: count (all statuses), totalWords (hasBeenStarted), readCount (countsAsRead).
+     *
+     * @return array<array{name: string, count: int, totalWords: int, readCount: int}>
+     */
+    public function getMainPairingRankingsData(User $user, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            // Query 1: entry count per main pairing (all entries that have one set)
+            $qb = $this->createQueryBuilder('re')
+                ->select('mp.id as mpid, mp.name as name, COUNT(re.id) as cnt')
+                ->innerJoin('re.mainPairing', 'mp')
+                ->where('re.user = :user')
+                ->setParameter('user', $user)
+                ->groupBy('mp.id, mp.name');
+
+            $this->applyYearFilter($qb, $year);
+
+            $mainRows = $qb->getQuery()->getArrayResult();
+
+            // Query 2: total words per main pairing (hasBeenStarted = true only)
+            $qb2 = $this->createQueryBuilder('re')
+                ->select('mp.id as mpid, SUM(COALESCE(w.words, 0)) as totalWords')
+                ->innerJoin('re.mainPairing', 'mp')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('started', true)
+                ->groupBy('mp.id');
+
+            $this->applyYearFilter($qb2, $year);
+
+            $wordsRows = $qb2->getQuery()->getArrayResult();
+
+            // Query 3: read count per main pairing (countsAsRead = true)
+            $qb3 = $this->createQueryBuilder('re')
+                ->select('mp.id as mpid, COUNT(re.id) as readCnt')
+                ->innerJoin('re.mainPairing', 'mp')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.countsAsRead = :countsAsRead')
+                ->setParameter('user', $user)
+                ->setParameter('countsAsRead', true)
+                ->groupBy('mp.id');
+
+            $this->applyYearFilter($qb3, $year);
+
+            $readRows = $qb3->getQuery()->getArrayResult();
+
+            $wordTotals = [];
+            foreach ($wordsRows as $row) {
+                $wordTotals[(int) $row['mpid']] = (int) $row['totalWords'];
+            }
+
+            $readCounts = [];
+            foreach ($readRows as $row) {
+                $readCounts[(int) $row['mpid']] = (int) $row['readCnt'];
+            }
+
+            return array_map(
+                static fn (array $row): array => [
+                    'name' => (string) $row['name'],
+                    'count' => (int) $row['cnt'],
+                    'totalWords' => $wordTotals[(int) $row['mpid']] ?? 0,
+                    'readCount' => $readCounts[(int) $row['mpid']] ?? 0,
+                ],
+                $mainRows,
+            );
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
      * Returns the names of metadata types for which the user has at least one
      * reading entry (through the work → works_metadata → metadata chain).
      * Used to populate the rankings link section on the dashboard.

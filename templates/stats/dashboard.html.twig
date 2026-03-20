@@ -327,10 +327,16 @@
                class="btn btn-outline-secondary btn-sm">
                 {{ 'stats.rankings.type_language'|trans }}
             </a>
+            <a href="{{ path('app_stats_rankings_main_pairing', {'year': year}) }}"
+               class="btn btn-outline-secondary btn-sm">
+                {{ 'stats.rankings.type_main_pairing'|trans }}
+            </a>
             {% for typeName in rankingTypes %}
                 <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
                    class="btn btn-outline-secondary btn-sm">
-                    {{ typeName }}
+                    {# Relabel "Pairing" (work relationship metadata) as "Relationships"
+                       to distinguish it from the Main Pairing ranking (reading entry field). #}
+                    {{ typeName == 'Pairing' ? ('stats.rankings.type_relationships'|trans) : typeName }}
                 </a>
             {% endfor %}
         </div>

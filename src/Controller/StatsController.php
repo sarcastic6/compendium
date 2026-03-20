@@ -108,6 +108,31 @@ class StatsController extends AbstractController
         ]);
     }
 
+    #[Route('/rankings/by-main-pairing', name: 'app_stats_rankings_main_pairing')]
+    public function rankingsByMainPairing(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $year = $this->parseYearParam($request);
+        $availableYears = $this->statisticsService->getDashboardSummary($user, null)['availableYears'];
+        [$sortColumn, $sortDir] = $this->parseSortParams($request);
+
+        $rankings = $this->statisticsService->getMainPairingRankings($user, $sortColumn, $sortDir, $year);
+
+        return $this->render('stats/rankings.html.twig', [
+            'type' => 'Main Pairing',
+            'rankings' => $rankings,
+            'year' => $year,
+            'availableYears' => $availableYears,
+            'sortColumn' => $sortColumn,
+            'sortDir' => $sortDir,
+            'rankingRoute' => 'app_stats_rankings_main_pairing',
+            'rankingRouteParams' => [],
+            'showReadColumns' => true,
+        ]);
+    }
+
     #[Route('/rankings/{type}', name: 'app_stats_rankings')]
     public function rankings(Request $request, string $type): Response
     {
