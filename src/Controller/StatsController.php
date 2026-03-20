@@ -69,10 +69,12 @@ class StatsController extends AbstractController
         [$sortColumn, $sortDir] = $this->parseSortParams($request);
 
         $rankings = $this->statisticsService->getStatusRankings($user, $sortColumn, $sortDir, $year);
+        $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
 
         return $this->render('stats/rankings.html.twig', [
             'type' => 'Status',
             'rankings' => $rankings,
+            'rankingTypes' => $rankingTypes,
             'year' => $year,
             'availableYears' => $availableYears,
             'sortColumn' => $sortColumn,
@@ -94,10 +96,12 @@ class StatsController extends AbstractController
         [$sortColumn, $sortDir] = $this->parseSortParams($request);
 
         $rankings = $this->statisticsService->getLanguageRankings($user, $sortColumn, $sortDir, $year);
+        $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
 
         return $this->render('stats/rankings.html.twig', [
             'type' => 'Language',
             'rankings' => $rankings,
+            'rankingTypes' => $rankingTypes,
             'year' => $year,
             'availableYears' => $availableYears,
             'sortColumn' => $sortColumn,
@@ -119,10 +123,12 @@ class StatsController extends AbstractController
         [$sortColumn, $sortDir] = $this->parseSortParams($request);
 
         $rankings = $this->statisticsService->getMainPairingRankings($user, $sortColumn, $sortDir, $year);
+        $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
 
         return $this->render('stats/rankings.html.twig', [
             'type' => 'Main Pairing',
             'rankings' => $rankings,
+            'rankingTypes' => $rankingTypes,
             'year' => $year,
             'availableYears' => $availableYears,
             'sortColumn' => $sortColumn,
@@ -153,10 +159,12 @@ class StatsController extends AbstractController
         [$sortColumn, $sortDir] = $this->parseSortParams($request);
 
         $rankings = $this->statisticsService->getRankings($user, $type, $sortColumn, $sortDir, $year);
+        $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
 
         return $this->render('stats/rankings.html.twig', [
             'type' => $type,
             'rankings' => $rankings,
+            'rankingTypes' => $rankingTypes,
             'year' => $year,
             'availableYears' => $availableYears,
             'sortColumn' => $sortColumn,
