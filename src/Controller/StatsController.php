@@ -262,10 +262,11 @@ class StatsController extends AbstractController
             $ratingUrls[] = $this->generateUrl('app_reading_entry_list', array_merge(['rating' => $stars], $yearScope));
         }
 
-        // Spice stars distribution
+        // Spice stars distribution — uses spiceExact so the drill-down shows entries with
+        // that precise spice value, not the minimum-based behaviour of the form's spice param.
         $spiceUrls = [];
         foreach (array_keys($ratingDistributions['spice']) as $spice) {
-            $spiceUrls[] = $this->generateUrl('app_reading_entry_list', array_merge(['spice' => $spice], $yearScope));
+            $spiceUrls[] = $this->generateUrl('app_reading_entry_list', array_merge(['spiceExact' => $spice], $yearScope));
         }
 
         return [

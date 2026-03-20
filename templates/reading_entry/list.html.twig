@@ -67,6 +67,15 @@
                 <i class="bi bi-x" aria-hidden="true"></i>
             </a>
         {% endif %}
+        {% if filters.spiceExact != '' %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'spiceExact': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.spice'|trans }}:
+                {% if filters.spiceExact == '0' %}🚫
+                {% else %}{% for j in 1..filters.spiceExact %}🌶️{% endfor %}{% endif %}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
         {% if filters.spice != '' %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'spice': ''})) }}"
                class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">

@@ -1408,6 +1408,14 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 ->setParameter('filter_date_to', new \DateTimeImmutable($filterParams['dateTo']), Types::DATE_IMMUTABLE);
         }
 
+        // Exact spice match used by chart drill-down links (always exact regardless of value).
+        // In practice only one of spiceExact/spice will be set at a time since spiceExact
+        // is never written by the filter form.
+        if (isset($filterParams['spiceExact']) && $filterParams['spiceExact'] !== '') {
+            $qb->andWhere('re.spiceStars = :filter_spice_exact')
+                ->setParameter('filter_spice_exact', (int) $filterParams['spiceExact']);
+        }
+
         // Spice stars: 0 is a valid value so check !== '' rather than !empty.
         // spice=0 is an exact match (no-spice entries only).
         // spice=1–5 is a minimum (entries at or above that level), matching how

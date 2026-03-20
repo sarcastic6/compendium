@@ -82,9 +82,12 @@ class ReadingEntryController extends AbstractController
             'language'    => $request->query->get('language', ''),
             'mainPairing' => $request->query->get('mainPairing', ''),
             'metadata'    => $metadataFilters,
+            // Set by spice distribution chart drill-down links only — always exact match.
+            // The form's 'spice' param uses exact for 0 and minimum for 1–5.
+            'spiceExact'  => $request->query->get('spiceExact', ''),
         ];
 
-        // Use strict empty check so spice=0 (ice cold, a valid value) is treated as an active filter.
+        // Use strict empty check so spice=0 (a valid value) is treated as an active filter.
         // PHP's array_filter() default treats '0' as falsy, which would incorrectly ignore it.
         // metadata is an array so it is checked separately.
         $stringParams = array_diff_key($filterParams, ['metadata' => null]);
