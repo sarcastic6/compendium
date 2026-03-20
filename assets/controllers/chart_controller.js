@@ -53,9 +53,16 @@ export default class extends Controller {
             'rgba(32,201,151,0.75)',
         ];
 
-        // Inject default background colors when datasets omit them
+        const isSegmented = ['doughnut', 'pie'].includes(this.typeValue);
+
+        // Inject default background colors when datasets omit them.
+        // For segmented charts (doughnut/pie), each slice needs its own colour,
+        // so backgroundColor must be an array indexed by data point.
+        // For other chart types, one colour per dataset is correct.
         const datasets = this.datasetsValue.map((ds, i) => ({
-            backgroundColor: defaultColors[i % defaultColors.length],
+            backgroundColor: isSegmented
+                ? (ds.data ?? []).map((_, j) => defaultColors[j % defaultColors.length])
+                : defaultColors[i % defaultColors.length],
             ...ds,
         }));
 
