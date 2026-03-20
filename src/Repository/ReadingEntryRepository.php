@@ -1245,8 +1245,10 @@ class ReadingEntryRepository extends ServiceEntityRepository
         if (!empty($filterParams['statusName'])) {
             // Filter by status name rather than ID. Used by drill-down links from the
             // Status rankings page, which only has names available (not IDs).
-            // 's' alias for Status is always joined before applyFilters is called.
-            $qb->andWhere('s.name = :filter_status_name')
+            // Uses its own alias (s_name_filter) so this block is self-contained and
+            // does not depend on the caller having already joined 're.status'.
+            $qb->innerJoin('re.status', 's_name_filter')
+                ->andWhere('s_name_filter.name = :filter_status_name')
                 ->setParameter('filter_status_name', $filterParams['statusName']);
         }
 
