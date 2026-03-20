@@ -1,0 +1,37 @@
+{#
+    Shared macros for rankings pages.
+    Import with: {% from 'stats/_rankings_macros.html.twig' import sortHeader %}
+#}
+
+{#
+    sortHeader — renders a sortable column header link.
+
+    Parameters:
+    - col:               the sort key for this column
+    - label:             translated label string
+    - align:             'start' or 'end' (Bootstrap text-align utility suffix)
+    - extraClass:        optional extra classes on the <th>
+    - sortColumn:        currently active sort column
+    - sortDir:           currently active sort direction ('asc'|'desc')
+    - rankingRoute:      route name for this rankings page
+    - rankingRouteParams: extra route params (e.g. {type: 'Fandom'})
+    - year:              currently selected year (null for all-time)
+#}
+{% macro sortHeader(col, label, align, extraClass, sortColumn, sortDir, rankingRoute, rankingRouteParams, year) %}
+    {% set isActive = (sortColumn == col) %}
+    {% set nextDir = (isActive and sortDir == 'desc') ? 'asc' : 'desc' %}
+    <th class="text-{{ align }}{{ extraClass ? ' ' ~ extraClass : '' }}{{ isActive ? ' table-primary' : '' }}">
+        <a href="{{ path(rankingRoute, rankingRouteParams|merge({
+            'year': year,
+            'sort': col,
+            'dir': nextDir
+        })) }}" class="text-decoration-none {{ isActive ? 'fw-semibold' : 'text-muted' }}">
+            {{ label }}
+            {% if isActive %}
+                <i class="bi bi-caret-{{ sortDir == 'asc' ? 'up' : 'down' }}-fill ms-1"></i>
+            {% else %}
+                <i class="bi bi-chevron-expand ms-1 opacity-25"></i>
+            {% endif %}
+        </a>
+    </th>
+{% endmacro %}
