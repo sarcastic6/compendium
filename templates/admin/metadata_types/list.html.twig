@@ -21,6 +21,7 @@
                     <th scope="col">{{ 'admin.metadata_types.field.name'|trans }}</th>
                     <th scope="col">{{ 'admin.metadata_types.field.multiple_allowed'|trans }}</th>
                     <th scope="col">{{ 'admin.metadata_types.field.show_as_dropdown'|trans }}</th>
+                    <th scope="col"></th>
                 </tr>
             </thead>
             <tbody>
@@ -40,6 +41,12 @@
                             {% else %}
                                 <span class="badge bg-secondary">No</span>
                             {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ path('app_admin_metadata_type_edit', {id: type.id}) }}"
+                               class="btn btn-sm btn-outline-secondary">
+                                {{ 'action.edit'|trans }}
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}

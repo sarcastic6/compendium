@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'admin.metadata_types.edit_heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-6">
+        <h1 class="h3 mb-4">{{ 'admin.metadata_types.edit_heading'|trans }}: {{ metadata_type.name }}</h1>
+
+        {{ form_start(form) }}
+            {{ form_row(form.name) }}
+            {{ form_row(form.multipleAllowed) }}
+            {{ form_row(form.showAsDropdown) }}
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
+                <a href="{{ path('app_admin_metadata_type_list') }}" class="btn btn-outline-secondary">{{ 'action.cancel'|trans }}</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

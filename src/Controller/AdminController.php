@@ -65,6 +65,31 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/statuses/{id}/edit', name: 'app_admin_status_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+    public function statusEdit(Request $request, int $id): Response
+    {
+        $status = $this->statusRepository->find($id);
+        if ($status === null) {
+            throw $this->createNotFoundException();
+        }
+
+        $form = $this->createForm(StatusFormType::class, $status);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->entityManager->flush();
+
+            $this->addFlash('success', 'action.save');
+
+            return $this->redirectToRoute('app_admin_status_list');
+        }
+
+        return $this->render('admin/statuses/edit.html.twig', [
+            'form' => $form,
+            'status' => $status,
+        ]);
+    }
+
     // --- Metadata Types ---
 
     #[Route('/metadata-types', name: 'app_admin_metadata_type_list')]
@@ -93,6 +118,31 @@ class AdminController extends AbstractController
 
         return $this->render('admin/metadata_types/new.html.twig', [
             'form' => $form,
+        ]);
+    }
+
+    #[Route('/metadata-types/{id}/edit', name: 'app_admin_metadata_type_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+    public function metadataTypeEdit(Request $request, int $id): Response
+    {
+        $metadataType = $this->metadataTypeRepository->find($id);
+        if ($metadataType === null) {
+            throw $this->createNotFoundException();
+        }
+
+        $form = $this->createForm(MetadataTypeFormType::class, $metadataType);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->entityManager->flush();
+
+            $this->addFlash('success', 'action.save');
+
+            return $this->redirectToRoute('app_admin_metadata_type_list');
+        }
+
+        return $this->render('admin/metadata_types/edit.html.twig', [
+            'form' => $form,
+            'metadata_type' => $metadataType,
         ]);
     }
 }

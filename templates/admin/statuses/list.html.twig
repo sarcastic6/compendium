@@ -21,6 +21,7 @@
                     <th scope="col">{{ 'admin.statuses.field.name'|trans }}</th>
                     <th scope="col">{{ 'admin.statuses.field.has_been_started'|trans }}</th>
                     <th scope="col">{{ 'admin.statuses.field.counts_as_read'|trans }}</th>
+                    <th scope="col"></th>
                 </tr>
             </thead>
             <tbody>
@@ -40,6 +41,12 @@
                             {% else %}
                                 <span class="badge bg-secondary">No</span>
                             {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ path('app_admin_status_edit', {id: status.id}) }}"
+                               class="btn btn-sm btn-outline-secondary">
+                                {{ 'action.edit'|trans }}
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}

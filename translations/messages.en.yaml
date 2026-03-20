@@ -158,6 +158,7 @@ admin:
     statuses:
         heading: 'Statuses'
         new_heading: 'New Status'
+        edit_heading: 'Edit Status'
         field:
             name: 'Name'
             has_been_started: 'Has Been Started'
@@ -165,6 +166,7 @@ admin:
     metadata_types:
         heading: 'Metadata Types'
         new_heading: 'New Metadata Type'
+        edit_heading: 'Edit Metadata Type'
         field:
             name: 'Name'
             multiple_allowed: 'Allow Multiple per Work'
