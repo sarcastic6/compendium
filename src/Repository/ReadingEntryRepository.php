@@ -1472,9 +1472,9 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 $qb->innerJoin('w.metadata', $metaAlias)
                     ->innerJoin("$metaAlias.metadataType", $mtAlias)
                     ->andWhere("$mtAlias.name = :filter_meta_type_$i")
-                    ->andWhere("$metaAlias.name = :filter_meta_name_$i")
+                    ->andWhere("$metaAlias.name LIKE :filter_meta_name_$i")
                     ->setParameter("filter_meta_type_$i", $typeName)
-                    ->setParameter("filter_meta_name_$i", $value);
+                    ->setParameter("filter_meta_name_$i", '%' . $value . '%');
                 ++$i;
             }
         }
