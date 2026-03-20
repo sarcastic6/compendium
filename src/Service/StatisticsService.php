@@ -216,6 +216,36 @@ class StatisticsService
     }
 
     /**
+     * Returns the most-used main pairing across a user's reading entries, plus
+     * any ties for first place. Uses the reading entry's mainPairing field, not
+     * work metadata — so it reflects the user's personal focus for each read.
+     *
+     * Returns null when no reading entries have a main pairing set.
+     *
+     * @return array{name: string, count: int, ties: array<array{name: string, count: int}>}|null
+     */
+    public function getTopMainPairingSpotlight(User $user, ?int $year): ?array
+    {
+        $rows = $this->readingEntryRepository->getTopMainPairing($user, 50, $year);
+
+        if ($rows === []) {
+            return null;
+        }
+
+        $topCount = $rows[0]['count'];
+        $ties = array_values(array_filter(
+            array_slice($rows, 1),
+            static fn (array $row): bool => $row['count'] === $topCount,
+        ));
+
+        return [
+            'name' => $rows[0]['name'],
+            'count' => $topCount,
+            'ties' => $ties,
+        ];
+    }
+
+    /**
      * Returns ranking data grouped by reading entry status, with all derived
      * columns computed and sorted. Follows the same column semantics as getRankings.
      *

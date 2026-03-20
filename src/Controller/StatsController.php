@@ -44,7 +44,7 @@ class StatsController extends AbstractController
             'rating'   => $this->statisticsService->getTopMetadataSpotlight($user, 'Rating', $year),
             'category' => $this->statisticsService->getTopMetadataSpotlight($user, 'Category', $year),
             'fandom'   => $this->statisticsService->getTopMetadataSpotlight($user, 'Fandom', $year),
-            'pairing'  => $this->statisticsService->getTopMetadataSpotlight($user, 'Pairing', $year),
+            'pairing'  => $this->statisticsService->getTopMainPairingSpotlight($user, $year),
         ];
 
         return $this->render('stats/dashboard.html.twig', [

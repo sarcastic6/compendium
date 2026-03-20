@@ -594,6 +594,51 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Returns the top-N most-used main pairings across a user's reading entries.
+     *
+     * Counts by reading entry's mainPairing field — not by work metadata — so
+     * this reflects the user's personal focus for each read, not all pairings
+     * tagged on the work.
+     *
+     * Entries with no main pairing set are excluded (INNER JOIN).
+     *
+     * @return array<array{name: string, count: int}>
+     */
+    public function getTopMainPairing(User $user, int $limit, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            $qb = $this->createQueryBuilder('re')
+                ->select('mp.name as name, COUNT(re.id) as cnt')
+                ->innerJoin('re.mainPairing', 'mp')
+                ->where('re.user = :user')
+                ->setParameter('user', $user)
+                ->groupBy('mp.id, mp.name')
+                ->orderBy('COUNT(re.id)', 'DESC')
+                ->setMaxResults($limit);
+
+            $this->applyYearFilter($qb, $year);
+
+            $rows = $qb->getQuery()->getArrayResult();
+
+            return array_map(
+                static fn (array $row) => ['name' => (string) $row['name'], 'count' => (int) $row['cnt']],
+                $rows,
+            );
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
      * Count of starred reading entries for the given user.
      */
     public function countStarred(User $user, ?int $year = null): int
