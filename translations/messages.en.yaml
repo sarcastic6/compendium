@@ -270,6 +270,14 @@ stats:
         type_language: 'Language'
         type_main_pairing: 'Main Pairing'
         type_relationships: 'Relationships'
+        type_author: 'Author'
+        col_chapters: 'Chapters'
+        col_wpc: 'Words / Chapter'
+        col_read: 'Read'
+        col_read_in_words: 'Read in Words'
+        col_avg_review: 'Avg Review'
+        col_fandoms: 'Fandoms'
+        author_ao3_link: 'View AO3 Profile'
 
 reset_password:
     request:

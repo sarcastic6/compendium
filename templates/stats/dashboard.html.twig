@@ -331,13 +331,20 @@
                class="btn btn-outline-secondary btn-sm">
                 {{ 'stats.rankings.type_main_pairing'|trans }}
             </a>
+            <a href="{{ path('app_stats_rankings_author', {'year': year}) }}"
+               class="btn btn-outline-secondary btn-sm">
+                {{ 'stats.rankings.type_author'|trans }}
+            </a>
             {% for typeName in rankingTypes %}
-                <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
-                   class="btn btn-outline-secondary btn-sm">
-                    {# Relabel "Pairing" (work relationship metadata) as "Relationships"
-                       to distinguish it from the Main Pairing ranking (reading entry field). #}
-                    {{ typeName == 'Pairing' ? ('stats.rankings.type_relationships'|trans) : typeName }}
-                </a>
+                {# Author has a dedicated page — skip it here to avoid a duplicate button #}
+                {% if typeName != 'Author' %}
+                    <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        {# Relabel "Pairing" (work relationship metadata) as "Relationships"
+                           to distinguish it from the Main Pairing ranking (reading entry field). #}
+                        {{ typeName == 'Pairing' ? ('stats.rankings.type_relationships'|trans) : typeName }}
+                    </a>
+                {% endif %}
             {% endfor %}
         </div>
     </div>

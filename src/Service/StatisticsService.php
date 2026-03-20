@@ -321,6 +321,92 @@ class StatisticsService
      * @param array<array{name: string, count: int, totalWords: int, readCount: int}> $rows
      * @return array<array{name: string, count: int, countPct: float, totalWords: int, wordsPct: float, readCount: int, readPct: float}>
      */
+    /**
+     * Returns ranking data grouped by Author metadata, with wordsPerChapter
+     * computed in PHP and all rows sorted by the requested column.
+     *
+     * Null values for wordsPerChapter and avgReview sort to the bottom
+     * regardless of sort direction (they represent missing data, not a low value).
+     *
+     * Valid $sortColumn values: name, count, words, chapters, wpc, read, read_in_words, avg_review
+     * Valid $sortDir values: asc, desc
+     * Default sort: count DESC
+     *
+     * @return array<array{
+     *   mid: int,
+     *   name: string,
+     *   ao3Link: string|null,
+     *   count: int,
+     *   totalWords: int,
+     *   totalChapters: int,
+     *   wordsPerChapter: int|null,
+     *   read: int,
+     *   readInWords: int,
+     *   avgReview: float|null,
+     *   fandoms: string[],
+     * }>
+     */
+    public function getAuthorRankings(
+        User $user,
+        string $sortColumn,
+        string $sortDir,
+        ?int $year,
+    ): array {
+        $rows = $this->readingEntryRepository->getAuthorRankingsData($user, $year);
+
+        $items = array_map(static function (array $row): array {
+            // Words per chapter is undefined when chapter count is zero or missing.
+            // Stored as int (rounded) since fractional chapters are not meaningful.
+            $wpc = ($row['totalChapters'] > 0)
+                ? (int) round($row['totalWords'] / $row['totalChapters'])
+                : null;
+
+            return array_merge($row, ['wordsPerChapter' => $wpc]);
+        }, $rows);
+
+        usort($items, static function (array $a, array $b) use ($sortColumn, $sortDir): int {
+            $valA = match ($sortColumn) {
+                'name'          => $a['name'],
+                'count'         => $a['count'],
+                'words'         => $a['totalWords'],
+                'chapters'      => $a['totalChapters'],
+                'wpc'           => $a['wordsPerChapter'],
+                'read'          => $a['read'],
+                'read_in_words' => $a['readInWords'],
+                'avg_review'    => $a['avgReview'],
+                default         => $a['count'],
+            };
+            $valB = match ($sortColumn) {
+                'name'          => $b['name'],
+                'count'         => $b['count'],
+                'words'         => $b['totalWords'],
+                'chapters'      => $b['totalChapters'],
+                'wpc'           => $b['wordsPerChapter'],
+                'read'          => $b['read'],
+                'read_in_words' => $b['readInWords'],
+                'avg_review'    => $b['avgReview'],
+                default         => $b['count'],
+            };
+
+            // Null values (missing data) always sort to the bottom regardless of direction
+            if ($valA === null && $valB === null) {
+                return 0;
+            }
+            if ($valA === null) {
+                return 1;
+            }
+            if ($valB === null) {
+                return -1;
+            }
+
+            $cmp = is_string($valA) ? strcmp($valA, $valB) : ($valA <=> $valB);
+
+            return $sortDir === 'asc' ? $cmp : -$cmp;
+        });
+
+        return $items;
+    }
+
     private function buildRankingItems(
         array $rows,
         int $totalEntries,

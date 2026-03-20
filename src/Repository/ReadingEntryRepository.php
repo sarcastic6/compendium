@@ -1156,6 +1156,188 @@ class ReadingEntryRepository extends ServiceEntityRepository
         }
     }
 
+    /**
+     * Returns ranking data grouped by Author metadata for the given user.
+     *
+     * Uses four queries merged by author ID in PHP:
+     *   Q1: entry count + avg review stars per author (all statuses)
+     *   Q2: total words + total chapters per author (hasBeenStarted = true)
+     *   Q3: read count + read-in-words per author (countsAsRead = true)
+     *   Q4: distinct fandom names per author (DBAL — requires two joins to works_metadata)
+     * Plus one DBAL lookup for AO3 profile links (metadata_source_links, year-independent).
+     *
+     * The SoftDeleteFilter is disabled so soft-deleted works still contribute.
+     * DBAL queries bypass the ORM filter; soft-deleted works are included by default.
+     *
+     * @return array<array{
+     *   mid: int,
+     *   name: string,
+     *   ao3Link: string|null,
+     *   count: int,
+     *   totalWords: int,
+     *   totalChapters: int,
+     *   read: int,
+     *   readInWords: int,
+     *   avgReview: float|null,
+     *   fandoms: string[],
+     * }>
+     */
+    public function getAuthorRankingsData(User $user, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            // Q1: entry count + avg review per author (all statuses)
+            $qb1 = $this->createQueryBuilder('re')
+                ->select('m.id as mid, m.name as name, COUNT(re.id) as cnt, AVG(re.reviewStars) as avgReview')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->where('re.user = :user')
+                ->andWhere('mt.name = :typeName')
+                ->setParameter('user', $user)
+                ->setParameter('typeName', 'Author')
+                ->groupBy('m.id, m.name');
+
+            $this->applyYearFilter($qb1, $year);
+
+            $mainRows = $qb1->getQuery()->getArrayResult();
+
+            // Q2: total words + chapters per author (hasBeenStarted = true only)
+            $qb2 = $this->createQueryBuilder('re')
+                ->select('m.id as mid, SUM(COALESCE(w.words, 0)) as totalWords, SUM(COALESCE(w.chapters, 0)) as totalChapters')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('mt.name = :typeName')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('typeName', 'Author')
+                ->setParameter('started', true)
+                ->groupBy('m.id');
+
+            $this->applyYearFilter($qb2, $year);
+
+            $wordsRows = $qb2->getQuery()->getArrayResult();
+
+            // Q3: read count + read-in-words per author (countsAsRead = true only)
+            $qb3 = $this->createQueryBuilder('re')
+                ->select('m.id as mid, COUNT(re.id) as readCnt, SUM(COALESCE(w.words, 0)) as readInWords')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('mt.name = :typeName')
+                ->andWhere('s.countsAsRead = :countsAsRead')
+                ->setParameter('user', $user)
+                ->setParameter('typeName', 'Author')
+                ->setParameter('countsAsRead', true)
+                ->groupBy('m.id');
+
+            $this->applyYearFilter($qb3, $year);
+
+            $readRows = $qb3->getQuery()->getArrayResult();
+
+            // Q4 (DBAL): AO3 profile links — year-independent (a profile link is not
+            // time-scoped; we look up all Author metadata_source_links in one query).
+            $conn = $em->getConnection();
+            $ao3Rows = $conn->executeQuery(
+                'SELECT msl.metadata_id, msl.link
+                   FROM metadata_source_links msl
+                   INNER JOIN metadata m ON msl.metadata_id = m.id
+                   INNER JOIN metadata_types mt ON m.metadata_type_id = mt.id
+                  WHERE mt.name = :authorType AND msl.source_type = :sourceType',
+                ['authorType' => 'Author', 'sourceType' => \App\Enum\SourceType::AO3->value],
+            )->fetchAllAssociative();
+
+            // Q5 (DBAL): distinct fandoms per author, year-scoped.
+            // Requires two joins to works_metadata (once for Author, once for Fandom),
+            // which cannot be expressed cleanly in a single DQL query.
+            $fandomSql = '
+                SELECT m_author.id AS authorId, m_fandom.name AS fandomName
+                  FROM reading_entries re
+                  INNER JOIN works w ON re.work_id = w.id
+                  INNER JOIN works_metadata wm_a ON wm_a.work_id = w.id
+                  INNER JOIN metadata m_author ON wm_a.metadata_id = m_author.id
+                  INNER JOIN metadata_types mt_author ON m_author.metadata_type_id = mt_author.id
+                  INNER JOIN works_metadata wm_f ON wm_f.work_id = w.id
+                  INNER JOIN metadata m_fandom ON wm_f.metadata_id = m_fandom.id
+                  INNER JOIN metadata_types mt_fandom ON m_fandom.metadata_type_id = mt_fandom.id
+                 WHERE re.user_id = :userId
+                   AND mt_author.name = :authorType
+                   AND mt_fandom.name = :fandomType';
+
+            $fandomParams = [
+                'userId'     => $user->getId(),
+                'authorType' => 'Author',
+                'fandomType' => 'Fandom',
+            ];
+
+            if ($year !== null) {
+                $fandomSql .= ' AND re.date_finished >= :yearStart AND re.date_finished <= :yearEnd';
+                $fandomParams['yearStart'] = "$year-01-01";
+                $fandomParams['yearEnd']   = "$year-12-31";
+            }
+
+            $fandomSql .= ' GROUP BY m_author.id, m_fandom.name ORDER BY m_author.id ASC, m_fandom.name ASC';
+
+            $fandomRows = $conn->executeQuery($fandomSql, $fandomParams)->fetchAllAssociative();
+
+            // Index all secondary results by author ID for O(1) lookup
+            $wordTotals    = [];
+            $chapterTotals = [];
+            foreach ($wordsRows as $row) {
+                $wordTotals[(int) $row['mid']]    = (int) $row['totalWords'];
+                $chapterTotals[(int) $row['mid']] = (int) $row['totalChapters'];
+            }
+
+            $readCounts  = [];
+            $readInWords = [];
+            foreach ($readRows as $row) {
+                $readCounts[(int) $row['mid']]  = (int) $row['readCnt'];
+                $readInWords[(int) $row['mid']] = (int) $row['readInWords'];
+            }
+
+            $ao3Links = [];
+            foreach ($ao3Rows as $row) {
+                $ao3Links[(int) $row['metadata_id']] = (string) $row['link'];
+            }
+
+            $fandoms = [];
+            foreach ($fandomRows as $row) {
+                $fandoms[(int) $row['authorId']][] = (string) $row['fandomName'];
+            }
+
+            return array_map(
+                static fn (array $row): array => [
+                    'mid'           => (int) $row['mid'],
+                    'name'          => (string) $row['name'],
+                    'ao3Link'       => $ao3Links[(int) $row['mid']] ?? null,
+                    'count'         => (int) $row['cnt'],
+                    'totalWords'    => $wordTotals[(int) $row['mid']] ?? 0,
+                    'totalChapters' => $chapterTotals[(int) $row['mid']] ?? 0,
+                    'read'          => $readCounts[(int) $row['mid']] ?? 0,
+                    'readInWords'   => $readInWords[(int) $row['mid']] ?? 0,
+                    'avgReview'     => $row['avgReview'] !== null ? round((float) $row['avgReview'], 2) : null,
+                    'fandoms'       => $fandoms[(int) $row['mid']] ?? [],
+                ],
+                $mainRows,
+            );
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------

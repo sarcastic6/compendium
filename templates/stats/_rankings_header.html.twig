@@ -49,6 +49,7 @@
         {'label': 'stats.rankings.type_status'|trans,       'route': 'app_stats_rankings_status',       'params': {}, 'key': 'Status'},
         {'label': 'stats.rankings.type_language'|trans,     'route': 'app_stats_rankings_language',     'params': {}, 'key': 'Language'},
         {'label': 'stats.rankings.type_main_pairing'|trans, 'route': 'app_stats_rankings_main_pairing', 'params': {}, 'key': 'Main Pairing'},
+        {'label': 'stats.rankings.type_author'|trans,       'route': 'app_stats_rankings_author',       'params': {}, 'key': 'Author'},
     ] %}
     {% for item in fixedTypes %}
         <a href="{{ path(item.route, {'year': year}) }}"
@@ -57,10 +58,13 @@
         </a>
     {% endfor %}
     {% for typeName in rankingTypes %}
-        {% set label = typeName == 'Pairing' ? ('stats.rankings.type_relationships'|trans) : typeName %}
-        <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
-           class="btn btn-sm {{ type == typeName ? 'btn-primary' : 'btn-outline-secondary' }}">
-            {{ label }}
-        </a>
+        {# Author has a dedicated page — skip it here to avoid a duplicate button #}
+        {% if typeName != 'Author' %}
+            {% set label = typeName == 'Pairing' ? ('stats.rankings.type_relationships'|trans) : typeName %}
+            <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
+               class="btn btn-sm {{ type == typeName ? 'btn-primary' : 'btn-outline-secondary' }}">
+                {{ label }}
+            </a>
+        {% endif %}
     {% endfor %}
 </div>

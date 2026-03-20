@@ -139,6 +139,32 @@ class StatsController extends AbstractController
         ]);
     }
 
+    #[Route('/rankings/by-author', name: 'app_stats_rankings_author')]
+    public function rankingsByAuthor(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $year = $this->parseYearParam($request);
+        $availableYears = $this->statisticsService->getDashboardSummary($user, null)['availableYears'];
+        [$sortColumn, $sortDir] = $this->parseAuthorSortParams($request);
+
+        $rankings = $this->statisticsService->getAuthorRankings($user, $sortColumn, $sortDir, $year);
+        $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
+
+        return $this->render('stats/author_rankings.html.twig', [
+            'type'               => 'Author',
+            'rankings'           => $rankings,
+            'rankingTypes'       => $rankingTypes,
+            'year'               => $year,
+            'availableYears'     => $availableYears,
+            'sortColumn'         => $sortColumn,
+            'sortDir'            => $sortDir,
+            'rankingRoute'       => 'app_stats_rankings_author',
+            'rankingRouteParams' => [],
+        ]);
+    }
+
     #[Route('/rankings/{type}', name: 'app_stats_rankings')]
     public function rankings(Request $request, string $type): Response
     {
@@ -261,6 +287,29 @@ class StatsController extends AbstractController
     private function parseSortParams(Request $request): array
     {
         $validColumns = ['name', 'count', 'count_pct', 'words', 'words_pct', 'read_count', 'read_pct'];
+        $column = $request->query->get('sort', 'count');
+        if (!in_array($column, $validColumns, true)) {
+            $column = 'count';
+        }
+
+        $dir = $request->query->get('dir', 'desc');
+        if ($dir !== 'asc' && $dir !== 'desc') {
+            $dir = 'desc';
+        }
+
+        return [$column, $dir];
+    }
+
+    /**
+     * Extracts and validates sort params for the author rankings page.
+     * Valid columns differ from the generic rankings (no pct columns; adds
+     * chapters, wpc, read_in_words, avg_review; fandoms is excluded as unsortable).
+     *
+     * @return array{string, string}
+     */
+    private function parseAuthorSortParams(Request $request): array
+    {
+        $validColumns = ['name', 'count', 'words', 'chapters', 'wpc', 'read', 'read_in_words', 'avg_review'];
         $column = $request->query->get('sort', 'count');
         if (!in_array($column, $validColumns, true)) {
             $column = 'count';
