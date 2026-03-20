@@ -35,7 +35,7 @@
                         {% for item in rankings %}
                             <tr>
                                 <td>
-                                    <a href="{{ path('app_reading_entry_list', {'metadata': item.name, 'metadataType': 'Author'}|merge(yearParams)) }}"
+                                    <a href="{{ path('app_reading_entry_list', {'metadata': {'Author': item.name}}|merge(yearParams)) }}"
                                        class="text-decoration-none">{{ item.name }}</a>
                                     {% if item.ao3Link %}
                                         <a href="{{ item.ao3Link }}" target="_blank" rel="noopener noreferrer"
@@ -54,7 +54,7 @@
                                     {% else %}
                                         {% for fandom in item.fandoms|slice(0, 3) %}
                                             <div>
-                                                <a href="{{ path('app_reading_entry_list', {'metadata': fandom, 'metadataType': 'Fandom'}|merge(yearParams)) }}"
+                                                <a href="{{ path('app_reading_entry_list', {'metadata': {'Fandom': fandom}}|merge(yearParams)) }}"
                                                    class="text-decoration-none small">{{ fandom }}</a>
                                             </div>
                                         {% endfor %}
@@ -65,7 +65,7 @@
                                                 </summary>
                                                 {% for fandom in item.fandoms|slice(3) %}
                                                     <div>
-                                                        <a href="{{ path('app_reading_entry_list', {'metadata': fandom, 'metadataType': 'Fandom'}|merge(yearParams)) }}"
+                                                        <a href="{{ path('app_reading_entry_list', {'metadata': {'Fandom': fandom}}|merge(yearParams)) }}"
                                                            class="text-decoration-none small">{{ fandom }}</a>
                                                     </div>
                                                 {% endfor %}

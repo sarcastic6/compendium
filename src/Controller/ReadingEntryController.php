@@ -9,6 +9,9 @@ use App\Entity\ReadingEntry;
 use App\Entity\Status;
 use App\Entity\User;
 use App\Form\ReadingEntryFormType;
+use App\Repository\LanguageRepository;
+use App\Repository\MetadataRepository;
+use App\Repository\MetadataTypeRepository;
 use App\Repository\ReadingEntryRepository;
 use App\Repository\StatusRepository;
 use App\Repository\WorkRepository;
@@ -30,6 +33,9 @@ class ReadingEntryController extends AbstractController
         private readonly WorkRepository $workRepository,
         private readonly StatusRepository $statusRepository,
         private readonly EntityManagerInterface $entityManager,
+        private readonly MetadataTypeRepository $metadataTypeRepository,
+        private readonly LanguageRepository $languageRepository,
+        private readonly MetadataRepository $metadataRepository,
     ) {
     }
 
@@ -39,8 +45,29 @@ class ReadingEntryController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
+        // Redirect statusName (set by status rankings drill-down links) to a status ID filter.
+        // This normalises the URL so only one status filter param exists going forward.
+        $statusName = $request->query->get('statusName', '');
+        if ($statusName !== '') {
+            $queryParams = $request->query->all();
+            unset($queryParams['statusName']);
+            $status = $this->statusRepository->findOneBy(['name' => $statusName]);
+            if ($status !== null) {
+                $queryParams['status'] = (string) $status->getId();
+            }
+            return $this->redirectToRoute('app_reading_entry_list', $queryParams);
+        }
+
         $page = max(1, $request->query->getInt('page', 1));
         $limit = 25;
+
+        // Parse metadata[] array: keys are metadata type names, values are filter strings.
+        // e.g. metadata[Fandom]=Harry+Potter&metadata[Warning]=Violence
+        $metadataRaw = $request->query->all('metadata');
+        $metadataFilters = array_filter(
+            array_map('strval', is_array($metadataRaw) ? $metadataRaw : []),
+            static fn (string $v): bool => $v !== '',
+        );
 
         $filterParams = [
             'status'      => $request->query->get('status', ''),
@@ -52,21 +79,29 @@ class ReadingEntryController extends AbstractController
             'dateTo'      => $request->query->get('dateTo', ''),
             'spice'       => $request->query->get('spice', ''),
             'type'        => $request->query->get('type', ''),
-            // Drill-down filters set by ranking page row links — not exposed in the filter form UI.
-            'statusName'  => $request->query->get('statusName', ''),
             'language'    => $request->query->get('language', ''),
             'mainPairing' => $request->query->get('mainPairing', ''),
-            'metadata'    => $request->query->get('metadata', ''),
-            'metadataType' => $request->query->get('metadataType', ''),
+            'metadata'    => $metadataFilters,
         ];
 
-        $hasFilters = array_filter($filterParams) !== [];
+        // Use strict empty check so spice=0 (ice cold, a valid value) is treated as an active filter.
+        // PHP's array_filter() default treats '0' as falsy, which would incorrectly ignore it.
+        // metadata is an array so it is checked separately.
+        $stringParams = array_diff_key($filterParams, ['metadata' => null]);
+        $hasFilters = array_filter($stringParams, static fn (string $v): bool => $v !== '') !== []
+            || $metadataFilters !== [];
+
+        $activeFilterCount = count(array_filter($stringParams, static fn (string $v): bool => $v !== ''))
+            + count($metadataFilters);
 
         $total = $this->readingEntryRepository->countByUserFiltered($user, $filterParams);
         $entries = $this->readingEntryRepository->findByUserFiltered($user, $filterParams, $page, $limit);
         $totalPages = (int) ceil($total / $limit);
 
         $allStatuses = $this->statusRepository->findAll();
+        $allMetadataTypes = $this->metadataTypeRepository->findAll();
+        $allLanguages = $this->languageRepository->findAll();
+        $metadataDropdownValues = $this->metadataRepository->findDropdownValuesByTypeName();
 
         return $this->render('reading_entry/list.html.twig', [
             'entries' => $entries,
@@ -75,7 +110,11 @@ class ReadingEntryController extends AbstractController
             'total' => $total,
             'filters' => $filterParams,
             'has_filters' => $hasFilters,
+            'active_filter_count' => $activeFilterCount,
             'statuses' => $allStatuses,
+            'metadataTypes' => $allMetadataTypes,
+            'languages' => $allLanguages,
+            'metadataDropdownValues' => $metadataDropdownValues,
         ]);
     }
 

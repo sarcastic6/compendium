@@ -11,27 +11,130 @@
     </a>
 </div>
 
-{# Filter bar #}
-<div class="mb-3">
+{# ── Filter toggle + clear all ────────────────────────────────────────────── #}
+<div class="d-flex align-items-center gap-2 mb-2">
     <button class="btn btn-outline-secondary btn-sm" type="button"
-            data-bs-toggle="collapse" data-bs-target="#filterBar" aria-expanded="{{ has_filters ? 'true' : 'false' }}"
-            aria-controls="filterBar">
+            data-bs-toggle="collapse" data-bs-target="#filterBar"
+            aria-expanded="false" aria-controls="filterBar">
         <i class="bi bi-funnel" aria-hidden="true"></i>
         {{ 'reading.filter.show_filters'|trans }}
         {% if has_filters %}
-            <span class="badge bg-primary ms-1">{{ filters|filter(v => v is not empty)|length }}</span>
+            <span class="badge bg-primary ms-1">{{ active_filter_count }}</span>
         {% endif %}
     </button>
     {% if has_filters %}
-        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary btn-sm ms-1">
+        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-x-lg" aria-hidden="true"></i>
             {{ 'reading.filter.clear'|trans }}
         </a>
     {% endif %}
 </div>
 
-<div class="collapse {% if has_filters %}show{% endif %}" id="filterBar">
+{# ── Active filter chips — always visible, outside the collapse ───────────── #}
+{% if has_filters %}
+    {# Build a status ID → name map so the status chip can show the name, not the ID #}
+    {% set statusMap = {} %}
+    {% for s in statuses %}
+        {% set statusMap = statusMap|merge({(s.id ~ ''): s.name}) %}
+    {% endfor %}
+
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        {% if filters.q %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'q': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.entry.col_title'|trans }}: {{ filters.q }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.author %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'author': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.author'|trans }}: {{ filters.author }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.status %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'status': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.status'|trans }}: {{ statusMap[filters.status] ?? filters.status }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.rating %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'rating': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.rating'|trans }}: {% for j in 1..filters.rating %}⭐{% endfor %}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.spice != '' %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'spice': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.spice'|trans }}: {{ filters.spice }}{% if filters.spice == '0' %} ({{ 'reading.filter.spice_ice_cold'|trans }}){% endif %}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.starred %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'starred': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.starred'|trans }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.dateFrom %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'dateFrom': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.date_from'|trans }}: {{ filters.dateFrom }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.dateTo %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'dateTo': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.date_to'|trans }}: {{ filters.dateTo }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.type %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'type': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.type'|trans }}: {{ filters.type }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.language %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'language': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.language'|trans }}: {{ filters.language }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.mainPairing %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'mainPairing': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.main_pairing'|trans }}: {{ filters.mainPairing }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {# One chip per active metadata[] filter — X button removes only that type #}
+        {% for metaType, metaValue in filters.metadata %}
+            {% set newMeta = {} %}
+            {% for k, v in filters.metadata %}
+                {% if k != metaType %}{% set newMeta = newMeta|merge({(k): v}) %}{% endif %}
+            {% endfor %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'metadata': newMeta})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ metaType }}: {{ metaValue }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{# ── Collapsible filter form — closed by default ──────────────────────────── #}
+<div class="collapse" id="filterBar">
     <form method="get" action="{{ path('app_reading_entry_list') }}" class="card card-body bg-light border-0 mb-3">
+        {# Row 1: text/select filters #}
         <div class="row g-2 align-items-end">
             <div class="col-md-3">
                 <label for="filter-q" class="form-label form-label-sm">{{ 'reading.entry.col_title'|trans }}</label>
@@ -45,13 +148,40 @@
                        value="{{ filters.author }}"
                        placeholder="{{ 'reading.filter.author_placeholder'|trans }}">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
+                <label for="filter-main-pairing" class="form-label form-label-sm">{{ 'reading.filter.main_pairing'|trans }}</label>
+                <input type="text" id="filter-main-pairing" name="mainPairing" class="form-control form-control-sm"
+                       value="{{ filters.mainPairing }}">
+            </div>
+            <div class="col-md-3">
                 <label for="filter-status" class="form-label form-label-sm">{{ 'reading.filter.status'|trans }}</label>
                 <select id="filter-status" name="status" class="form-select form-select-sm">
                     <option value="">{{ 'reading.filter.any_status'|trans }}</option>
                     {% for status in statuses %}
                         <option value="{{ status.id }}" {% if filters.status == (status.id ~ '') %}selected{% endif %}>
                             {{ status.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        {# Row 2: more filters #}
+        <div class="row g-2 align-items-end mt-1">
+            <div class="col-md-2">
+                <label for="filter-type" class="form-label form-label-sm">{{ 'reading.filter.type'|trans }}</label>
+                <select id="filter-type" name="type" class="form-select form-select-sm">
+                    <option value="">{{ 'reading.filter.any_type'|trans }}</option>
+                    <option value="Book" {% if filters.type == 'Book' %}selected{% endif %}>{{ 'reading.filter.type_book'|trans }}</option>
+                    <option value="Fanfiction" {% if filters.type == 'Fanfiction' %}selected{% endif %}>{{ 'reading.filter.type_fanfiction'|trans }}</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="filter-language" class="form-label form-label-sm">{{ 'reading.filter.language'|trans }}</label>
+                <select id="filter-language" name="language" class="form-select form-select-sm">
+                    <option value="">{{ 'reading.filter.any_language'|trans }}</option>
+                    {% for language in languages %}
+                        <option value="{{ language.name }}" {% if filters.language == language.name %}selected{% endif %}>
+                            {{ language.name }}
                         </option>
                     {% endfor %}
                 </select>
@@ -68,16 +198,16 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <div class="form-check mt-4">
-                    <input class="form-check-input" type="checkbox" id="filter-starred" name="starred" value="1"
-                           {% if filters.starred == '1' %}checked{% endif %}>
-                    <label class="form-check-label" for="filter-starred">
-                        {{ 'reading.filter.starred'|trans }}
-                    </label>
-                </div>
+                <label for="filter-spice" class="form-label form-label-sm">{{ 'reading.filter.spice'|trans }}</label>
+                <select id="filter-spice" name="spice" class="form-select form-select-sm">
+                    <option value="">{{ 'reading.filter.any_spice'|trans }}</option>
+                    {% for i in 0..5 %}
+                        <option value="{{ i }}" {% if filters.spice == (i ~ '') %}selected{% endif %}>
+                            {{ i }}{% if i == 0 %} ({{ 'reading.filter.spice_ice_cold'|trans }}){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
-        </div>
-        <div class="row g-2 align-items-end mt-1">
             <div class="col-md-2">
                 <label for="filter-date-from" class="form-label form-label-sm">{{ 'reading.filter.date_from'|trans }}</label>
                 <input type="date" id="filter-date-from" name="dateFrom" class="form-control form-control-sm"
@@ -88,50 +218,75 @@
                 <input type="date" id="filter-date-to" name="dateTo" class="form-control form-control-sm"
                        value="{{ filters.dateTo }}">
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100">
-                    <i class="bi bi-search" aria-hidden="true"></i>
-                    {{ 'reading.filter.show_filters'|trans }}
-                </button>
+        </div>
+        {# Row 3: dynamic metadata type text inputs — one per type in the DB #}
+        {% if metadataTypes is not empty %}
+            <div class="row g-2 align-items-end mt-1">
+                {% for metadataType in metadataTypes %}
+                    <div class="col-md-3">
+                        <label for="filter-meta-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
+                        {% if metadataType.showAsDropdown and metadataDropdownValues[metadataType.name] is defined %}
+                            <select id="filter-meta-{{ loop.index }}"
+                                    name="metadata[{{ metadataType.name }}]"
+                                    class="form-select form-select-sm">
+                                <option value="">Any {{ metadataType.name|lower }}</option>
+                                {% for value in metadataDropdownValues[metadataType.name] %}
+                                    <option value="{{ value }}" {% if filters.metadata[metadataType.name] ?? '' == value %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="text" id="filter-meta-{{ loop.index }}"
+                                   name="metadata[{{ metadataType.name }}]"
+                                   class="form-control form-control-sm"
+                                   value="{{ filters.metadata[metadataType.name] ?? '' }}">
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <div class="col-md-2">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" id="filter-starred" name="starred" value="1"
+                               {% if filters.starred == '1' %}checked{% endif %}>
+                        <label class="form-check-label" for="filter-starred">
+                            {{ 'reading.filter.starred'|trans }}
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2 ms-auto">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        {{ 'reading.filter.show_filters'|trans }}
+                    </button>
+                </div>
             </div>
-        </div>
-        {# Hidden inputs preserve drill-down filters (set by ranking page links) when the user
-           adjusts other filters and resubmits the form. Not shown as editable fields because
-           they can only be meaningfully set via the ranking pages. #}
-        {% if filters.statusName %}<input type="hidden" name="statusName" value="{{ filters.statusName }}">{% endif %}
-        {% if filters.language %}<input type="hidden" name="language" value="{{ filters.language }}">{% endif %}
-        {% if filters.mainPairing %}<input type="hidden" name="mainPairing" value="{{ filters.mainPairing }}">{% endif %}
-        {% if filters.metadata %}<input type="hidden" name="metadata" value="{{ filters.metadata }}">{% endif %}
-        {% if filters.metadataType %}<input type="hidden" name="metadataType" value="{{ filters.metadataType }}">{% endif %}
+        {% else %}
+            {# Fallback row when no metadata types exist yet #}
+            <div class="row g-2 align-items-end mt-1">
+                <div class="col-md-2">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" id="filter-starred" name="starred" value="1"
+                               {% if filters.starred == '1' %}checked{% endif %}>
+                        <label class="form-check-label" for="filter-starred">
+                            {{ 'reading.filter.starred'|trans }}
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        {{ 'reading.filter.show_filters'|trans }}
+                    </button>
+                </div>
+            </div>
+        {% endif %}
     </form>
-    {# Drill-down filter chips — shown when arriving from a rankings page. #}
-    {% if filters.statusName or filters.language or filters.mainPairing or filters.metadata %}
-        <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
-            <small class="text-muted">{{ 'reading.filter.drill_down'|trans }}:</small>
-            {% if filters.statusName %}
-                <span class="badge text-bg-info">{{ 'stats.rankings.type_status'|trans }}: {{ filters.statusName }}</span>
-            {% endif %}
-            {% if filters.language %}
-                <span class="badge text-bg-info">{{ 'stats.rankings.type_language'|trans }}: {{ filters.language }}</span>
-            {% endif %}
-            {% if filters.mainPairing %}
-                <span class="badge text-bg-info">{{ 'stats.rankings.type_main_pairing'|trans }}: {{ filters.mainPairing }}</span>
-            {% endif %}
-            {% if filters.metadata %}
-                {% set metaLabel = filters.metadataType == 'Pairing' ? ('stats.rankings.type_relationships'|trans) : filters.metadataType %}
-                <span class="badge text-bg-info">{{ metaLabel }}: {{ filters.metadata }}</span>
-            {% endif %}
-        </div>
-    {% endif %}
 </div>
 
 {% if entries is empty %}
     <div class="text-center py-5 text-muted">
         {% if has_filters %}
             <p class="mb-3">No entries match your filters.</p>
-            <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary">
-                {{ 'reading.filter.clear'|trans }}
-            </a>
         {% else %}
             <p class="mb-3">{{ 'reading.entry.empty'|trans }}</p>
             <a href="{{ path('app_work_select') }}" class="btn btn-outline-primary">

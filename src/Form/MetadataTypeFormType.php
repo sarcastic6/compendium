@@ -28,6 +28,10 @@ class MetadataTypeFormType extends AbstractType
             ->add('multipleAllowed', CheckboxType::class, [
                 'label' => 'admin.metadata_types.field.multiple_allowed',
                 'required' => false,
+            ])
+            ->add('showAsDropdown', CheckboxType::class, [
+                'label' => 'admin.metadata_types.field.show_as_dropdown',
+                'required' => false,
             ]);
     }
 

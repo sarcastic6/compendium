@@ -42,6 +42,15 @@ class MetadataType
     #[ORM\Column(options: ['default' => true])]
     private bool $multipleAllowed = true;
 
+    /**
+     * When true, the reading entry list filter renders this type as a dropdown
+     * populated from existing metadata values, instead of a free-text input.
+     * Only set this for types with a small, stable vocabulary (e.g. Rating, Warning, Category).
+     * Types with many values (Fandom, Character, Tag) should remain free-text.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $showAsDropdown = false;
+
     public function __construct(string $name, bool $multipleAllowed = true)
     {
         $this->name = $name;
@@ -73,6 +82,18 @@ class MetadataType
     public function setMultipleAllowed(bool $multipleAllowed): static
     {
         $this->multipleAllowed = $multipleAllowed;
+
+        return $this;
+    }
+
+    public function isShowAsDropdown(): bool
+    {
+        return $this->showAsDropdown;
+    }
+
+    public function setShowAsDropdown(bool $showAsDropdown): static
+    {
+        $this->showAsDropdown = $showAsDropdown;
 
         return $this;
     }

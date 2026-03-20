@@ -40,7 +40,7 @@
                                 {% set drillUrl = path('app_reading_entry_list', {'mainPairing': item.name}|merge(yearParams)) %}
                             {% else %}
                                 {# Metadata type (Fandom, Character, Pairing/Relationships, Tag, etc.) #}
-                                {% set drillUrl = path('app_reading_entry_list', {'metadata': item.name, 'metadataType': type}|merge(yearParams)) %}
+                                {% set drillUrl = path('app_reading_entry_list', {'metadata': {(type): item.name}}|merge(yearParams)) %}
                             {% endif %}
                             <tr>
                                 <td><a href="{{ drillUrl }}" class="text-decoration-none">{{ item.name }}</a></td>

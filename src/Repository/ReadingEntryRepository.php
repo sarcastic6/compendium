@@ -1424,16 +1424,6 @@ class ReadingEntryRepository extends ServiceEntityRepository
             }
         }
 
-        if (!empty($filterParams['statusName'])) {
-            // Filter by status name rather than ID. Used by drill-down links from the
-            // Status rankings page, which only has names available (not IDs).
-            // Uses its own alias (s_name_filter) so this block is self-contained and
-            // does not depend on the caller having already joined 're.status'.
-            $qb->innerJoin('re.status', 's_name_filter')
-                ->andWhere('s_name_filter.name = :filter_status_name')
-                ->setParameter('filter_status_name', $filterParams['statusName']);
-        }
-
         if (!empty($filterParams['language'])) {
             // Filter by work language name. Drill-down from the Language rankings page.
             $qb->innerJoin('w.language', 'lang_filter')
@@ -1442,23 +1432,33 @@ class ReadingEntryRepository extends ServiceEntityRepository
         }
 
         if (!empty($filterParams['mainPairing'])) {
-            // Filter by the reading entry's mainPairing name. Drill-down from the
-            // Main Pairing rankings page. Entries with no main pairing are excluded.
+            // Filter by the reading entry's mainPairing name. Used by both drill-down links
+            // from the Main Pairing rankings page and the filter form's text input.
+            // LIKE match so partial names (typed in the form) work alongside exact drill-down values.
             $qb->innerJoin('re.mainPairing', 'mp_filter')
-                ->andWhere('mp_filter.name = :filter_main_pairing')
-                ->setParameter('filter_main_pairing', $filterParams['mainPairing']);
+                ->andWhere('mp_filter.name LIKE :filter_main_pairing')
+                ->setParameter('filter_main_pairing', '%' . $filterParams['mainPairing'] . '%');
         }
 
-        if (!empty($filterParams['metadata']) && !empty($filterParams['metadataType'])) {
-            // Filter by work metadata name + type. Drill-down from metadata rankings pages
-            // (Fandom, Character, Pairing/Relationships, Tag, etc.).
-            // Uses distinct aliases to avoid conflicts with the author filter join.
-            $qb->innerJoin('w.metadata', 'm_meta_filter')
-                ->innerJoin('m_meta_filter.metadataType', 'mt_meta_filter')
-                ->andWhere('mt_meta_filter.name = :filter_meta_type')
-                ->andWhere('m_meta_filter.name = :filter_meta_name')
-                ->setParameter('filter_meta_type', $filterParams['metadataType'])
-                ->setParameter('filter_meta_name', $filterParams['metadata']);
+        // metadata[] array: each key is a metadata type name, each value is the filter string.
+        // One JOIN per active type filter using indexed aliases to avoid alias conflicts.
+        // e.g. metadata[Fandom]=Harry+Potter&metadata[Warning]=Violence → two inner joins.
+        if (!empty($filterParams['metadata']) && is_array($filterParams['metadata'])) {
+            $i = 0;
+            foreach ($filterParams['metadata'] as $typeName => $value) {
+                if ($value === '') {
+                    continue;
+                }
+                $metaAlias   = 'm_meta_' . $i;
+                $mtAlias     = 'mt_meta_' . $i;
+                $qb->innerJoin('w.metadata', $metaAlias)
+                    ->innerJoin("$metaAlias.metadataType", $mtAlias)
+                    ->andWhere("$mtAlias.name = :filter_meta_type_$i")
+                    ->andWhere("$metaAlias.name = :filter_meta_name_$i")
+                    ->setParameter("filter_meta_type_$i", $typeName)
+                    ->setParameter("filter_meta_name_$i", $value);
+                ++$i;
+            }
         }
     }
 }

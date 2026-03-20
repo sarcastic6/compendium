@@ -20,6 +20,7 @@
                 <tr>
                     <th scope="col">{{ 'admin.metadata_types.field.name'|trans }}</th>
                     <th scope="col">{{ 'admin.metadata_types.field.multiple_allowed'|trans }}</th>
+                    <th scope="col">{{ 'admin.metadata_types.field.show_as_dropdown'|trans }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -28,6 +29,13 @@
                         <td>{{ type.name }}</td>
                         <td>
                             {% if type.multipleAllowed %}
+                                <span class="badge bg-success">Yes</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if type.showAsDropdown %}
                                 <span class="badge bg-success">Yes</span>
                             {% else %}
                                 <span class="badge bg-secondary">No</span>
