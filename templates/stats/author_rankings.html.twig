@@ -19,7 +19,6 @@
                 <table class="table table-striped table-hover mb-0 align-top">
                     <thead>
                         <tr>
-                            <th class="ps-3" style="width: 3rem">{{ 'stats.rankings.col_rank'|trans }}</th>
                             {{ sortHeader('name',          'stats.rankings.col_name'|trans,          'start', '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
                             {{ sortHeader('count',         'stats.rankings.col_count'|trans,         'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
                             {{ sortHeader('words',         'stats.rankings.col_words'|trans,         'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
@@ -35,7 +34,6 @@
                     <tbody>
                         {% for item in rankings %}
                             <tr>
-                                <td class="ps-3 text-muted">{{ loop.index }}</td>
                                 <td>
                                     <a href="{{ path('app_reading_entry_list', {'metadata': item.name, 'metadataType': 'Author'}|merge(yearParams)) }}"
                                        class="text-decoration-none">{{ item.name }}</a>

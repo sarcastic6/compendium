@@ -256,8 +256,7 @@ stats:
     rankings:
         heading: 'Rankings: %type%'
         back_to_dashboard: 'Back to Stats'
-        col_rank: '#'
-        col_name: 'Name'
+col_name: 'Name'
         col_count: 'Count #'
         col_count_pct: 'Count %'
         col_words: 'Total Words'
