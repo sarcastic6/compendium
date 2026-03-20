@@ -95,7 +95,34 @@
                 </button>
             </div>
         </div>
+        {# Hidden inputs preserve drill-down filters (set by ranking page links) when the user
+           adjusts other filters and resubmits the form. Not shown as editable fields because
+           they can only be meaningfully set via the ranking pages. #}
+        {% if filters.statusName %}<input type="hidden" name="statusName" value="{{ filters.statusName }}">{% endif %}
+        {% if filters.language %}<input type="hidden" name="language" value="{{ filters.language }}">{% endif %}
+        {% if filters.mainPairing %}<input type="hidden" name="mainPairing" value="{{ filters.mainPairing }}">{% endif %}
+        {% if filters.metadata %}<input type="hidden" name="metadata" value="{{ filters.metadata }}">{% endif %}
+        {% if filters.metadataType %}<input type="hidden" name="metadataType" value="{{ filters.metadataType }}">{% endif %}
     </form>
+    {# Drill-down filter chips — shown when arriving from a rankings page. #}
+    {% if filters.statusName or filters.language or filters.mainPairing or filters.metadata %}
+        <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
+            <small class="text-muted">{{ 'reading.filter.drill_down'|trans }}:</small>
+            {% if filters.statusName %}
+                <span class="badge text-bg-info">{{ 'stats.rankings.type_status'|trans }}: {{ filters.statusName }}</span>
+            {% endif %}
+            {% if filters.language %}
+                <span class="badge text-bg-info">{{ 'stats.rankings.type_language'|trans }}: {{ filters.language }}</span>
+            {% endif %}
+            {% if filters.mainPairing %}
+                <span class="badge text-bg-info">{{ 'stats.rankings.type_main_pairing'|trans }}: {{ filters.mainPairing }}</span>
+            {% endif %}
+            {% if filters.metadata %}
+                {% set metaLabel = filters.metadataType == 'Pairing' ? ('stats.rankings.type_relationships'|trans) : filters.metadataType %}
+                <span class="badge text-bg-info">{{ metaLabel }}: {{ filters.metadata }}</span>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 
 {% if entries is empty %}

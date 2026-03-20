@@ -43,15 +43,21 @@ class ReadingEntryController extends AbstractController
         $limit = 25;
 
         $filterParams = [
-            'status' => $request->query->get('status', ''),
-            'q' => $request->query->get('q', ''),
-            'author' => $request->query->get('author', ''),
-            'starred' => $request->query->get('starred', ''),
-            'rating' => $request->query->get('rating', ''),
-            'dateFrom' => $request->query->get('dateFrom', ''),
-            'dateTo' => $request->query->get('dateTo', ''),
-            'spice' => $request->query->get('spice', ''),
-            'type' => $request->query->get('type', ''),
+            'status'      => $request->query->get('status', ''),
+            'q'           => $request->query->get('q', ''),
+            'author'      => $request->query->get('author', ''),
+            'starred'     => $request->query->get('starred', ''),
+            'rating'      => $request->query->get('rating', ''),
+            'dateFrom'    => $request->query->get('dateFrom', ''),
+            'dateTo'      => $request->query->get('dateTo', ''),
+            'spice'       => $request->query->get('spice', ''),
+            'type'        => $request->query->get('type', ''),
+            // Drill-down filters set by ranking page row links — not exposed in the filter form UI.
+            'statusName'  => $request->query->get('statusName', ''),
+            'language'    => $request->query->get('language', ''),
+            'mainPairing' => $request->query->get('mainPairing', ''),
+            'metadata'    => $request->query->get('metadata', ''),
+            'metadataType' => $request->query->get('metadataType', ''),
         ];
 
         $hasFilters = array_filter($filterParams) !== [];

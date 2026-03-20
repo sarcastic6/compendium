@@ -93,6 +93,7 @@ reading:
         author_placeholder: 'Search by author...'
         any_status: 'Any status'
         any_rating: 'Any review'
+        drill_down: 'Filtered from rankings'
     bulk:
         select_all: 'Select all'
         change_status: 'Change Status'

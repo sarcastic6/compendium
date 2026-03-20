@@ -105,10 +105,23 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {# Year-scoped date params passed through to the reading entry list filter. #}
+                        {% set yearParams = year ? {'dateFrom': year ~ '-01-01', 'dateTo': year ~ '-12-31'} : {} %}
                         {% for item in rankings %}
+                            {# Build drill-down URL based on the current ranking type. #}
+                            {% if type == 'Status' %}
+                                {% set drillUrl = path('app_reading_entry_list', {'statusName': item.name}|merge(yearParams)) %}
+                            {% elseif type == 'Language' %}
+                                {% set drillUrl = path('app_reading_entry_list', {'language': item.name}|merge(yearParams)) %}
+                            {% elseif type == 'Main Pairing' %}
+                                {% set drillUrl = path('app_reading_entry_list', {'mainPairing': item.name}|merge(yearParams)) %}
+                            {% else %}
+                                {# Metadata type (Fandom, Character, Pairing/Relationships, Tag, etc.) #}
+                                {% set drillUrl = path('app_reading_entry_list', {'metadata': item.name, 'metadataType': type}|merge(yearParams)) %}
+                            {% endif %}
                             <tr>
                                 <td class="ps-3 text-muted">{{ loop.index }}</td>
-                                <td>{{ item.name }}</td>
+                                <td><a href="{{ drillUrl }}" class="text-decoration-none">{{ item.name }}</a></td>
                                 <td class="text-end">{{ item.count }}</td>
                                 <td class="text-end text-muted">{{ item.countPct }}%</td>
                                 <td class="text-end">{{ item.totalWords|number_format(0, '.', ',') }}</td>

@@ -1214,13 +1214,16 @@ class ReadingEntryRepository extends ServiceEntityRepository
         }
 
         if (!empty($filterParams['dateFrom'])) {
+            // Types::DATE_IMMUTABLE ensures Doctrine serializes as 'Y-m-d' (not 'Y-m-d H:i:s'),
+            // so SQLite string comparison correctly includes entries on the boundary date.
             $qb->andWhere('re.dateFinished >= :filter_date_from')
-                ->setParameter('filter_date_from', new \DateTimeImmutable($filterParams['dateFrom']));
+                ->setParameter('filter_date_from', new \DateTimeImmutable($filterParams['dateFrom']), Types::DATE_IMMUTABLE);
         }
 
         if (!empty($filterParams['dateTo'])) {
+            // Same reasoning as dateFrom above.
             $qb->andWhere('re.dateFinished <= :filter_date_to')
-                ->setParameter('filter_date_to', new \DateTimeImmutable($filterParams['dateTo']));
+                ->setParameter('filter_date_to', new \DateTimeImmutable($filterParams['dateTo']), Types::DATE_IMMUTABLE);
         }
 
         // Spice stars: 0 is a valid value so check !== '' rather than !empty
@@ -1237,6 +1240,41 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 $qb->andWhere('w.type = :filter_type')
                     ->setParameter('filter_type', $workType);
             }
+        }
+
+        if (!empty($filterParams['statusName'])) {
+            // Filter by status name rather than ID. Used by drill-down links from the
+            // Status rankings page, which only has names available (not IDs).
+            // 's' alias for Status is always joined before applyFilters is called.
+            $qb->andWhere('s.name = :filter_status_name')
+                ->setParameter('filter_status_name', $filterParams['statusName']);
+        }
+
+        if (!empty($filterParams['language'])) {
+            // Filter by work language name. Drill-down from the Language rankings page.
+            $qb->innerJoin('w.language', 'lang_filter')
+                ->andWhere('lang_filter.name = :filter_language')
+                ->setParameter('filter_language', $filterParams['language']);
+        }
+
+        if (!empty($filterParams['mainPairing'])) {
+            // Filter by the reading entry's mainPairing name. Drill-down from the
+            // Main Pairing rankings page. Entries with no main pairing are excluded.
+            $qb->innerJoin('re.mainPairing', 'mp_filter')
+                ->andWhere('mp_filter.name = :filter_main_pairing')
+                ->setParameter('filter_main_pairing', $filterParams['mainPairing']);
+        }
+
+        if (!empty($filterParams['metadata']) && !empty($filterParams['metadataType'])) {
+            // Filter by work metadata name + type. Drill-down from metadata rankings pages
+            // (Fandom, Character, Pairing/Relationships, Tag, etc.).
+            // Uses distinct aliases to avoid conflicts with the author filter join.
+            $qb->innerJoin('w.metadata', 'm_meta_filter')
+                ->innerJoin('m_meta_filter.metadataType', 'mt_meta_filter')
+                ->andWhere('mt_meta_filter.name = :filter_meta_type')
+                ->andWhere('m_meta_filter.name = :filter_meta_name')
+                ->setParameter('filter_meta_type', $filterParams['metadataType'])
+                ->setParameter('filter_meta_name', $filterParams['metadata']);
         }
     }
 }
