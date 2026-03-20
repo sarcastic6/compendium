@@ -112,7 +112,7 @@
 {# Metadata grouped by type #}
 {# Authors are excluded here — they are already shown in the core details section above. #}
 {# Known types are rendered in this preferred order; any unrecognized types follow at the end. #}
-{% set metadataTypeOrder = ['Warning', 'Rating', 'Category', 'Fandom', 'Pairing', 'Character', 'Tag'] %}
+{% set metadataTypeOrder = ['Warning', 'Rating', 'Category', 'Fandom', 'Relationships', 'Character', 'Tag'] %}
 
 {% set grouped = {} %}
 {% for item in work.metadata %}

@@ -220,23 +220,23 @@ class ImportServiceTest extends TestCase
         $this->assertSame('General Audiences', $result->dto->metadata[0]['name']);
     }
 
-    public function test_applies_synonym_map_relationship_to_pairing(): void
+    public function test_applies_synonym_map_relationship_to_relationships(): void
     {
-        $pairingType = new MetadataType('Pairing', true);
+        $relationshipsType = new MetadataType('Relationships', true);
         $this->metadataTypeRepo
             ->method('findOneBy')
-            ->willReturnCallback(static function (array $criteria) use ($pairingType): ?MetadataType {
-                return $criteria['name'] === 'Pairing' ? $pairingType : null;
+            ->willReturnCallback(static function (array $criteria) use ($relationshipsType): ?MetadataType {
+                return $criteria['name'] === 'Relationships' ? $relationshipsType : null;
             });
 
         $scraped = $this->makeScraped();
-        // AO3 calls them "Relationship"; our DB uses "Pairing"
+        // AO3 calls them "Relationship" (singular); our DB uses "Relationships" (plural)
         $scraped->metadata = ['Relationship' => [['name' => 'Character A/Character B', 'link' => null]]];
 
         $result = $this->service->mapToWorkFormDto($scraped);
 
         $this->assertCount(1, $result->dto->metadata);
-        $this->assertSame($pairingType, $result->dto->metadata[0]['metadataType']);
+        $this->assertSame($relationshipsType, $result->dto->metadata[0]['metadataType']);
     }
 
     public function test_auto_creates_metadata_type_when_not_found(): void

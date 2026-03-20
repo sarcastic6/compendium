@@ -29,7 +29,7 @@ class MetadataType
         'Warning',
         'Category',
         'Fandom',
-        'Pairing',
+        'Relationships',
         'Character',
         'Tag',
     ];

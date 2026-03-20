@@ -74,7 +74,7 @@ class ReadingEntryFormType extends AbstractType
                     $qb = $er->createQueryBuilder('m')
                         ->innerJoin('m.metadataType', 'mt')
                         ->where('mt.name = :typeName')
-                        ->setParameter('typeName', 'Pairing')
+                        ->setParameter('typeName', 'Relationships')
                         ->orderBy('m.name', 'ASC');
 
                     // Narrow to pairings associated with the selected work, if available

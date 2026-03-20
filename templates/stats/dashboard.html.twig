@@ -340,9 +340,7 @@
                 {% if typeName != 'Author' %}
                     <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
                        class="btn btn-outline-secondary btn-sm">
-                        {# Relabel "Pairing" (work relationship metadata) as "Relationships"
-                           to distinguish it from the Main Pairing ranking (reading entry field). #}
-                        {{ typeName == 'Pairing' ? ('stats.rankings.type_relationships'|trans) : typeName }}
+                        {{ typeName }}
                     </a>
                 {% endif %}
             {% endfor %}

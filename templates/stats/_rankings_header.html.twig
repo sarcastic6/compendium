@@ -60,10 +60,9 @@
     {% for typeName in rankingTypes %}
         {# Author has a dedicated page — skip it here to avoid a duplicate button #}
         {% if typeName != 'Author' %}
-            {% set label = typeName == 'Pairing' ? ('stats.rankings.type_relationships'|trans) : typeName %}
             <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
                class="btn btn-sm {{ type == typeName ? 'btn-primary' : 'btn-outline-secondary' }}">
-                {{ label }}
+                {{ typeName }}
             </a>
         {% endif %}
     {% endfor %}

@@ -21,7 +21,7 @@ class ReadingEntryService
      * Creates and persists a new ReadingEntry.
      * User is always set from the authenticated session — never from form input.
      *
-     * @throws \InvalidArgumentException if mainPairing is not of type 'Pairing' or stars are out of range
+     * @throws \InvalidArgumentException if mainPairing is not of type 'Relationships' or stars are out of range
      */
     public function createEntry(User $user, Work $work, Status $status): ReadingEntry
     {
@@ -50,18 +50,18 @@ class ReadingEntryService
             throw new \InvalidArgumentException('reading.entry.stars.out_of_range');
         }
 
-        // spiceStars must be 0-5 or null — 0 means 'ice cold' (no spice), null means not rated.
+        // spiceStars must be 0-5 or null — 0 means 'no spice' (🚫), null means not rated.
         // No database-level constraint exists (DBAL 4.x does not support CHECK constraints),
         // so this is the sole enforcement point.
         if ($entry->getSpiceStars() !== null && ($entry->getSpiceStars() < 0 || $entry->getSpiceStars() > 5)) {
             throw new \InvalidArgumentException('reading.entry.stars.out_of_range');
         }
 
-        // mainPairing must reference a Metadata whose MetadataType is 'Pairing'.
+        // mainPairing must reference a Metadata whose MetadataType is 'Relationships'.
         // This can't be enforced at the DB level because it requires a join through metadata_type.
         if ($entry->getMainPairing() !== null) {
             $typeName = $entry->getMainPairing()->getMetadataType()->getName();
-            if ($typeName !== 'Pairing') {
+            if ($typeName !== 'Relationships') {
                 throw new \InvalidArgumentException('reading.entry.main_pairing.wrong_type');
             }
         }

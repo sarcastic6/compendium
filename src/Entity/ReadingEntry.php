@@ -60,7 +60,7 @@ class ReadingEntry
     private ?int $spiceStars = null;
 
     /**
-     * Must reference a Metadata entity whose MetadataType name is 'Pairing'.
+     * Must reference a Metadata entity whose MetadataType name is 'Relationships'.
      * Enforced at the application level in ReadingEntryService — not a database FK constraint
      * because it requires a join through metadata_type, which can't be expressed as a simple FK.
      */

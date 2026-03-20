@@ -34,7 +34,7 @@ class ImportService
      * Values are the expected MetadataType.name values created by the admin.
      */
     private const CATEGORY_SYNONYM_MAP = [
-        'Relationship' => 'Pairing',
+        'Relationship' => 'Relationships',
     ];
 
     public function __construct(
