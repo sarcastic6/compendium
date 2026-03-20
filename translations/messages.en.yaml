@@ -88,6 +88,7 @@ reading:
         date_to: 'Finished to'
         clear: 'Clear Filters'
         show_filters: 'Filters'
+        apply: 'Apply'
         active_filters: '{count} active'
         search_placeholder: 'Search by title...'
         author_placeholder: 'Search by author...'
