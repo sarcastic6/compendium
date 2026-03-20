@@ -1408,10 +1408,20 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 ->setParameter('filter_date_to', new \DateTimeImmutable($filterParams['dateTo']), Types::DATE_IMMUTABLE);
         }
 
-        // Spice stars: 0 is a valid value so check !== '' rather than !empty
+        // Spice stars: 0 is a valid value so check !== '' rather than !empty.
+        // spice=0 is an exact match (no-spice entries only).
+        // spice=1–5 is a minimum (entries at or above that level), matching how
+        // the review filter works. The two cases are intentionally different:
+        // 0 represents a categorical absence of spice, not a point on the scale.
         if (isset($filterParams['spice']) && $filterParams['spice'] !== '') {
-            $qb->andWhere('re.spiceStars = :filter_spice')
-                ->setParameter('filter_spice', (int) $filterParams['spice']);
+            $spice = (int) $filterParams['spice'];
+            if ($spice === 0) {
+                $qb->andWhere('re.spiceStars = :filter_spice')
+                    ->setParameter('filter_spice', 0);
+            } else {
+                $qb->andWhere('re.spiceStars >= :filter_spice')
+                    ->setParameter('filter_spice', $spice);
+            }
         }
 
         if (!empty($filterParams['type'])) {

@@ -96,7 +96,7 @@ reading:
         drill_down: 'Filtered from rankings'
         spice: 'Spice'
         any_spice: 'Any spice'
-        spice_ice_cold: 'ice cold'
+        no_spice: 'No spice'
         type: 'Type'
         any_type: 'Any type'
         type_book: 'Book'

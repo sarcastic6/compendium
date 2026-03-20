@@ -70,7 +70,12 @@
         {% if filters.spice != '' %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'spice': ''})) }}"
                class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
-                {{ 'reading.filter.spice'|trans }}: {{ filters.spice }}{% if filters.spice == '0' %} ({{ 'reading.filter.spice_ice_cold'|trans }}){% endif %}
+                {{ 'reading.filter.spice'|trans }}:
+                {% if filters.spice == '0' %}
+                    🚫
+                {% else %}
+                    {% for j in 1..filters.spice %}🌶️{% endfor %}+
+                {% endif %}
                 <i class="bi bi-x" aria-hidden="true"></i>
             </a>
         {% endif %}
@@ -201,9 +206,10 @@
                 <label for="filter-spice" class="form-label form-label-sm">{{ 'reading.filter.spice'|trans }}</label>
                 <select id="filter-spice" name="spice" class="form-select form-select-sm">
                     <option value="">{{ 'reading.filter.any_spice'|trans }}</option>
-                    {% for i in 0..5 %}
+                    <option value="0" {% if filters.spice == '0' %}selected{% endif %}>🚫 {{ 'reading.filter.no_spice'|trans }}</option>
+                    {% for i in 1..5 %}
                         <option value="{{ i }}" {% if filters.spice == (i ~ '') %}selected{% endif %}>
-                            {{ i }}{% if i == 0 %} ({{ 'reading.filter.spice_ice_cold'|trans }}){% endif %}
+                            {% for j in 1..i %}🌶️{% endfor %}{% if i < 5 %}+{% endif %}
                         </option>
                     {% endfor %}
                 </select>
@@ -223,6 +229,7 @@
         {% if metadataTypes is not empty %}
             <div class="row g-2 align-items-end mt-1">
                 {% for metadataType in metadataTypes %}
+                {% if metadataType.name != 'Author' %}
                     <div class="col-md-3">
                         <label for="filter-meta-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
                         {% if metadataType.showAsDropdown and metadataDropdownValues[metadataType.name] is defined %}
@@ -243,6 +250,7 @@
                                    value="{{ filters.metadata[metadataType.name] ?? '' }}">
                         {% endif %}
                     </div>
+                {% endif %}
                 {% endfor %}
                 <div class="col-md-2">
                     <div class="form-check mt-4">
