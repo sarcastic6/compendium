@@ -20,13 +20,9 @@ class Language
     #[ORM\Column(length: 100)]
     private string $name;
 
-    #[ORM\Column(length: 1024, nullable: true)]
-    private ?string $link = null;
-
-    public function __construct(string $name, ?string $link = null)
+    public function __construct(string $name)
     {
         $this->name = $name;
-        $this->link = $link;
     }
 
     public function getId(): ?int
@@ -42,18 +38,6 @@ class Language
     public function setName(string $name): static
     {
         $this->name = $name;
-
-        return $this;
-    }
-
-    public function getLink(): ?string
-    {
-        return $this->link;
-    }
-
-    public function setLink(?string $link): static
-    {
-        $this->link = $link;
 
         return $this;
     }
