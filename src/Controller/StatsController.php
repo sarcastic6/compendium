@@ -87,6 +87,7 @@ class StatsController extends AbstractController
             'rankingRoute' => 'app_stats_rankings_status',
             'rankingRouteParams' => [],
             'showReadColumns' => false,
+            'showAvgReview' => false,
         ]);
     }
 
@@ -114,6 +115,7 @@ class StatsController extends AbstractController
             'rankingRoute' => 'app_stats_rankings_language',
             'rankingRouteParams' => [],
             'showReadColumns' => true,
+            'showAvgReview' => false,
         ]);
     }
 
@@ -141,6 +143,7 @@ class StatsController extends AbstractController
             'rankingRoute' => 'app_stats_rankings_main_pairing',
             'rankingRouteParams' => [],
             'showReadColumns' => true,
+            'showAvgReview' => true,
         ]);
     }
 
@@ -203,6 +206,7 @@ class StatsController extends AbstractController
             'rankingRoute' => 'app_stats_rankings',
             'rankingRouteParams' => ['type' => $type],
             'showReadColumns' => true,
+            'showAvgReview' => true,
         ]);
     }
 
@@ -317,7 +321,7 @@ class StatsController extends AbstractController
      */
     private function parseSortParams(Request $request): array
     {
-        $validColumns = ['name', 'count', 'count_pct', 'words', 'words_pct', 'read_count', 'read_pct'];
+        $validColumns = ['name', 'count', 'count_pct', 'words', 'words_pct', 'read_count', 'read_pct', 'avg_review'];
         $column = $request->query->get('sort', 'count');
         if (!in_array($column, $validColumns, true)) {
             $column = 'count';

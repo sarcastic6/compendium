@@ -838,7 +838,23 @@ class ReadingEntryRepository extends ServiceEntityRepository
 
             $readRows = $qb3->getQuery()->getArrayResult();
 
-            // Index words and read counts by metadata ID for O(1) lookup
+            // Query 4: avg review stars per metadata item (NULL reviews excluded by SQL AVG)
+            $qb4 = $this->createQueryBuilder('re')
+                ->select('m.id as mid, AVG(re.reviewStars) as avgReview')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->where('re.user = :user')
+                ->andWhere('mt.name = :typeName')
+                ->setParameter('user', $user)
+                ->setParameter('typeName', $typeName)
+                ->groupBy('m.id');
+
+            $this->applyYearFilter($qb4, $year);
+
+            $reviewRows = $qb4->getQuery()->getArrayResult();
+
+            // Index words, read counts, and avg reviews by metadata ID for O(1) lookup
             $wordTotals = [];
             foreach ($wordsRows as $row) {
                 $wordTotals[(int) $row['mid']] = (int) $row['totalWords'];
@@ -849,12 +865,20 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 $readCounts[(int) $row['mid']] = (int) $row['readCnt'];
             }
 
+            $avgReviews = [];
+            foreach ($reviewRows as $row) {
+                $avgReviews[(int) $row['mid']] = $row['avgReview'] !== null
+                    ? round((float) $row['avgReview'], 2)
+                    : null;
+            }
+
             return array_map(
                 static fn (array $row): array => [
                     'name' => (string) $row['name'],
                     'count' => (int) $row['cnt'],
                     'totalWords' => $wordTotals[(int) $row['mid']] ?? 0,
                     'readCount' => $readCounts[(int) $row['mid']] ?? 0,
+                    'avgReview' => $avgReviews[(int) $row['mid']] ?? null,
                 ],
                 $mainRows,
             );
@@ -1089,6 +1113,18 @@ class ReadingEntryRepository extends ServiceEntityRepository
 
             $readRows = $qb3->getQuery()->getArrayResult();
 
+            // Query 4: avg review stars per main pairing (NULL reviews excluded by SQL AVG)
+            $qb4 = $this->createQueryBuilder('re')
+                ->select('mp.id as mpid, AVG(re.reviewStars) as avgReview')
+                ->innerJoin('re.mainPairing', 'mp')
+                ->where('re.user = :user')
+                ->setParameter('user', $user)
+                ->groupBy('mp.id');
+
+            $this->applyYearFilter($qb4, $year);
+
+            $reviewRows = $qb4->getQuery()->getArrayResult();
+
             $wordTotals = [];
             foreach ($wordsRows as $row) {
                 $wordTotals[(int) $row['mpid']] = (int) $row['totalWords'];
@@ -1099,12 +1135,20 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 $readCounts[(int) $row['mpid']] = (int) $row['readCnt'];
             }
 
+            $avgReviews = [];
+            foreach ($reviewRows as $row) {
+                $avgReviews[(int) $row['mpid']] = $row['avgReview'] !== null
+                    ? round((float) $row['avgReview'], 2)
+                    : null;
+            }
+
             return array_map(
                 static fn (array $row): array => [
                     'name' => (string) $row['name'],
                     'count' => (int) $row['cnt'],
                     'totalWords' => $wordTotals[(int) $row['mpid']] ?? 0,
                     'readCount' => $readCounts[(int) $row['mpid']] ?? 0,
+                    'avgReview' => $avgReviews[(int) $row['mpid']] ?? null,
                 ],
                 $mainRows,
             );

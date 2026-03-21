@@ -455,6 +455,9 @@ class StatisticsService
                     'readPct' => $row['count'] > 0
                         ? round($row['readCount'] / $row['count'] * 100, 1)
                         : 0.0,
+                    // avgReview is null when the repository doesn't provide it (Status,
+                    // Language) or when no reviews exist for this item.
+                    'avgReview' => $row['avgReview'] ?? null,
                 ];
             },
             $rows,
@@ -467,6 +470,7 @@ class StatisticsService
                 'words', 'words_pct' => $a['totalWords'],
                 'read_count' => $a['readCount'],
                 'read_pct' => $a['readPct'],
+                'avg_review' => $a['avgReview'],
                 default => $a['count'],
             };
             $valB = match ($sortColumn) {
@@ -475,8 +479,20 @@ class StatisticsService
                 'words', 'words_pct' => $b['totalWords'],
                 'read_count' => $b['readCount'],
                 'read_pct' => $b['readPct'],
+                'avg_review' => $b['avgReview'],
                 default => $b['count'],
             };
+
+            // Null values (no reviews) always sort to the bottom regardless of direction
+            if ($valA === null && $valB === null) {
+                return 0;
+            }
+            if ($valA === null) {
+                return 1;
+            }
+            if ($valB === null) {
+                return -1;
+            }
 
             $cmp = is_string($valA)
                 ? strcmp($valA, $valB)
