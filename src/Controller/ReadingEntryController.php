@@ -85,6 +85,8 @@ class ReadingEntryController extends AbstractController
             // Set by spice distribution chart drill-down links only — always exact match.
             // The form's 'spice' param uses exact for 0 and minimum for 1–5.
             'spiceExact'  => $request->query->get('spiceExact', ''),
+            'wordsMin'    => $request->query->get('wordsMin', ''),
+            'wordsMax'    => $request->query->get('wordsMax', ''),
         ];
 
         // Use strict empty check so spice=0 (a valid value) is treated as an active filter.

@@ -85,6 +85,16 @@ class StatisticsService
     }
 
     /**
+     * Returns reading entry counts bucketed by work word length (AO3-standard ranges).
+     *
+     * @return array{under1k: int, k1_10k: int, k10_50k: int, k50_100k: int, over100k: int}
+     */
+    public function getWordCountDistribution(User $user, ?int $year): array
+    {
+        return $this->readingEntryRepository->getWordCountDistribution($user, $year);
+    }
+
+    /**
      * Returns review and spice star distributions for the current user.
      *
      * @return array{review: array<int, int>, spice: array<int, int>}

@@ -370,6 +370,30 @@
 
 </div>{# end donut row 2 #}
 
+{# ── Work length distribution ─────────────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">{{ 'stats.chart.word_length_distribution'|trans }}</div>
+            <div class="card-body">
+                {% set wcdTotal = wordCountDistribution|reduce((carry, v) => carry + v, 0) %}
+                {% if wcdTotal == 0 %}
+                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                {% else %}
+                    <canvas
+                        data-controller="chart"
+                        data-chart-type-value="bar"
+                        data-chart-labels-value="{{ ['< 1K', '1K–10K', '10K–50K', '50K–100K', '> 100K']|json_encode }}"
+                        data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': wordCountDistribution|values, 'backgroundColor': 'rgba(13,110,253,0.6)'}]|json_encode }}"
+                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}, 'aspectRatio': 4}|json_encode }}"
+                        data-chart-urls-value="{{ chartUrls.wordCount|json_encode }}"
+                    ></canvas>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>{# end word length distribution #}
+
 {# ── Rating distributions ────────────────────────────────────────────────── #}
 <div class="row g-3 mb-4">
 

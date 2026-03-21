@@ -275,6 +275,7 @@ stats:
         type_breakdown: 'Type Breakdown'
         rating_distribution: 'Review Distribution'
         spice_distribution: 'Spice Distribution'
+        word_length_distribution: 'Work Length Distribution'
         by_category: 'By Category'
         by_rating: 'By Rating'
         by_warning: 'By Warning'

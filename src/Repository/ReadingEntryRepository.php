@@ -411,6 +411,76 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Returns reading entry counts bucketed into AO3-standard word length ranges.
+     *
+     * Buckets: <1K, 1K–10K, 10K–50K, 50K–100K, >100K words.
+     * Only entries where the user has actually started the work (hasBeenStarted)
+     * and the work has a known word count are included — consistent with word
+     * count stats elsewhere.
+     *
+     * Bucketing is done in PHP rather than SQL to avoid database-specific CASE
+     * syntax and maintain cross-DB portability.
+     *
+     * The SoftDeleteFilter is disabled so soft-deleted works still contribute.
+     *
+     * @return array{under1k: int, k1_10k: int, k10_50k: int, k50_100k: int, over100k: int}
+     */
+    public function getWordCountDistribution(User $user, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            $qb = $this->createQueryBuilder('re')
+                ->select('w.words')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->andWhere('w.words IS NOT NULL')
+                ->setParameter('user', $user)
+                ->setParameter('started', true);
+
+            $this->applyYearFilter($qb, $year);
+
+            $rows = $qb->getQuery()->getArrayResult();
+
+            $buckets = [
+                'under1k'   => 0,
+                'k1_10k'    => 0,
+                'k10_50k'   => 0,
+                'k50_100k'  => 0,
+                'over100k'  => 0,
+            ];
+
+            foreach ($rows as $row) {
+                $words = (int) $row['words'];
+                if ($words < 1_000) {
+                    $buckets['under1k']++;
+                } elseif ($words < 10_000) {
+                    $buckets['k1_10k']++;
+                } elseif ($words < 50_000) {
+                    $buckets['k10_50k']++;
+                } elseif ($words < 100_000) {
+                    $buckets['k50_100k']++;
+                } else {
+                    $buckets['over100k']++;
+                }
+            }
+
+            return $buckets;
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
      * Counts completed entries (status.countsAsRead = true) per month for the
      * given year. Returns array<int, int> keyed 1–12, zero-filled.
      *
@@ -1509,6 +1579,18 @@ class ReadingEntryRepository extends ServiceEntityRepository
             $qb->innerJoin('re.mainPairing', 'mp_filter')
                 ->andWhere('mp_filter.name LIKE :filter_main_pairing')
                 ->setParameter('filter_main_pairing', '%' . $filterParams['mainPairing'] . '%');
+        }
+
+        // wordsMin / wordsMax: filter by work word count range (used by chart drill-downs).
+        // NULL word counts are naturally excluded by the comparison (NULL >= N is falsy in SQL).
+        if (isset($filterParams['wordsMin']) && $filterParams['wordsMin'] !== '') {
+            $qb->andWhere('w.words >= :filter_words_min')
+                ->setParameter('filter_words_min', (int) $filterParams['wordsMin']);
+        }
+
+        if (isset($filterParams['wordsMax']) && $filterParams['wordsMax'] !== '') {
+            $qb->andWhere('w.words <= :filter_words_max')
+                ->setParameter('filter_words_max', (int) $filterParams['wordsMax']);
         }
 
         // metadata[] array: each key is a metadata type name, each value is the filter string.

@@ -36,6 +36,7 @@ class StatsController extends AbstractController
         $summary = $this->statisticsService->getDashboardSummary($user, $year);
         $trendData = $this->statisticsService->getTrendData($user, $year);
         $ratingDistributions = $this->statisticsService->getRatingDistributions($user, $year);
+        $wordCountDistribution = $this->statisticsService->getWordCountDistribution($user, $year);
         $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
 
         $metadataDistributions = $this->statisticsService->getMetadataDistributions(
@@ -55,6 +56,7 @@ class StatsController extends AbstractController
             'summary' => $summary,
             'trendData' => $trendData,
             'ratingDistributions' => $ratingDistributions,
+            'wordCountDistribution' => $wordCountDistribution,
             'metadataDistributions' => $metadataDistributions,
             'rankingTypes' => $rankingTypes,
             'year' => $year,
@@ -300,14 +302,24 @@ class StatsController extends AbstractController
             $metadataChartUrls[$key] = $urls;
         }
 
+        // Word length distribution — one URL per bucket, boundaries match the repository buckets.
+        $wordCountUrls = [
+            $this->generateUrl('app_reading_entry_list', array_merge(['wordsMax' => 999], $yearScope)),
+            $this->generateUrl('app_reading_entry_list', array_merge(['wordsMin' => 1000,  'wordsMax' => 9999], $yearScope)),
+            $this->generateUrl('app_reading_entry_list', array_merge(['wordsMin' => 10000, 'wordsMax' => 49999], $yearScope)),
+            $this->generateUrl('app_reading_entry_list', array_merge(['wordsMin' => 50000, 'wordsMax' => 99999], $yearScope)),
+            $this->generateUrl('app_reading_entry_list', array_merge(['wordsMin' => 100000], $yearScope)),
+        ];
+
         return [
-            'trend'       => $trendUrls,
-            'status'      => $statusUrls,
-            'rating'      => $ratingUrls,
-            'spice'       => $spiceUrls,
+            'trend'        => $trendUrls,
+            'status'       => $statusUrls,
+            'rating'       => $ratingUrls,
+            'spice'        => $spiceUrls,
             'metaCategory' => $metadataChartUrls['metaCategory'],
             'metaRating'   => $metadataChartUrls['metaRating'],
             'metaWarning'  => $metadataChartUrls['metaWarning'],
+            'wordCount'    => $wordCountUrls,
         ];
     }
 
