@@ -37,6 +37,7 @@ class StatsController extends AbstractController
         $trendData = $this->statisticsService->getTrendData($user, $year);
         $ratingDistributions = $this->statisticsService->getRatingDistributions($user, $year);
         $wordCountDistribution = $this->statisticsService->getWordCountDistribution($user, $year);
+        $readingPace = $this->statisticsService->getReadingPaceStats($user, $year);
         $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
 
         $metadataDistributions = $this->statisticsService->getMetadataDistributions(
@@ -57,6 +58,7 @@ class StatsController extends AbstractController
             'trendData' => $trendData,
             'ratingDistributions' => $ratingDistributions,
             'wordCountDistribution' => $wordCountDistribution,
+            'readingPace' => $readingPace,
             'metadataDistributions' => $metadataDistributions,
             'rankingTypes' => $rankingTypes,
             'year' => $year,

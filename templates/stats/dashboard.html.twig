@@ -31,7 +31,7 @@
 <div class="row g-3 mb-4">
 
     {# Unique works #}
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="card h-100 text-center shadow-sm">
             <div class="card-body py-3">
                 <div class="fs-3 fw-bold text-primary">{{ summary.uniqueWorkCount }}</div>
@@ -41,7 +41,7 @@
     </div>
 
     {# Total words #}
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="card h-100 text-center shadow-sm">
             <div class="card-body py-3">
                 <div class="fs-3 fw-bold text-primary">
@@ -59,7 +59,7 @@
     </div>
 
     {# Average words #}
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="card h-100 text-center shadow-sm">
             <div class="card-body py-3">
                 <div class="fs-3 fw-bold text-primary">
@@ -80,7 +80,7 @@
     </div>
 
     {# Finish rate #}
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="card h-100 text-center shadow-sm">
             <div class="card-body py-3">
                 <div class="fs-3 fw-bold text-primary">{{ summary.finishRate }}%</div>
@@ -90,7 +90,7 @@
     </div>
 
     {# Average rating #}
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="card h-100 text-center shadow-sm">
             <div class="card-body py-3">
                 <div class="fs-3 fw-bold text-primary">
@@ -106,7 +106,7 @@
     </div>
 
     {# Average spice #}
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="card h-100 text-center shadow-sm">
             <div class="card-body py-3">
                 <div class="fs-3 fw-bold text-primary">
@@ -117,6 +117,31 @@
                     {% endif %}
                 </div>
                 <div class="small text-muted mt-1">{{ 'stats.card.avg_spice'|trans }}</div>
+            </div>
+        </div>
+    </div>
+
+    {# Reading pace #}
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">
+                    {% if readingPace.averageDays is not null %}
+                        {{ readingPace.averageDays }}d
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
+                <div class="small text-muted mt-1">
+                    {{ 'stats.card.reading_pace'|trans }}
+                    {% if readingPace.entryCount > 0 %}
+                        <i class="bi bi-info-circle text-muted ms-1"
+                           data-bs-toggle="tooltip"
+                           data-bs-trigger="hover focus click"
+                           data-bs-title="{{ 'stats.card.reading_pace_subtitle'|trans({'%count%': readingPace.entryCount}) }}"
+                           style="cursor:pointer"></i>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

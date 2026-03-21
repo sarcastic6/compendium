@@ -1507,6 +1507,56 @@ class ReadingEntryRepository extends ServiceEntityRepository
     // -------------------------------------------------------------------------
 
     /**
+     * Returns the average reading pace (days from dateStarted to dateFinished)
+     * for completed entries (countsAsRead = true) where both dates are set.
+     *
+     * Date diff is computed in PHP for cross-database portability (SQLite,
+     * MySQL, and PostgreSQL each use different date-diff functions).
+     * Negative diffs (data entry errors where start > finish) are silently
+     * skipped. Same-day reads count as 0 days.
+     *
+     * @return array{averageDays: float|null, entryCount: int}
+     */
+    public function getReadingPaceStats(User $user, ?int $year = null): array
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('re.dateStarted, re.dateFinished')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->andWhere('re.dateStarted IS NOT NULL')
+            ->andWhere('re.dateFinished IS NOT NULL')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true);
+
+        $this->applyYearFilter($qb, $year);
+
+        $rows = $qb->getQuery()->getArrayResult();
+
+        $totalDays = 0;
+        $count = 0;
+        foreach ($rows as $row) {
+            /** @var \DateTimeInterface $start */
+            $start = $row['dateStarted'];
+            /** @var \DateTimeInterface $finish */
+            $finish = $row['dateFinished'];
+            $diff = (int) $finish->diff($start)->days;
+            // diff()->days is always non-negative; check the sign via invert flag
+            if ($start->diff($finish)->invert === 1) {
+                // start is after finish — data entry error, skip
+                continue;
+            }
+            $totalDays += $diff;
+            $count++;
+        }
+
+        return [
+            'averageDays' => $count > 0 ? round($totalDays / $count, 1) : null,
+            'entryCount'  => $count,
+        ];
+    }
+
+    /**
      * Applies a year filter on dateFinished to a QueryBuilder.
      * When $year is null this is a no-op (all-time view).
      */

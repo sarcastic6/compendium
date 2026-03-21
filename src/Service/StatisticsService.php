@@ -95,6 +95,16 @@ class StatisticsService
     }
 
     /**
+     * Returns average reading pace (days start→finish) for completed entries.
+     *
+     * @return array{averageDays: float|null, entryCount: int}
+     */
+    public function getReadingPaceStats(User $user, ?int $year): array
+    {
+        return $this->readingEntryRepository->getReadingPaceStats($user, $year);
+    }
+
+    /**
      * Returns review and spice star distributions for the current user.
      *
      * @return array{review: array<int, int>, spice: array<int, int>}

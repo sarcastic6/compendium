@@ -244,6 +244,8 @@ stats:
         finish_rate: 'Finish Rate'
         avg_rating: 'Avg. Review'
         avg_spice: 'Avg. Spice'
+        reading_pace: 'Avg. Pace'
+        reading_pace_subtitle: 'Across %count% reads with start dates'
         no_rating: 'No ratings'
         favorites: 'Favorites'
         by_status: 'By Status'
