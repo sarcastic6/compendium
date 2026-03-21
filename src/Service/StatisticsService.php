@@ -98,6 +98,30 @@ class StatisticsService
     }
 
     /**
+     * Returns entry count distributions by metadata type for use in donut charts.
+     *
+     * Each type name maps to an array<string, int> (metadata name → count), sorted
+     * descending by count. Types with no entries return an empty array.
+     *
+     * @param string[] $typeNames
+     * @return array<string, array<string, int>>
+     */
+    public function getMetadataDistributions(User $user, array $typeNames, ?int $year): array
+    {
+        $result = [];
+        foreach ($typeNames as $typeName) {
+            $rows = $this->readingEntryRepository->getTopMetadata($user, $typeName, 100, $year);
+            $dist = [];
+            foreach ($rows as $row) {
+                $dist[$row['name']] = $row['count'];
+            }
+            $result[$typeName] = $dist;
+        }
+
+        return $result;
+    }
+
+    /**
      * Pass-through to repository for top-N metadata by type.
      *
      * @return array<array{name: string, count: int}>

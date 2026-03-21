@@ -275,6 +275,9 @@ stats:
         type_breakdown: 'Type Breakdown'
         rating_distribution: 'Review Distribution'
         spice_distribution: 'Spice Distribution'
+        by_category: 'By Category'
+        by_rating: 'By Rating'
+        by_warning: 'By Warning'
     modal:
         tied_at_first: 'Tied #1 — %type%'
     rankings:

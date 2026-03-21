@@ -38,7 +38,11 @@ class StatsController extends AbstractController
         $ratingDistributions = $this->statisticsService->getRatingDistributions($user, $year);
         $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
 
-        $chartUrls = $this->buildChartUrls($summary, $trendData, $ratingDistributions, $year);
+        $metadataDistributions = $this->statisticsService->getMetadataDistributions(
+            $user, ['Category', 'Rating', 'Warning'], $year,
+        );
+
+        $chartUrls = $this->buildChartUrls($summary, $trendData, $ratingDistributions, $metadataDistributions, $year);
 
         $topMetadata = [
             'rating'   => $this->statisticsService->getTopMetadataSpotlight($user, 'Rating', $year),
@@ -51,6 +55,7 @@ class StatsController extends AbstractController
             'summary' => $summary,
             'trendData' => $trendData,
             'ratingDistributions' => $ratingDistributions,
+            'metadataDistributions' => $metadataDistributions,
             'rankingTypes' => $rankingTypes,
             'year' => $year,
             'chartUrls' => $chartUrls,
@@ -212,12 +217,14 @@ class StatsController extends AbstractController
      * @param array<string, mixed>     $summary
      * @param array<int, int>          $trendData
      * @param array{review: array<int,int>, spice: array<int,int>} $ratingDistributions
-     * @return array{trend: string[], status: array<string|null>, rating: string[], spice: string[]}
+     * @param array<string, array<string, int>> $metadataDistributions
+     * @return array{trend: string[], status: array<string|null>, rating: string[], spice: string[], metaCategory: string[], metaRating: string[], metaWarning: string[]}
      */
     private function buildChartUrls(
         array $summary,
         array $trendData,
         array $ratingDistributions,
+        array $metadataDistributions,
         ?int $year,
     ): array {
         $yearScope = $year !== null
@@ -269,11 +276,34 @@ class StatsController extends AbstractController
             $spiceUrls[] = $this->generateUrl('app_reading_entry_list', array_merge(['spiceExact' => $spice], $yearScope));
         }
 
+        // Metadata donut charts: Category, Rating (AO3 content rating), Warning.
+        // Each slice links to the reading list filtered by that metadata value.
+        // URL format: metadata[TypeName]=Value (matches the list's metadata[] filter).
+        $metaKeyMap = [
+            'Category' => 'metaCategory',
+            'Rating'   => 'metaRating',
+            'Warning'  => 'metaWarning',
+        ];
+        $metadataChartUrls = [];
+        foreach ($metaKeyMap as $typeName => $key) {
+            $urls = [];
+            foreach (array_keys($metadataDistributions[$typeName] ?? []) as $name) {
+                $urls[] = $this->generateUrl(
+                    'app_reading_entry_list',
+                    array_merge(['metadata' => [$typeName => $name]], $yearScope),
+                );
+            }
+            $metadataChartUrls[$key] = $urls;
+        }
+
         return [
-            'trend' => $trendUrls,
-            'status' => $statusUrls,
-            'rating' => $ratingUrls,
-            'spice' => $spiceUrls,
+            'trend'       => $trendUrls,
+            'status'      => $statusUrls,
+            'rating'      => $ratingUrls,
+            'spice'       => $spiceUrls,
+            'metaCategory' => $metadataChartUrls['metaCategory'],
+            'metaRating'   => $metadataChartUrls['metaRating'],
+            'metaWarning'  => $metadataChartUrls['metaWarning'],
         ];
     }
 
