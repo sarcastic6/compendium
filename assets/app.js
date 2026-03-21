@@ -12,3 +12,9 @@ import './stimulus_bootstrap.js';
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new Tooltip(el));
 });
+
+// When a Bootstrap tab becomes visible, trigger a window resize so that
+// Chart.js (responsive: true) redraws any charts that were hidden at init time.
+document.addEventListener('shown.bs.tab', () => {
+    window.dispatchEvent(new Event('resize'));
+});

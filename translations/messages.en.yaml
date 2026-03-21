@@ -230,6 +230,8 @@ stats:
     dashboard:
         heading: 'Reading Statistics'
         empty: 'No reading entries yet. Start logging your reads!'
+        tab_overview: 'Overview'
+        tab_breakdown: 'Breakdown'
     filter:
         all_time: 'All Time'
         finished_in: 'Finished in %year%'

@@ -149,67 +149,335 @@
 
 </div>{# end summary cards #}
 
-{# ── Trend chart ─────────────────────────────────────────────────────────── #}
-<div class="row g-3 mb-4">
-    <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header">
-                {{ year ? 'stats.chart.monthly_trend'|trans : 'stats.chart.yearly_trend'|trans }}
-            </div>
-            <div class="card-body">
-                {% if trendData is empty %}
-                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
-                {% else %}
-                    <canvas id="trend-chart"
-                        data-controller="chart"
-                        data-chart-type-value="line"
-                        data-chart-labels-value="{{ trendData|keys|map(k => year ? ('stats.month.' ~ k)|trans : k)|json_encode }}"
-                        data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': trendData|values, 'backgroundColor': 'rgba(13,110,253,0.2)', 'borderColor': 'rgba(13,110,253,1)', 'fill': true, 'tension': 0.3}]|json_encode }}"
-                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}, 'aspectRatio': 4}|json_encode }}"
-                        data-chart-urls-value="{{ chartUrls.trend|json_encode }}"
-                    ></canvas>
-                {% endif %}
+{# ── Tabs ─────────────────────────────────────────────────────────────────── #}
+<ul class="nav nav-tabs" id="stats-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-overview-btn"
+                data-bs-toggle="tab" data-bs-target="#tab-overview"
+                type="button" role="tab">
+            {{ 'stats.dashboard.tab_overview'|trans }}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-breakdown-btn"
+                data-bs-toggle="tab" data-bs-target="#tab-breakdown"
+                type="button" role="tab">
+            {{ 'stats.dashboard.tab_breakdown'|trans }}
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content border border-top-0 rounded-bottom p-3 mb-4">
+
+    {# ── Overview tab: trend + top reads + rankings ───────────────────────── #}
+    <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
+
+        {# Trend chart #}
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        {{ year ? 'stats.chart.monthly_trend'|trans : 'stats.chart.yearly_trend'|trans }}
+                    </div>
+                    <div class="card-body">
+                        {% if trendData is empty %}
+                            <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                        {% else %}
+                            <canvas id="trend-chart"
+                                data-controller="chart"
+                                data-chart-type-value="line"
+                                data-chart-labels-value="{{ trendData|keys|map(k => year ? ('stats.month.' ~ k)|trans : k)|json_encode }}"
+                                data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': trendData|values, 'backgroundColor': 'rgba(13,110,253,0.2)', 'borderColor': 'rgba(13,110,253,1)', 'fill': true, 'tension': 0.3}]|json_encode }}"
+                                data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}, 'aspectRatio': 4}|json_encode }}"
+                                data-chart-urls-value="{{ chartUrls.trend|json_encode }}"
+                            ></canvas>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-{# ── Top Reads spotlight — full width, 2-column grid ─────────────────────── #}
-<div class="row g-3 mb-4">
-    <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header">{{ 'stats.card.top_reads'|trans }}</div>
-            <div class="card-body">
-                <div class="row g-3">
-                    {% for key, spotlight in topMetadata %}
-                        <div class="col-md-6">
-                            <div class="text-muted small mb-1">{{ ('stats.card.top_' ~ key)|trans }}</div>
-                            <div class="d-flex align-items-baseline gap-1">
-                                {% if spotlight %}
-                                    <span>{{ spotlight.name }}</span>
-                                    <span class="text-muted small">· {{ spotlight.count }} {{ spotlight.count == 1 ? 'read' : 'reads' }}</span>
-                                    {% if spotlight.ties is not empty %}
-                                        <button type="button"
-                                                class="btn btn-link btn-sm p-0"
-                                                style="min-height: 0; line-height: inherit;"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modal-top-{{ key }}">
-                                            +{{ spotlight.ties|length }}
-                                        </button>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </div>
+        {# Top Reads spotlight — full width, 2-column grid #}
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">{{ 'stats.card.top_reads'|trans }}</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            {% for key, spotlight in topMetadata %}
+                                <div class="col-md-6">
+                                    <div class="text-muted small mb-1">{{ ('stats.card.top_' ~ key)|trans }}</div>
+                                    <div class="d-flex align-items-baseline gap-1">
+                                        {% if spotlight %}
+                                            <span>{{ spotlight.name }}</span>
+                                            <span class="text-muted small">· {{ spotlight.count }} {{ spotlight.count == 1 ? 'read' : 'reads' }}</span>
+                                            {% if spotlight.ties is not empty %}
+                                                <button type="button"
+                                                        class="btn btn-link btn-sm p-0"
+                                                        style="min-height: 0; line-height: inherit;"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modal-top-{{ key }}">
+                                                    +{{ spotlight.ties|length }}
+                                                </button>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Rankings links #}
+        <div class="card shadow-sm">
+            <div class="card-header">{{ 'stats.rankings.available'|trans }}</div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ path('app_stats_rankings_status', {'year': year}) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        {{ 'stats.rankings.type_status'|trans }}
+                    </a>
+                    <a href="{{ path('app_stats_rankings_language', {'year': year}) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        {{ 'stats.rankings.type_language'|trans }}
+                    </a>
+                    <a href="{{ path('app_stats_rankings_main_pairing', {'year': year}) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        {{ 'stats.rankings.type_main_pairing'|trans }}
+                    </a>
+                    <a href="{{ path('app_stats_rankings_author', {'year': year}) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        {{ 'stats.rankings.type_author'|trans }}
+                    </a>
+                    {% for typeName in rankingTypes %}
+                        {% if typeName != 'Author' %}
+                            <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
+                               class="btn btn-outline-secondary btn-sm">
+                                {{ typeName }}
+                            </a>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>
         </div>
-    </div>
-</div>{# end top reads #}
 
-{# Tie modals — one per spotlight row, only rendered when ties exist #}
+    </div>{# end tab-overview #}
+
+    {# ── Breakdown tab: donuts + word length + review/spice ───────────────── #}
+    <div class="tab-pane fade" id="tab-breakdown" role="tabpanel">
+
+        {# Donut row 1: Category + Rating #}
+        <div class="row g-3 mb-4">
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">{{ 'stats.chart.by_category'|trans }}</div>
+                    <div class="card-body">
+                        {% if metadataDistributions['Category'] is empty %}
+                            <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                        {% else %}
+                            <div class="row">
+                                <div class="col-5 d-flex align-items-center justify-content-center">
+                                    <canvas
+                                        data-controller="chart"
+                                        data-chart-type-value="doughnut"
+                                        data-chart-labels-value="{{ metadataDistributions['Category']|keys|json_encode }}"
+                                        data-chart-datasets-value="{{ [{'data': metadataDistributions['Category']|values}]|json_encode }}"
+                                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
+                                        data-chart-urls-value="{{ chartUrls.metaCategory|json_encode }}"
+                                    ></canvas>
+                                </div>
+                                <div class="col-7">
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                        {% for name, count in metadataDistributions['Category'] %}
+                                            <tr><td>{{ name }}</td><td class="text-end fw-semibold">{{ count }}</td></tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">{{ 'stats.chart.by_rating'|trans }}</div>
+                    <div class="card-body">
+                        {% if metadataDistributions['Rating'] is empty %}
+                            <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                        {% else %}
+                            <div class="row">
+                                <div class="col-5 d-flex align-items-center justify-content-center">
+                                    <canvas
+                                        data-controller="chart"
+                                        data-chart-type-value="doughnut"
+                                        data-chart-labels-value="{{ metadataDistributions['Rating']|keys|json_encode }}"
+                                        data-chart-datasets-value="{{ [{'data': metadataDistributions['Rating']|values}]|json_encode }}"
+                                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
+                                        data-chart-urls-value="{{ chartUrls.metaRating|json_encode }}"
+                                    ></canvas>
+                                </div>
+                                <div class="col-7">
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                        {% for name, count in metadataDistributions['Rating'] %}
+                                            <tr><td>{{ name }}</td><td class="text-end fw-semibold">{{ count }}</td></tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>{# end donut row 1 #}
+
+        {# Donut row 2: Warning + Status #}
+        <div class="row g-3 mb-4">
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">{{ 'stats.chart.by_warning'|trans }}</div>
+                    <div class="card-body">
+                        {% if metadataDistributions['Warning'] is empty %}
+                            <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                        {% else %}
+                            <div class="row">
+                                <div class="col-5 d-flex align-items-center justify-content-center">
+                                    <canvas
+                                        data-controller="chart"
+                                        data-chart-type-value="doughnut"
+                                        data-chart-labels-value="{{ metadataDistributions['Warning']|keys|json_encode }}"
+                                        data-chart-datasets-value="{{ [{'data': metadataDistributions['Warning']|values}]|json_encode }}"
+                                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
+                                        data-chart-urls-value="{{ chartUrls.metaWarning|json_encode }}"
+                                    ></canvas>
+                                </div>
+                                <div class="col-7">
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                        {% for name, count in metadataDistributions['Warning'] %}
+                                            <tr><td>{{ name }}</td><td class="text-end fw-semibold">{{ count }}</td></tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">{{ 'stats.card.by_status'|trans }}</div>
+                    <div class="card-body">
+                        {% if summary.byStatus is empty %}
+                            <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                        {% else %}
+                            <div class="row">
+                                <div class="col-5 d-flex align-items-center justify-content-center">
+                                    <canvas
+                                        data-controller="chart"
+                                        data-chart-type-value="doughnut"
+                                        data-chart-labels-value="{{ summary.byStatus|keys|json_encode }}"
+                                        data-chart-datasets-value="{{ [{'data': summary.byStatus|values}]|json_encode }}"
+                                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
+                                        data-chart-urls-value="{{ chartUrls.status|json_encode }}"
+                                    ></canvas>
+                                </div>
+                                <div class="col-7">
+                                    <table class="table table-sm mb-0">
+                                        <tbody>
+                                        {% for status, count in summary.byStatus %}
+                                            <tr><td>{{ status }}</td><td class="text-end fw-semibold">{{ count }}</td></tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>{# end donut row 2 #}
+
+        {# Work length distribution #}
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">{{ 'stats.chart.word_length_distribution'|trans }}</div>
+                    <div class="card-body">
+                        {% set wcdTotal = wordCountDistribution|reduce((carry, v) => carry + v, 0) %}
+                        {% if wcdTotal == 0 %}
+                            <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
+                        {% else %}
+                            <canvas
+                                data-controller="chart"
+                                data-chart-type-value="bar"
+                                data-chart-labels-value="{{ ['< 1K', '1K–10K', '10K–50K', '50K–100K', '> 100K']|json_encode }}"
+                                data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': wordCountDistribution|values, 'backgroundColor': 'rgba(13,110,253,0.6)'}]|json_encode }}"
+                                data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}, 'aspectRatio': 4}|json_encode }}"
+                                data-chart-urls-value="{{ chartUrls.wordCount|json_encode }}"
+                            ></canvas>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Review + spice distributions #}
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">{{ 'stats.chart.rating_distribution'|trans }}</div>
+                    <div class="card-body">
+                        <canvas
+                            data-controller="chart"
+                            data-chart-type-value="bar"
+                            data-chart-labels-value="{{ ratingDistributions.review|keys|map(k => '⭐' ~ k)|json_encode }}"
+                            data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': ratingDistributions.review|values, 'backgroundColor': 'rgba(255,193,7,0.8)'}]|json_encode }}"
+                            data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}}|json_encode }}"
+                            data-chart-urls-value="{{ chartUrls.rating|json_encode }}"
+                        ></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header">{{ 'stats.chart.spice_distribution'|trans }}</div>
+                    <div class="card-body">
+                        <canvas
+                            data-controller="chart"
+                            data-chart-type-value="bar"
+                            data-chart-labels-value="{{ ratingDistributions.spice|keys|map(k => k == 0 ? '🚫' : '🌶️' ~ k)|json_encode }}"
+                            data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': ratingDistributions.spice|values, 'backgroundColor': 'rgba(220,53,69,0.7)'}]|json_encode }}"
+                            data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}}|json_encode }}"
+                            data-chart-urls-value="{{ chartUrls.spice|json_encode }}"
+                        ></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>{# end review/spice distributions #}
+
+    </div>{# end tab-breakdown #}
+
+</div>{# end tab-content #}
+
+{# Tie modals — outside tab-content so they aren't clipped by overflow #}
 {% for key, spotlight in topMetadata %}
     {% if spotlight and spotlight.ties is not empty %}
         <div class="modal fade" id="modal-top-{{ key }}" tabindex="-1"
@@ -236,261 +504,6 @@
         </div>
     {% endif %}
 {% endfor %}
-
-{# ── Donut charts — row 1: Category + Rating ─────────────────────────────── #}
-<div class="row g-3 mb-4">
-
-    {# Category breakdown #}
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header">{{ 'stats.chart.by_category'|trans }}</div>
-            <div class="card-body">
-                {% if metadataDistributions['Category'] is empty %}
-                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
-                {% else %}
-                    <div class="row">
-                        <div class="col-5 d-flex align-items-center justify-content-center">
-                            <canvas
-                                data-controller="chart"
-                                data-chart-type-value="doughnut"
-                                data-chart-labels-value="{{ metadataDistributions['Category']|keys|json_encode }}"
-                                data-chart-datasets-value="{{ [{'data': metadataDistributions['Category']|values}]|json_encode }}"
-                                data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
-                                data-chart-urls-value="{{ chartUrls.metaCategory|json_encode }}"
-                            ></canvas>
-                        </div>
-                        <div class="col-7">
-                            <table class="table table-sm mb-0">
-                                <tbody>
-                                {% for name, count in metadataDistributions['Category'] %}
-                                    <tr>
-                                        <td>{{ name }}</td>
-                                        <td class="text-end fw-semibold">{{ count }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    {# Rating (AO3 content rating) breakdown #}
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header">{{ 'stats.chart.by_rating'|trans }}</div>
-            <div class="card-body">
-                {% if metadataDistributions['Rating'] is empty %}
-                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
-                {% else %}
-                    <div class="row">
-                        <div class="col-5 d-flex align-items-center justify-content-center">
-                            <canvas
-                                data-controller="chart"
-                                data-chart-type-value="doughnut"
-                                data-chart-labels-value="{{ metadataDistributions['Rating']|keys|json_encode }}"
-                                data-chart-datasets-value="{{ [{'data': metadataDistributions['Rating']|values}]|json_encode }}"
-                                data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
-                                data-chart-urls-value="{{ chartUrls.metaRating|json_encode }}"
-                            ></canvas>
-                        </div>
-                        <div class="col-7">
-                            <table class="table table-sm mb-0">
-                                <tbody>
-                                {% for name, count in metadataDistributions['Rating'] %}
-                                    <tr>
-                                        <td>{{ name }}</td>
-                                        <td class="text-end fw-semibold">{{ count }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-</div>{# end donut row 1 #}
-
-{# ── Donut charts — row 2: Warning + Status ───────────────────────────────── #}
-<div class="row g-3 mb-4">
-
-    {# Warning breakdown #}
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header">{{ 'stats.chart.by_warning'|trans }}</div>
-            <div class="card-body">
-                {% if metadataDistributions['Warning'] is empty %}
-                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
-                {% else %}
-                    <div class="row">
-                        <div class="col-5 d-flex align-items-center justify-content-center">
-                            <canvas
-                                data-controller="chart"
-                                data-chart-type-value="doughnut"
-                                data-chart-labels-value="{{ metadataDistributions['Warning']|keys|json_encode }}"
-                                data-chart-datasets-value="{{ [{'data': metadataDistributions['Warning']|values}]|json_encode }}"
-                                data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
-                                data-chart-urls-value="{{ chartUrls.metaWarning|json_encode }}"
-                            ></canvas>
-                        </div>
-                        <div class="col-7">
-                            <table class="table table-sm mb-0">
-                                <tbody>
-                                {% for name, count in metadataDistributions['Warning'] %}
-                                    <tr>
-                                        <td>{{ name }}</td>
-                                        <td class="text-end fw-semibold">{{ count }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    {# Status breakdown #}
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header">{{ 'stats.card.by_status'|trans }}</div>
-            <div class="card-body">
-                {% if summary.byStatus is empty %}
-                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
-                {% else %}
-                    <div class="row">
-                        <div class="col-5 d-flex align-items-center justify-content-center">
-                            <canvas
-                                data-controller="chart"
-                                data-chart-type-value="doughnut"
-                                data-chart-labels-value="{{ summary.byStatus|keys|json_encode }}"
-                                data-chart-datasets-value="{{ [{'data': summary.byStatus|values}]|json_encode }}"
-                                data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}}|json_encode }}"
-                                data-chart-urls-value="{{ chartUrls.status|json_encode }}"
-                            ></canvas>
-                        </div>
-                        <div class="col-7">
-                            <table class="table table-sm mb-0">
-                                <tbody>
-                                {% for status, count in summary.byStatus %}
-                                    <tr>
-                                        <td>{{ status }}</td>
-                                        <td class="text-end fw-semibold">{{ count }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-</div>{# end donut row 2 #}
-
-{# ── Work length distribution ─────────────────────────────────────────────── #}
-<div class="row g-3 mb-4">
-    <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header">{{ 'stats.chart.word_length_distribution'|trans }}</div>
-            <div class="card-body">
-                {% set wcdTotal = wordCountDistribution|reduce((carry, v) => carry + v, 0) %}
-                {% if wcdTotal == 0 %}
-                    <p class="text-muted mb-0">{{ 'stats.card.no_data'|trans }}</p>
-                {% else %}
-                    <canvas
-                        data-controller="chart"
-                        data-chart-type-value="bar"
-                        data-chart-labels-value="{{ ['< 1K', '1K–10K', '10K–50K', '50K–100K', '> 100K']|json_encode }}"
-                        data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': wordCountDistribution|values, 'backgroundColor': 'rgba(13,110,253,0.6)'}]|json_encode }}"
-                        data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}, 'aspectRatio': 4}|json_encode }}"
-                        data-chart-urls-value="{{ chartUrls.wordCount|json_encode }}"
-                    ></canvas>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>{# end word length distribution #}
-
-{# ── Rating distributions ────────────────────────────────────────────────── #}
-<div class="row g-3 mb-4">
-
-    {# Review stars distribution #}
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header">{{ 'stats.chart.rating_distribution'|trans }}</div>
-            <div class="card-body">
-                <canvas
-                    data-controller="chart"
-                    data-chart-type-value="bar"
-                    data-chart-labels-value="{{ ratingDistributions.review|keys|map(k => '⭐' ~ k)|json_encode }}"
-                    data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': ratingDistributions.review|values, 'backgroundColor': 'rgba(255,193,7,0.8)'}]|json_encode }}"
-                    data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}}|json_encode }}"
-                    data-chart-urls-value="{{ chartUrls.rating|json_encode }}"
-                ></canvas>
-            </div>
-        </div>
-    </div>
-
-    {# Spice stars distribution #}
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-header">{{ 'stats.chart.spice_distribution'|trans }}</div>
-            <div class="card-body">
-                <canvas
-                    data-controller="chart"
-                    data-chart-type-value="bar"
-                    data-chart-labels-value="{{ ratingDistributions.spice|keys|map(k => k == 0 ? '🚫' : '🌶️' ~ k)|json_encode }}"
-                    data-chart-datasets-value="{{ [{'label': 'stats.chart.entries'|trans, 'data': ratingDistributions.spice|values, 'backgroundColor': 'rgba(220,53,69,0.7)'}]|json_encode }}"
-                    data-chart-options-value="{{ {'plugins': {'legend': {'display': false}}, 'scales': {'y': {'ticks': {'precision': 0}}}}|json_encode }}"
-                    data-chart-urls-value="{{ chartUrls.spice|json_encode }}"
-                ></canvas>
-            </div>
-        </div>
-    </div>
-
-</div>{# end rating distributions #}
-
-{# ── Rankings links ──────────────────────────────────────────────────────── #}
-<div class="card shadow-sm mb-4">
-    <div class="card-header">{{ 'stats.rankings.available'|trans }}</div>
-    <div class="card-body">
-        <div class="d-flex flex-wrap gap-2">
-            <a href="{{ path('app_stats_rankings_status', {'year': year}) }}"
-               class="btn btn-outline-secondary btn-sm">
-                {{ 'stats.rankings.type_status'|trans }}
-            </a>
-            <a href="{{ path('app_stats_rankings_language', {'year': year}) }}"
-               class="btn btn-outline-secondary btn-sm">
-                {{ 'stats.rankings.type_language'|trans }}
-            </a>
-            <a href="{{ path('app_stats_rankings_main_pairing', {'year': year}) }}"
-               class="btn btn-outline-secondary btn-sm">
-                {{ 'stats.rankings.type_main_pairing'|trans }}
-            </a>
-            <a href="{{ path('app_stats_rankings_author', {'year': year}) }}"
-               class="btn btn-outline-secondary btn-sm">
-                {{ 'stats.rankings.type_author'|trans }}
-            </a>
-            {% for typeName in rankingTypes %}
-                {# Author has a dedicated page — skip it here to avoid a duplicate button #}
-                {% if typeName != 'Author' %}
-                    <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
-                       class="btn btn-outline-secondary btn-sm">
-                        {{ typeName }}
-                    </a>
-                {% endif %}
-            {% endfor %}
-        </div>
-    </div>
-</div>
 
 {% endif %}{# end non-empty state #}
 {% endblock %}
