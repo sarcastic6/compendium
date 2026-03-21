@@ -387,6 +387,24 @@
                                 <span class="badge {% if entry.status.countsAsRead %}bg-success{% else %}bg-secondary{% endif %}">
                                     {{ entry.status.name }}
                                 </span>
+                                {% if not entry.status.countsAsRead and entry.lastReadChapter %}
+                                    {% if entry.work.chapters %}
+                                        {% set pct = (entry.lastReadChapter / entry.work.chapters * 100)|round %}
+                                        {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                                        <div class="text-muted mt-1" style="font-size: 0.72rem; white-space: nowrap;">
+                                            ch. {{ entry.lastReadChapter }} / {{ entry.work.chapters }}
+                                        </div>
+                                        <div class="progress mt-1" style="height: 3px; width: 80px;">
+                                            <div class="progress-bar" role="progressbar"
+                                                 style="width: {{ pct }}%"
+                                                 aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                                            ch. {{ entry.lastReadChapter }}
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
                             </td>
                             <td data-label="{{ 'reading.field.date_finished'|trans }}">
                                 {{ entry.dateFinished ? entry.dateFinished|date('Y-m-d') : '—' }}
