@@ -109,6 +109,20 @@
                 <i class="bi bi-x" aria-hidden="true"></i>
             </a>
         {% endif %}
+        {% if filters.wordsMin %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'wordsMin': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.words_min'|trans }}: {{ filters.wordsMin|number_format }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.wordsMax %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'wordsMax': ''})) }}"
+               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+                {{ 'reading.filter.words_max'|trans }}: {{ filters.wordsMax|number_format }}
+                <i class="bi bi-x" aria-hidden="true"></i>
+            </a>
+        {% endif %}
         {% if filters.type %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'type': ''})) }}"
                class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
@@ -179,26 +193,27 @@
                 </select>
             </div>
         </div>
-        {# Row 2: more filters #}
+        {# Row 2: quantitative/range filters #}
         <div class="row g-2 align-items-end mt-1">
             <div class="col-md-2">
-                <label for="filter-type" class="form-label form-label-sm">{{ 'reading.filter.type'|trans }}</label>
-                <select id="filter-type" name="type" class="form-select form-select-sm">
-                    <option value="">{{ 'reading.filter.any_type'|trans }}</option>
-                    <option value="Book" {% if filters.type == 'Book' %}selected{% endif %}>{{ 'reading.filter.type_book'|trans }}</option>
-                    <option value="Fanfiction" {% if filters.type == 'Fanfiction' %}selected{% endif %}>{{ 'reading.filter.type_fanfiction'|trans }}</option>
-                </select>
+                <label for="filter-date-from" class="form-label form-label-sm">{{ 'reading.filter.date_from'|trans }}</label>
+                <input type="date" id="filter-date-from" name="dateFrom" class="form-control form-control-sm"
+                       value="{{ filters.dateFrom }}">
             </div>
             <div class="col-md-2">
-                <label for="filter-language" class="form-label form-label-sm">{{ 'reading.filter.language'|trans }}</label>
-                <select id="filter-language" name="language" class="form-select form-select-sm">
-                    <option value="">{{ 'reading.filter.any_language'|trans }}</option>
-                    {% for language in languages %}
-                        <option value="{{ language.name }}" {% if filters.language == language.name %}selected{% endif %}>
-                            {{ language.name }}
-                        </option>
-                    {% endfor %}
-                </select>
+                <label for="filter-date-to" class="form-label form-label-sm">{{ 'reading.filter.date_to'|trans }}</label>
+                <input type="date" id="filter-date-to" name="dateTo" class="form-control form-control-sm"
+                       value="{{ filters.dateTo }}">
+            </div>
+            <div class="col-md-2">
+                <label for="filter-words-min" class="form-label form-label-sm">{{ 'reading.filter.words_min'|trans }}</label>
+                <input type="number" id="filter-words-min" name="wordsMin" class="form-control form-control-sm"
+                       min="0" step="1000" value="{{ filters.wordsMin }}">
+            </div>
+            <div class="col-md-2">
+                <label for="filter-words-max" class="form-label form-label-sm">{{ 'reading.filter.words_max'|trans }}</label>
+                <input type="number" id="filter-words-max" name="wordsMax" class="form-control form-control-sm"
+                       min="0" step="1000" value="{{ filters.wordsMax }}">
             </div>
             <div class="col-md-2">
                 <label for="filter-rating" class="form-label form-label-sm">{{ 'reading.filter.rating'|trans }}</label>
@@ -223,80 +238,76 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
-                <label for="filter-date-from" class="form-label form-label-sm">{{ 'reading.filter.date_from'|trans }}</label>
-                <input type="date" id="filter-date-from" name="dateFrom" class="form-control form-control-sm"
-                       value="{{ filters.dateFrom }}">
-            </div>
-            <div class="col-md-2">
-                <label for="filter-date-to" class="form-label form-label-sm">{{ 'reading.filter.date_to'|trans }}</label>
-                <input type="date" id="filter-date-to" name="dateTo" class="form-control form-control-sm"
-                       value="{{ filters.dateTo }}">
-            </div>
         </div>
-        {# Row 3: dynamic metadata type text inputs — one per type in the DB #}
-        {% if metadataTypes is not empty %}
-            <div class="row g-2 align-items-end mt-1">
-                {% for metadataType in metadataTypes %}
-                {% if metadataType.name != 'Author' %}
-                    <div class="col-md-3">
+        {# Row 3: categorical filters — type, language, then all metadata types (Author excluded) #}
+        <div class="row g-2 align-items-end mt-1">
+            <div class="col-md-2">
+                <label for="filter-type" class="form-label form-label-sm">{{ 'reading.filter.type'|trans }}</label>
+                <select id="filter-type" name="type" class="form-select form-select-sm">
+                    <option value="">{{ 'reading.filter.any_type'|trans }}</option>
+                    <option value="Book" {% if filters.type == 'Book' %}selected{% endif %}>{{ 'reading.filter.type_book'|trans }}</option>
+                    <option value="Fanfiction" {% if filters.type == 'Fanfiction' %}selected{% endif %}>{{ 'reading.filter.type_fanfiction'|trans }}</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="filter-language" class="form-label form-label-sm">{{ 'reading.filter.language'|trans }}</label>
+                <select id="filter-language" name="language" class="form-select form-select-sm">
+                    <option value="">{{ 'reading.filter.any_language'|trans }}</option>
+                    {% for language in languages %}
+                        <option value="{{ language.name }}" {% if filters.language == language.name %}selected{% endif %}>
+                            {{ language.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {# Dropdown metadata types only (e.g. Rating, Warning, Category) #}
+            {% for metadataType in metadataTypes %}
+                {% if metadataType.name != 'Author' and metadataType.showAsDropdown and metadataDropdownValues[metadataType.name] is defined %}
+                    <div class="col-md-2">
                         <label for="filter-meta-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
-                        {% if metadataType.showAsDropdown and metadataDropdownValues[metadataType.name] is defined %}
-                            <select id="filter-meta-{{ loop.index }}"
-                                    name="metadata[{{ metadataType.name }}]"
-                                    class="form-select form-select-sm">
-                                <option value="">Any {{ metadataType.name|lower }}</option>
-                                {% for value in metadataDropdownValues[metadataType.name] %}
-                                    <option value="{{ value }}" {% if filters.metadata[metadataType.name] ?? '' == value %}selected{% endif %}>
-                                        {{ value }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        {% else %}
-                            <input type="text" id="filter-meta-{{ loop.index }}"
-                                   name="metadata[{{ metadataType.name }}]"
-                                   class="form-control form-control-sm"
-                                   value="{{ filters.metadata[metadataType.name] ?? '' }}">
-                        {% endif %}
+                        <select id="filter-meta-{{ loop.index }}"
+                                name="metadata[{{ metadataType.name }}]"
+                                class="form-select form-select-sm">
+                            <option value="">{{ 'reading.filter.any'|trans }} {{ metadataType.name|lower }}</option>
+                            {% for value in metadataDropdownValues[metadataType.name] %}
+                                <option value="{{ value }}" {% if filters.metadata[metadataType.name] ?? '' == value %}selected{% endif %}>
+                                    {{ value }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
                 {% endif %}
-                {% endfor %}
-                <div class="col-md-2">
-                    <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" id="filter-starred" name="starred" value="1"
-                               {% if filters.starred == '1' %}checked{% endif %}>
-                        <label class="form-check-label" for="filter-starred">
-                            {{ 'reading.filter.starred'|trans }}
-                        </label>
+            {% endfor %}
+        </div>
+        {# Row 4: free-text metadata filters (e.g. Fandom, Character, Relationships, Tag) + Favorites + Apply #}
+        <div class="row g-2 align-items-end mt-1">
+            {% for metadataType in metadataTypes %}
+                {% if metadataType.name != 'Author' and not metadataType.showAsDropdown %}
+                    <div class="col-md-2">
+                        <label for="filter-meta-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
+                        <input type="text" id="filter-meta-{{ loop.index }}"
+                               name="metadata[{{ metadataType.name }}]"
+                               class="form-control form-control-sm"
+                               value="{{ filters.metadata[metadataType.name] ?? '' }}">
                     </div>
-                </div>
-                <div class="col-md-2 ms-auto">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-search" aria-hidden="true"></i>
-                        {{ 'reading.filter.apply'|trans }}
-                    </button>
+                {% endif %}
+            {% endfor %}
+            <div class="col-auto align-self-end">
+                <div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" id="filter-starred" name="starred" value="1"
+                           {% if filters.starred == '1' %}checked{% endif %}>
+                    <label class="form-check-label" for="filter-starred">
+                        {{ 'reading.filter.starred'|trans }}
+                    </label>
                 </div>
             </div>
-        {% else %}
-            {# Fallback row when no metadata types exist yet #}
-            <div class="row g-2 align-items-end mt-1">
-                <div class="col-md-2">
-                    <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" id="filter-starred" name="starred" value="1"
-                               {% if filters.starred == '1' %}checked{% endif %}>
-                        <label class="form-check-label" for="filter-starred">
-                            {{ 'reading.filter.starred'|trans }}
-                        </label>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-search" aria-hidden="true"></i>
-                        {{ 'reading.filter.apply'|trans }}
-                    </button>
-                </div>
+            <div class="col-md-2 ms-auto">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    {{ 'reading.filter.apply'|trans }}
+                </button>
             </div>
-        {% endif %}
+        </div>
     </form>
 </div>
 
