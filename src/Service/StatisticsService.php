@@ -468,6 +468,12 @@ class StatisticsService
                     // avgReview is null when the repository doesn't provide it (Status,
                     // Language) or when no reviews exist for this item.
                     'avgReview' => $row['avgReview'] ?? null,
+                    // abandonRate: of entries where the user started this item, what % did
+                    // they not complete? Null when the repository doesn't provide startedCount
+                    // (Status, Language) or when startedCount is zero (all TBR entries).
+                    'abandonRate' => isset($row['startedCount']) && $row['startedCount'] > 0
+                        ? round(($row['startedCount'] - $row['readCount']) / $row['startedCount'] * 100, 1)
+                        : null,
                 ];
             },
             $rows,
@@ -481,6 +487,7 @@ class StatisticsService
                 'read_count' => $a['readCount'],
                 'read_pct' => $a['readPct'],
                 'avg_review' => $a['avgReview'],
+                'abandon_rate' => $a['abandonRate'],
                 default => $a['count'],
             };
             $valB = match ($sortColumn) {
@@ -490,6 +497,7 @@ class StatisticsService
                 'read_count' => $b['readCount'],
                 'read_pct' => $b['readPct'],
                 'avg_review' => $b['avgReview'],
+                'abandon_rate' => $b['abandonRate'],
                 default => $b['count'],
             };
 

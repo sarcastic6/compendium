@@ -26,7 +26,10 @@
                                 {{ sortHeader('read_pct',   'stats.rankings.col_read_pct'|trans,   'end', showAvgReview ? '' : 'pe-3', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
                             {% endif %}
                             {% if showAvgReview %}
-                                {{ sortHeader('avg_review', 'stats.rankings.col_avg_review'|trans, 'end', 'pe-3', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                                {{ sortHeader('avg_review',   'stats.rankings.col_avg_review'|trans,   'end', showAbandonRate ? '' : 'pe-3', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                            {% endif %}
+                            {% if showAbandonRate %}
+                                {{ sortHeader('abandon_rate', 'stats.rankings.col_abandon_rate'|trans, 'end', 'pe-3',                       sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
                             {% endif %}
                         </tr>
                     </thead>
@@ -62,7 +65,16 @@
                                         {% else %}
                                             {% set reviewHue = (60 + (item.avgReview - 2.5) / 2.5 * 60)|round %}
                                         {% endif %}
-                                        <td class="text-end pe-3" style="background-color: hsl({{ reviewHue }}, 70%, 85%)">{{ item.avgReview }}</td>
+                                        <td class="text-end {{ showAbandonRate ? '' : 'pe-3' }}" style="background-color: hsl({{ reviewHue }}, 70%, 85%)">{{ item.avgReview }}</td>
+                                    {% else %}
+                                        <td class="text-end {{ showAbandonRate ? '' : 'pe-3' }}">—</td>
+                                    {% endif %}
+                                {% endif %}
+                                {% if showAbandonRate %}
+                                    {% if item.abandonRate is not null %}
+                                        {# Inverted hue: 0% abandon = green (120), 100% = red (0) #}
+                                        {% set abandonHue = ((100 - item.abandonRate) / 100 * 120)|round %}
+                                        <td class="text-end pe-3" style="background-color: hsl({{ abandonHue }}, 70%, 85%)">{{ item.abandonRate }}%</td>
                                     {% else %}
                                         <td class="text-end pe-3">—</td>
                                     {% endif %}

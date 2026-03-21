@@ -924,7 +924,29 @@ class ReadingEntryRepository extends ServiceEntityRepository
 
             $reviewRows = $qb4->getQuery()->getArrayResult();
 
-            // Index words, read counts, and avg reviews by metadata ID for O(1) lookup
+            // Query 5: started count per metadata item (hasBeenStarted = true).
+            // Used as the denominator for abandon rate: of works you actually began,
+            // how many did you not finish? Excludes TBR from the denominator so that
+            // unstarted entries don't deflate the abandonment signal.
+            $qb5 = $this->createQueryBuilder('re')
+                ->select('m.id as mid, COUNT(re.id) as startedCnt')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.metadata', 'm')
+                ->innerJoin('m.metadataType', 'mt')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('mt.name = :typeName')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('typeName', $typeName)
+                ->setParameter('started', true)
+                ->groupBy('m.id');
+
+            $this->applyYearFilter($qb5, $year);
+
+            $startedRows = $qb5->getQuery()->getArrayResult();
+
+            // Index words, read counts, avg reviews, and started counts by metadata ID for O(1) lookup
             $wordTotals = [];
             foreach ($wordsRows as $row) {
                 $wordTotals[(int) $row['mid']] = (int) $row['totalWords'];
@@ -942,6 +964,11 @@ class ReadingEntryRepository extends ServiceEntityRepository
                     : null;
             }
 
+            $startedCounts = [];
+            foreach ($startedRows as $row) {
+                $startedCounts[(int) $row['mid']] = (int) $row['startedCnt'];
+            }
+
             return array_map(
                 static fn (array $row): array => [
                     'name' => (string) $row['name'],
@@ -949,6 +976,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
                     'totalWords' => $wordTotals[(int) $row['mid']] ?? 0,
                     'readCount' => $readCounts[(int) $row['mid']] ?? 0,
                     'avgReview' => $avgReviews[(int) $row['mid']] ?? null,
+                    'startedCount' => $startedCounts[(int) $row['mid']] ?? 0,
                 ],
                 $mainRows,
             );
@@ -1195,6 +1223,22 @@ class ReadingEntryRepository extends ServiceEntityRepository
 
             $reviewRows = $qb4->getQuery()->getArrayResult();
 
+            // Query 5: started count per main pairing (hasBeenStarted = true).
+            // Denominator for abandon rate — excludes TBR entries.
+            $qb5 = $this->createQueryBuilder('re')
+                ->select('mp.id as mpid, COUNT(re.id) as startedCnt')
+                ->innerJoin('re.mainPairing', 'mp')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('started', true)
+                ->groupBy('mp.id');
+
+            $this->applyYearFilter($qb5, $year);
+
+            $startedRows = $qb5->getQuery()->getArrayResult();
+
             $wordTotals = [];
             foreach ($wordsRows as $row) {
                 $wordTotals[(int) $row['mpid']] = (int) $row['totalWords'];
@@ -1212,6 +1256,11 @@ class ReadingEntryRepository extends ServiceEntityRepository
                     : null;
             }
 
+            $startedCounts = [];
+            foreach ($startedRows as $row) {
+                $startedCounts[(int) $row['mpid']] = (int) $row['startedCnt'];
+            }
+
             return array_map(
                 static fn (array $row): array => [
                     'name' => (string) $row['name'],
@@ -1219,6 +1268,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
                     'totalWords' => $wordTotals[(int) $row['mpid']] ?? 0,
                     'readCount' => $readCounts[(int) $row['mpid']] ?? 0,
                     'avgReview' => $avgReviews[(int) $row['mpid']] ?? null,
+                    'startedCount' => $startedCounts[(int) $row['mpid']] ?? 0,
                 ],
                 $mainRows,
             );

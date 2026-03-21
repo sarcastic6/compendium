@@ -303,6 +303,7 @@ stats:
         col_read: 'Read'
         col_read_in_words: 'Read in Words'
         col_avg_review: 'Avg Review'
+        col_abandon_rate: 'Abandon Rate'
         col_fandoms: 'Fandoms'
         author_ao3_link: 'View AO3 Profile'
 
