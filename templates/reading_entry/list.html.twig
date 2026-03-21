@@ -350,11 +350,12 @@
                             <input class="form-check-input" type="checkbox" id="select-all"
                                    aria-label="{{ 'reading.bulk.select_all'|trans }}">
                         </th>
+                        <th scope="col">{{ 'reading.entry.col_date_finished'|trans }}</th>
                         <th scope="col">{{ 'reading.entry.col_title'|trans }}</th>
                         <th scope="col">{{ 'reading.entry.col_authors'|trans }}</th>
+                        <th scope="col">{{ 'reading.entry.col_words'|trans }}</th>
                         <th scope="col">{{ 'reading.field.status'|trans }}</th>
-                        <th scope="col">{{ 'reading.field.date_finished'|trans }}</th>
-                        <th scope="col">{{ 'reading.field.review_stars'|trans }}</th>
+                        <th scope="col">{{ 'reading.entry.col_review_spice'|trans }}</th>
                         <th scope="col"></th>
                     </tr>
                 </thead>
@@ -366,6 +367,9 @@
                                        name="ids[]" value="{{ entry.id }}"
                                        aria-label="{{ entry.work.deleted ? 'reading.entry.work_deleted'|trans : entry.work.title }}">
                             </td>
+                            <td data-label="{{ 'reading.entry.col_date_finished'|trans }}">
+                                {{ entry.dateFinished ? entry.dateFinished|date('Y-m-d') : '—' }}
+                            </td>
                             <td data-label="{{ 'reading.entry.col_title'|trans }}">
                                 {% if entry.work.deleted %}
                                     <span class="entry-deleted-work">
@@ -376,12 +380,26 @@
                                     {% if entry.work.starred %}
                                         <i class="bi bi-star-fill text-warning ms-1" aria-label="Favorite work"></i>
                                     {% endif %}
+                                    {% if entry.comments %}
+                                        <button type="button"
+                                                class="btn btn-link p-0 ms-1 text-muted comment-trigger"
+                                                data-bs-toggle="offcanvas"
+                                                data-bs-target="#commentOffcanvas"
+                                                data-comment-title="{{ entry.work.title|e('html_attr') }}"
+                                                data-comment-body="{{ entry.comments|e('html_attr') }}"
+                                                aria-label="View comment">
+                                            <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+                                        </button>
+                                    {% endif %}
                                 {% endif %}
                             </td>
                             <td data-label="{{ 'reading.entry.col_authors'|trans }}">
                                 {% if not entry.work.deleted %}
                                     {{ entry.work.authors|map(a => a.name)|join(', ')|default('—') }}
                                 {% endif %}
+                            </td>
+                            <td data-label="{{ 'reading.entry.col_words'|trans }}">
+                                {{ entry.work.words ? entry.work.words|number_format : '—' }}
                             </td>
                             <td data-label="{{ 'reading.field.status'|trans }}">
                                 <span class="badge {% if entry.status.countsAsRead %}bg-success{% else %}bg-secondary{% endif %}">
@@ -406,10 +424,7 @@
                                     {% endif %}
                                 {% endif %}
                             </td>
-                            <td data-label="{{ 'reading.field.date_finished'|trans }}">
-                                {{ entry.dateFinished ? entry.dateFinished|date('Y-m-d') : '—' }}
-                            </td>
-                            <td data-label="{{ 'reading.field.review_stars'|trans }}">
+                            <td data-label="{{ 'reading.entry.col_review_spice'|trans }}">
                                 {% if entry.reviewStars %}
                                     <span class="stars-display" aria-label="{{ entry.reviewStars }} stars">
                                         {% for i in range(1, entry.reviewStars) %}⭐{% endfor %}
@@ -420,9 +435,18 @@
                                 {% if entry.starred %}
                                     <i class="bi bi-heart-fill text-danger ms-1" aria-label="Favorite entry"></i>
                                 {% endif %}
+                                {% if entry.spiceStars is not null %}
+                                    <div>
+                                        {% if entry.spiceStars == 0 %}
+                                            🚫
+                                        {% else %}
+                                            {% for i in range(1, entry.spiceStars) %}🌶️{% endfor %}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
                             </td>
                             <td>
-                                <div class="d-flex gap-1">
+                                <div class="d-flex gap-1 align-items-center">
                                     <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}"
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-pencil" aria-hidden="true"></i>
@@ -528,9 +552,32 @@
     </div>
 </div>
 
+{# Comment offcanvas — shared, populated by JS from data attributes on the trigger button #}
+<div class="offcanvas offcanvas-end" tabindex="-1" id="commentOffcanvas" aria-labelledby="commentOffcanvasTitle" style="width: min(420px, 90vw)">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title text-truncate" id="commentOffcanvasTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p id="commentOffcanvasBody" class="mb-0" style="white-space: pre-wrap;"></p>
+    </div>
+</div>
+
 <script type="module" src="{{ asset('js/bulk-actions.js') }}"></script>
 
 <script>
+// Wire comment offcanvas: populate title and body from the triggering button's data attributes
+document.addEventListener('DOMContentLoaded', function () {
+    var offcanvas = document.getElementById('commentOffcanvas');
+    if (!offcanvas) { return; }
+    offcanvas.addEventListener('show.bs.offcanvas', function (event) {
+        var button = event.relatedTarget;
+        if (!button) { return; }
+        document.getElementById('commentOffcanvasTitle').textContent = button.getAttribute('data-comment-title') || '';
+        document.getElementById('commentOffcanvasBody').textContent = button.getAttribute('data-comment-body') || '';
+    });
+});
+
 // Wire single-entry delete modal: set action URL and CSRF token from the triggering button's data attributes
 document.addEventListener('DOMContentLoaded', function () {
     var deleteModal = document.getElementById('deleteModal');
