@@ -19,6 +19,8 @@ action:
     delete: 'Delete'
     confirm: 'Confirm'
     close: 'Close'
+    yes: 'Yes'
+    no: 'No'
 
 auth:
     login:
@@ -57,6 +59,7 @@ reading:
         deleted: 'Entry deleted.'
         list_heading: 'My Reading List'
         empty: 'No reading entries yet. Add your first one!'
+        empty_filtered: 'No entries match your filters.'
         work_deleted: '[Deleted work]'
         col_title: 'Title'
         col_authors: 'Author(s)'
@@ -158,16 +161,20 @@ admin:
     heading: 'Admin Panel'
     statuses:
         heading: 'Statuses'
+        manage: 'Manage Statuses'
         new_heading: 'New Status'
         edit_heading: 'Edit Status'
+        empty: 'No statuses created yet.'
         field:
             name: 'Name'
             has_been_started: 'Has Been Started'
             counts_as_read: 'Counts as Read'
     metadata_types:
         heading: 'Metadata Types'
+        manage: 'Manage Metadata Types'
         new_heading: 'New Metadata Type'
         edit_heading: 'Edit Metadata Type'
+        empty: 'No metadata types created yet.'
         field:
             name: 'Name'
             multiple_allowed: 'Allow Multiple per Work'
@@ -192,6 +199,9 @@ security:
 
 mfa:
     heading: '2FA Setup'
+    status:
+        enabled: 'Enabled'
+        not_enabled: 'Not enabled'
     totp:
         heading: 'Authenticator App (TOTP)'
         enable: 'Enable Authenticator App'

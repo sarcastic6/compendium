@@ -52,7 +52,7 @@ class ReadingEntry
     private ?int $reviewStars = null;
 
     /**
-     * Must be between 0 and 5 inclusive. 0 means 'ice cold' (no spice); NULL means not rated.
+     * Must be between 0 and 5 inclusive. 0 means 'no spice' (displayed as 🚫); NULL means not rated.
      * Enforced at the application level in ReadingEntryService.
      * DBAL 4.x does not support CHECK constraints — no database-level constraint exists for this field.
      */

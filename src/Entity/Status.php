@@ -6,6 +6,8 @@ namespace App\Entity;
 
 use App\Repository\StatusRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: StatusRepository::class)]
 #[ORM\Table(name: 'statuses')]
@@ -21,14 +23,15 @@ class Status
     private string $name;
 
     /**
-     * True when the user is actively engaged with this work (Reading, On Hold).
-     * False for terminal states (Completed, DNF) and not-yet-started (TBR).
+     * True when the user has actually begun reading this work (Reading, On Hold,
+     * Completed, DNF). False only for not-yet-started statuses (TBR).
      *
      * Used to determine whether word counts should be included in consumption
-     * statistics — words are counted for any entry where the user has actually
-     * started reading (hasBeenStarted = true OR countsAsRead = true).
+     * statistics — only entries where the user has actually started reading
+     * contribute to words-read figures.
      *
-     * NOT to be confused with countsAsRead, which tracks completion.
+     * NOT to be confused with countsAsRead, which tracks successful completion.
+     * countsAsRead = true implies hasBeenStarted = true (enforced by validateFlags()).
      */
     #[ORM\Column(options: ['default' => true])]
     private bool $hasBeenStarted = true;
@@ -95,5 +98,23 @@ class Status
         $this->countsAsRead = $countsAsRead;
 
         return $this;
+    }
+
+    /**
+     * Enforces the invariant: countsAsRead = true implies hasBeenStarted = true.
+     * A status cannot count as a completed read if the user never started the work.
+     *
+     * Enforced at the application level via Symfony validation because DBAL 4.x
+     * does not support multi-column CHECK constraints. This runs automatically on
+     * form submission and can be triggered anywhere via the Validator service.
+     */
+    #[Assert\Callback]
+    public function validateFlags(ExecutionContextInterface $context): void
+    {
+        if ($this->countsAsRead && !$this->hasBeenStarted) {
+            $context->buildViolation('A status cannot count as read if the work has not been started.')
+                ->atPath('countsAsRead')
+                ->addViolation();
+        }
     }
 }

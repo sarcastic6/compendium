@@ -12,7 +12,7 @@
 </div>
 
 {% if statuses is empty %}
-    <p class="text-muted">No statuses created yet.</p>
+    <p class="text-muted">{{ 'admin.statuses.empty'|trans }}</p>
 {% else %}
     <div class="table-responsive">
         <table class="table table-hover">
@@ -30,16 +30,16 @@
                         <td>{{ status.name }}</td>
                         <td>
                             {% if status.hasBeenStarted %}
-                                <span class="badge bg-success">Yes</span>
+                                <span class="badge bg-success">{{ 'action.yes'|trans }}</span>
                             {% else %}
-                                <span class="badge bg-secondary">No</span>
+                                <span class="badge bg-secondary">{{ 'action.no'|trans }}</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if status.countsAsRead %}
-                                <span class="badge bg-success">Yes</span>
+                                <span class="badge bg-success">{{ 'action.yes'|trans }}</span>
                             {% else %}
-                                <span class="badge bg-secondary">No</span>
+                                <span class="badge bg-secondary">{{ 'action.no'|trans }}</span>
                             {% endif %}
                         </td>
                         <td>

@@ -303,7 +303,7 @@
 {% if entries is empty %}
     <div class="text-center py-5 text-muted">
         {% if has_filters %}
-            <p class="mb-3">No entries match your filters.</p>
+            <p class="mb-3">{{ 'reading.entry.empty_filtered'|trans }}</p>
         {% else %}
             <p class="mb-3">{{ 'reading.entry.empty'|trans }}</p>
             <a href="{{ path('app_work_select') }}" class="btn btn-outline-primary">

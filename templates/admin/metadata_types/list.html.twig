@@ -12,7 +12,7 @@
 </div>
 
 {% if metadata_types is empty %}
-    <p class="text-muted">No metadata types created yet.</p>
+    <p class="text-muted">{{ 'admin.metadata_types.empty'|trans }}</p>
 {% else %}
     <div class="table-responsive">
         <table class="table table-hover">
@@ -30,16 +30,16 @@
                         <td>{{ type.name }}</td>
                         <td>
                             {% if type.multipleAllowed %}
-                                <span class="badge bg-success">Yes</span>
+                                <span class="badge bg-success">{{ 'action.yes'|trans }}</span>
                             {% else %}
-                                <span class="badge bg-secondary">No</span>
+                                <span class="badge bg-secondary">{{ 'action.no'|trans }}</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if type.showAsDropdown %}
-                                <span class="badge bg-success">Yes</span>
+                                <span class="badge bg-success">{{ 'action.yes'|trans }}</span>
                             {% else %}
-                                <span class="badge bg-secondary">No</span>
+                                <span class="badge bg-secondary">{{ 'action.no'|trans }}</span>
                             {% endif %}
                         </td>
                         <td>

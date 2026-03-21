@@ -49,6 +49,15 @@ class Ao3Scraper implements ScraperInterface
 
     public function scrape(string $url): ScrapedWorkDto
     {
+        // Explicitly guard against non-AO3 URLs. This makes the security boundary
+        // intentional and visible — do not rely on normalizeUrl() to enforce it,
+        // as that would be accidental protection that could silently disappear on refactor.
+        if (!$this->supports($url)) {
+            throw new \InvalidArgumentException(
+                sprintf('Ao3Scraper does not support URL: %s', $url),
+            );
+        }
+
         $normalizedUrl = $this->normalizeUrl($url);
 
         $this->logger->debug('AO3 scraper: fetching URL', ['url' => $normalizedUrl]);

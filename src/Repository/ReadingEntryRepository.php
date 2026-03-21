@@ -1398,14 +1398,23 @@ class ReadingEntryRepository extends ServiceEntityRepository
         if (!empty($filterParams['dateFrom'])) {
             // Types::DATE_IMMUTABLE ensures Doctrine serializes as 'Y-m-d' (not 'Y-m-d H:i:s'),
             // so SQLite string comparison correctly includes entries on the boundary date.
-            $qb->andWhere('re.dateFinished >= :filter_date_from')
-                ->setParameter('filter_date_from', new \DateTimeImmutable($filterParams['dateFrom']), Types::DATE_IMMUTABLE);
+            // Invalid date strings (e.g. hand-edited URLs) are silently ignored — no filter applied.
+            try {
+                $qb->andWhere('re.dateFinished >= :filter_date_from')
+                    ->setParameter('filter_date_from', new \DateTimeImmutable($filterParams['dateFrom']), Types::DATE_IMMUTABLE);
+            } catch (\Exception) {
+                // Silently skip — returning unfiltered results is the safe default for bad input.
+            }
         }
 
         if (!empty($filterParams['dateTo'])) {
             // Same reasoning as dateFrom above.
-            $qb->andWhere('re.dateFinished <= :filter_date_to')
-                ->setParameter('filter_date_to', new \DateTimeImmutable($filterParams['dateTo']), Types::DATE_IMMUTABLE);
+            try {
+                $qb->andWhere('re.dateFinished <= :filter_date_to')
+                    ->setParameter('filter_date_to', new \DateTimeImmutable($filterParams['dateTo']), Types::DATE_IMMUTABLE);
+            } catch (\Exception) {
+                // Silently skip — returning unfiltered results is the safe default for bad input.
+            }
         }
 
         // Exact spice match used by chart drill-down links (always exact regardless of value).
