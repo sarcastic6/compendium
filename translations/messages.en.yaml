@@ -185,6 +185,7 @@ admin:
             name: 'Name'
             multiple_allowed: 'Allow Multiple per Work'
             show_as_dropdown: 'Show as Dropdown in Filters'
+            show_as_checkboxes: 'Show as Checkboxes on Work Form'
 
 profile:
     heading: 'My Profile'

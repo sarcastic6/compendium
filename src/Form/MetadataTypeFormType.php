@@ -32,6 +32,10 @@ class MetadataTypeFormType extends AbstractType
             ->add('showAsDropdown', CheckboxType::class, [
                 'label' => 'admin.metadata_types.field.show_as_dropdown',
                 'required' => false,
+            ])
+            ->add('showAsCheckboxes', CheckboxType::class, [
+                'label' => 'admin.metadata_types.field.show_as_checkboxes',
+                'required' => false,
             ]);
     }
 

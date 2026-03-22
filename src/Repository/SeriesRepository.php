@@ -17,4 +17,22 @@ class SeriesRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Series::class);
     }
+
+    /**
+     * Search series by name (partial match), ordered by name, limited to 15 results.
+     * Used by the autocomplete API endpoint.
+     *
+     * @return array<int, array{id: int, name: string}>
+     */
+    public function searchByName(string $term): array
+    {
+        return $this->createQueryBuilder('s')
+            ->select('s.id', 's.name')
+            ->where('LOWER(s.name) LIKE LOWER(:term)')
+            ->setParameter('term', '%' . $term . '%')
+            ->orderBy('s.name', 'ASC')
+            ->setMaxResults(15)
+            ->getQuery()
+            ->getArrayResult();
+    }
 }

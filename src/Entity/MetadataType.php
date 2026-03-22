@@ -51,6 +51,18 @@ class MetadataType
     #[ORM\Column(options: ['default' => false])]
     private bool $showAsDropdown = false;
 
+    /**
+     * When true, the work form renders this type as a checkbox group instead of
+     * an autocomplete text input. Intended for small, stable vocabularies
+     * (e.g. Rating, Warning, Category).
+     *
+     * Independent from showAsDropdown: a type can have showAsDropdown = true
+     * (filter renders as select) and showAsCheckboxes = false (form renders
+     * as autocomplete) or vice versa.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $showAsCheckboxes = false;
+
     public function __construct(string $name, bool $multipleAllowed = true)
     {
         $this->name = $name;
@@ -94,6 +106,18 @@ class MetadataType
     public function setShowAsDropdown(bool $showAsDropdown): static
     {
         $this->showAsDropdown = $showAsDropdown;
+
+        return $this;
+    }
+
+    public function isShowAsCheckboxes(): bool
+    {
+        return $this->showAsCheckboxes;
+    }
+
+    public function setShowAsCheckboxes(bool $showAsCheckboxes): static
+    {
+        $this->showAsCheckboxes = $showAsCheckboxes;
 
         return $this;
     }

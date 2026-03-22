@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Dto\WorkFormDto;
 use App\Entity\MetadataType;
 use App\Form\WorkFormType;
+use App\Repository\MetadataRepository;
 use App\Repository\MetadataTypeRepository;
 use App\Repository\WorkRepository;
 use App\Scraper\ScrapedWorkDto;
@@ -27,6 +28,7 @@ class WorkController extends AbstractController
         private readonly WorkRepository $workRepository,
         private readonly ImportService $importService,
         private readonly MetadataTypeRepository $metadataTypeRepository,
+        private readonly MetadataRepository $metadataRepository,
     ) {
     }
 
@@ -51,6 +53,11 @@ class WorkController extends AbstractController
             }
         }
 
+        // Get Author MetadataType at render time so the autocomplete URL has a valid typeId.
+        // findOrCreateAuthorType() flushes when creating a new entity, ensuring getId() != null.
+        $authorType = $this->workService->findOrCreateAuthorType();
+
+        // All non-Author metadata types, sorted by display order.
         $metadataTypes = $this->metadataTypeRepository->createQueryBuilder('mt')
             ->where('mt.name != :author')
             ->setParameter('author', 'Author')
@@ -67,9 +74,78 @@ class WorkController extends AbstractController
             return $posA !== $posB ? $posA <=> $posB : strcmp($a->getName(), $b->getName());
         });
 
+        // Checkbox types: rendered as checkbox groups (small, stable vocabularies).
+        $checkboxTypes = array_values(array_filter(
+            $metadataTypes,
+            static fn (MetadataType $t) => $t->isShowAsCheckboxes(),
+        ));
+
+        // Known metadata values for each checkbox type, for rendering the checkbox options.
+        $checkboxOptions = $this->metadataRepository->findCheckboxOptionsByTypes($checkboxTypes);
+
+        // Pre-computed set of known names per checkbox type (for "scraped extras" detection).
+        $knownCheckboxNames = [];
+        foreach ($checkboxOptions as $typeId => $options) {
+            $knownCheckboxNames[$typeId] = array_map(static fn ($o) => $o['name'], $options);
+        }
+
+        // Resolve which checkboxes should be pre-checked from DTO data (AO3 import or POST re-render).
+        // This method is read-only — the controller is responsible for removing the matched entries.
+        $preselectedCheckboxNames = $this->workService->resolveCheckboxPreselections(
+            $dto->metadata,
+            $checkboxTypes,
+        );
+
+        // Remove checkbox-type entries from $dto->metadata so they don't also render as
+        // autocomplete chips. They are represented by the $preselectedCheckboxNames instead.
+        $checkboxTypeIds = array_map(static fn (MetadataType $t) => $t->getId(), $checkboxTypes);
+        $dto->metadata = array_values(array_filter(
+            $dto->metadata,
+            static fn (array $entry) => !in_array(
+                $entry['metadataType']->getId(),
+                $checkboxTypeIds,
+                true,
+            ),
+        ));
+
+        // Build indexed chip data for autocomplete pre-population (grouped by MetadataType ID).
+        // Each chip carries its form index so the template can emit correct hidden field names.
+        $metadataByType = [];
+        $metaIndex = 0;
+        foreach ($dto->metadata as $entry) {
+            $typeId = $entry['metadataType']->getId();
+            if ($typeId === null) {
+                continue;
+            }
+            $metadataByType[$typeId][] = [
+                'index' => $metaIndex,
+                'name'  => $entry['name'],
+                'link'  => $entry['link'] ?? '',
+            ];
+            $metaIndex++;
+        }
+
+        // Author chips, indexed for hidden field emission.
+        $authorChips = [];
+        foreach ($dto->authors as $i => $author) {
+            $authorChips[] = [
+                'index' => $i,
+                'name'  => $author['name'],
+                'link'  => $author['link'] ?? '',
+            ];
+        }
+
         return $this->render('work/new.html.twig', [
-            'form' => $form,
-            'metadataTypes' => $metadataTypes,
+            'form'                    => $form,
+            'dto'                     => $dto,
+            'metadataTypes'           => $metadataTypes,
+            'checkboxOptions'         => $checkboxOptions,
+            'knownCheckboxNames'      => $knownCheckboxNames,
+            'preselectedCheckboxNames' => $preselectedCheckboxNames,
+            'metadataByType'          => $metadataByType,
+            'totalMetadataIndex'      => $metaIndex,
+            'authorTypeId'            => $authorType->getId(),
+            'authorChips'             => $authorChips,
         ]);
     }
 

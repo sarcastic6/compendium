@@ -46,6 +46,11 @@ class WorkFormType extends AbstractType
                 'label' => 'work.field.series',
                 'required' => false,
             ])
+            ->add('seriesId', HiddenType::class, [
+                // Populated by the series autocomplete controller when the user selects an existing
+                // series. Null means find-or-create by seriesName, or no series if both are empty.
+                'required' => false,
+            ])
             ->add('seriesUrl', HiddenType::class, [
                 'required' => false,
             ])

@@ -47,7 +47,22 @@ class WorkService
         $work->setSourceType($dto->sourceType);
         $work->setStarred($dto->starred);
 
-        if ($dto->seriesName !== null && trim($dto->seriesName) !== '') {
+        // Three-way series resolution:
+        // 1. seriesId set   → user selected an existing series from autocomplete; load by ID.
+        // 2. seriesId null + seriesName non-empty → user typed a new name; find-or-create.
+        // 3. Both null/empty → no series.
+        if ($dto->seriesId !== null) {
+            $series = $this->seriesRepository->find($dto->seriesId);
+            if ($series === null) {
+                // Non-existent ID means form tampering or the series was deleted between page
+                // load and submit. Silently falling back to find-or-create would mask this.
+                throw new \InvalidArgumentException(sprintf(
+                    'Series with ID %d not found. It may have been deleted.',
+                    $dto->seriesId,
+                ));
+            }
+            $work->setSeries($series);
+        } elseif ($dto->seriesName !== null && trim($dto->seriesName) !== '') {
             $series = $this->findOrCreateSeries(trim($dto->seriesName), $dto->seriesUrl, $dto->sourceType);
             $work->setSeries($series);
         }
@@ -96,16 +111,69 @@ class WorkService
      * Finds or creates the 'Author' MetadataType.
      * The Author type is not seeded — it is created at runtime on first use.
      * multiple_allowed = true: a work can have multiple authors.
+     *
+     * Public because the controller calls this at form render time (not just submit time)
+     * to obtain the type ID for the author autocomplete URL. When a new entity is created,
+     * we flush immediately so getId() returns a valid integer before this method returns.
+     * This is a one-time operation — once the Author type exists, subsequent calls hit the
+     * find path and skip the flush.
      */
-    private function findOrCreateAuthorType(): MetadataType
+    public function findOrCreateAuthorType(): MetadataType
     {
         $type = $this->metadataTypeRepository->findOneBy(['name' => 'Author']);
-        if ($type === null) {
-            $type = new MetadataType('Author', true);
-            $this->entityManager->persist($type);
+        if ($type !== null) {
+            return $type;
         }
 
+        $type = new MetadataType('Author', true);
+        $this->entityManager->persist($type);
+        // Flush immediately so getId() is populated before returning.
+        // Without this, the template receives typeId=null and the autocomplete URL is broken.
+        $this->entityManager->flush();
+
         return $type;
+    }
+
+    /**
+     * Returns the names of DTO metadata entries that belong to checkbox types, grouped by
+     * MetadataType ID. Used to pre-check checkboxes when the form renders with pre-populated
+     * data (AO3 import or POST re-render after validation failure).
+     *
+     * This method is read-only: it only inspects $dtoMetadata, never mutates it.
+     * The caller is responsible for removing the matched entries from $dto->metadata
+     * to prevent them from also appearing as autocomplete chips.
+     *
+     * @param array<int, array{metadataType: MetadataType, name: string, link: string|null}> $dtoMetadata
+     * @param MetadataType[] $checkboxTypes
+     * @return array<int, string[]>
+     */
+    public function resolveCheckboxPreselections(array $dtoMetadata, array $checkboxTypes): array
+    {
+        $checkboxTypeIds = [];
+        foreach ($checkboxTypes as $type) {
+            $id = $type->getId();
+            if ($id !== null) {
+                $checkboxTypeIds[$id] = true;
+            }
+        }
+
+        $result = [];
+        foreach ($dtoMetadata as $entry) {
+            $type = $entry['metadataType'] ?? null;
+            if (!($type instanceof MetadataType)) {
+                continue;
+            }
+            $typeId = $type->getId();
+            if ($typeId === null || !isset($checkboxTypeIds[$typeId])) {
+                continue;
+            }
+            $name = trim((string) ($entry['name'] ?? ''));
+            if ($name !== '') {
+                $result[$typeId][] = $name;
+            }
+        }
+
+        return $result;
     }
 
     /**

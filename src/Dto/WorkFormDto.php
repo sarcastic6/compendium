@@ -24,6 +24,13 @@ class WorkFormDto
     /** Series name — WorkService does find-or-create. Null means no series. */
     public ?string $seriesName = null;
 
+    /**
+     * Series entity ID — set when the user selects an existing series from autocomplete.
+     * When non-null, WorkService loads the series by ID rather than finding-or-creating by name.
+     * Null means either a new series (use seriesName) or no series (both null/empty).
+     */
+    public ?int $seriesId = null;
+
     /** Series source URL — populated by scraper only, null for manual entry. */
     #[Url(requireTld: false)]
     public ?string $seriesUrl = null;
