@@ -11,8 +11,11 @@ use App\Repository\MetadataRepository;
 use App\Repository\MetadataTypeRepository;
 use App\Repository\WorkRepository;
 use App\Scraper\ScrapedWorkDto;
+use App\Scraper\ScraperRegistry;
+use App\Scraper\ScrapingException;
 use App\Service\ImportService;
 use App\Service\WorkService;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,6 +32,8 @@ class WorkController extends AbstractController
         private readonly ImportService $importService,
         private readonly MetadataTypeRepository $metadataTypeRepository,
         private readonly MetadataRepository $metadataRepository,
+        private readonly ScraperRegistry $scraperRegistry,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -172,6 +177,65 @@ class WorkController extends AbstractController
         }
 
         return $result->dto;
+    }
+
+    /**
+     * Re-scrapes a Work's source URL and updates its metadata in place.
+     * Only works that have a source URL pointing to a supported scraper can be refreshed.
+     */
+    #[Route('/{id}/refresh', name: 'app_work_refresh', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function refresh(int $id, Request $request): Response
+    {
+        $work = $this->workRepository->find($id);
+        if ($work === null) {
+            throw $this->createNotFoundException();
+        }
+
+        if (!$this->isCsrfTokenValid('refresh_work_' . $id, $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $link = $work->getLink();
+        if ($link === null) {
+            $this->addFlash('error', 'work.refresh.error.no_link');
+
+            return $this->redirectToRoute('app_work_show', ['id' => $id]);
+        }
+
+        $scraper = $this->scraperRegistry->getScraperForUrl($link);
+        if ($scraper === null) {
+            $this->addFlash('error', 'work.refresh.error.unsupported_url');
+
+            return $this->redirectToRoute('app_work_show', ['id' => $id]);
+        }
+
+        try {
+            $scraped = $scraper->scrape($link);
+        } catch (ScrapingException $e) {
+            $this->logger->error('Work refresh scrape failed', [
+                'work_id'     => $id,
+                'url'         => $link,
+                'http_status' => $e->getHttpStatus(),
+                'error'       => $e->getMessage(),
+            ]);
+            $this->addFlash('error', 'work.refresh.error.scrape_failed');
+
+            return $this->redirectToRoute('app_work_show', ['id' => $id]);
+        }
+
+        $result = $this->importService->mapToWorkFormDto($scraped);
+        foreach ($result->warnings as $warning) {
+            $this->addFlash('warning', $warning);
+        }
+
+        try {
+            $this->workService->refreshWork($work, $result->dto);
+            $this->addFlash('success', 'work.refresh.success');
+        } catch (\InvalidArgumentException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('app_work_show', ['id' => $id]);
     }
 
     /**

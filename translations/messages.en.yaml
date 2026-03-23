@@ -142,6 +142,13 @@ work:
             last_updated_date: 'Last updated'
             created_at: 'Created'
             updated_at: 'Updated'
+    refresh:
+        button: 'Refresh from %source%'
+        success: 'Work metadata refreshed successfully.'
+        error:
+            no_link: 'This work has no source URL and cannot be refreshed.'
+            unsupported_url: 'This work''s source URL is not supported for automatic refresh.'
+            scrape_failed: 'Failed to fetch updated metadata. The source may be temporarily unavailable.'
     field:
         type: 'Type'
         title: 'Title'

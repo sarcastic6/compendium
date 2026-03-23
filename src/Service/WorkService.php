@@ -28,6 +28,59 @@ class WorkService
     }
 
     /**
+     * Refreshes an existing Work's metadata from a freshly scraped DTO.
+     *
+     * Only fields with non-null scraped values are updated — if a field fails to parse
+     * (returns null), the stored value is preserved rather than overwritten with nothing.
+     *
+     * Metadata sync is selective: only the types present in the scraped data are replaced.
+     * Types not returned by the scraper (e.g., manually added types) are left untouched.
+     *
+     * @throws \InvalidArgumentException if a metadata type enforces single values but the scrape returns multiple
+     */
+    public function refreshWork(Work $work, WorkFormDto $dto): void
+    {
+        if ($dto->title !== null) {
+            $work->setTitle($dto->title);
+        }
+        if ($dto->summary !== null) {
+            $work->setSummary($dto->summary);
+        }
+        if ($dto->words !== null) {
+            $work->setWords($dto->words);
+        }
+        if ($dto->chapters !== null) {
+            $work->setChapters($dto->chapters);
+        }
+        if ($dto->language !== null) {
+            $work->setLanguage($dto->language);
+        }
+        if ($dto->publishedDate !== null) {
+            $work->setPublishedDate($dto->publishedDate);
+        }
+        if ($dto->lastUpdatedDate !== null) {
+            $work->setLastUpdatedDate($dto->lastUpdatedDate);
+        }
+
+        if ($dto->seriesName !== null && trim($dto->seriesName) !== '') {
+            $series = $this->findOrCreateSeries(
+                trim($dto->seriesName),
+                $dto->seriesUrl,
+                $work->getSourceType(),
+                $dto->seriesNumberOfParts,
+                $dto->seriesTotalWords,
+                $dto->seriesIsComplete,
+            );
+            $work->setSeries($series);
+            $work->setPlaceInSeries($dto->placeInSeries);
+        }
+
+        $this->syncMetadata($work, $dto->authors, $dto->metadata);
+
+        $this->entityManager->flush();
+    }
+
+    /**
      * Creates a new Work from the DTO, finding or creating related entities as needed.
      * Authors, metadata, and series are all resolved within a single transaction.
      *
@@ -200,6 +253,59 @@ class WorkService
         }
 
         return $result;
+    }
+
+    /**
+     * Syncs a work's metadata for the types present in the incoming data.
+     *
+     * For each MetadataType represented in the combined authors + metadata list, all
+     * existing entries of that type are removed from the work before the fresh entries
+     * are added. Types not present in the incoming data are left untouched, so manually
+     * added metadata of unrecognised types survives a refresh.
+     *
+     * @param array<int, array{name: string, link: string|null}> $authors
+     * @param array<int, array{metadataType: MetadataType, name: string, link: string|null}> $metadata
+     */
+    private function syncMetadata(Work $work, array $authors, array $metadata): void
+    {
+        $allNewEntries = $metadata;
+        if ($authors !== []) {
+            $authorType = $this->findOrCreateAuthorType();
+            foreach ($authors as $entry) {
+                $name = trim((string) ($entry['name'] ?? ''));
+                if ($name !== '') {
+                    $allNewEntries[] = [
+                        'metadataType' => $authorType,
+                        'name'         => $name,
+                        'link'         => $entry['link'] ?? null,
+                    ];
+                }
+            }
+        }
+
+        if ($allNewEntries === []) {
+            return;
+        }
+
+        // Collect the IDs of MetadataTypes we have fresh data for.
+        $incomingTypeIds = [];
+        foreach ($allNewEntries as $entry) {
+            $type = $entry['metadataType'] ?? null;
+            if ($type instanceof MetadataType && $type->getId() !== null) {
+                $incomingTypeIds[$type->getId()] = true;
+            }
+        }
+
+        // Remove existing entries for those types. toArray() is used to avoid modifying
+        // the collection while iterating over it.
+        foreach ($work->getMetadata()->toArray() as $existing) {
+            $typeId = $existing->getMetadataType()->getId();
+            if ($typeId !== null && isset($incomingTypeIds[$typeId])) {
+                $work->removeMetadata($existing);
+            }
+        }
+
+        $this->applyMetadata($work, $allNewEntries, $work->getSourceType());
     }
 
     /**

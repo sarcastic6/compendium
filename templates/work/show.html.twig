@@ -19,9 +19,20 @@
             <i class="bi bi-star-fill text-warning ms-1" aria-label="Favorite work"></i>
         {% endif %}
     </h1>
-    <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary">
-        {{ 'nav.home'|trans }}
-    </a>
+    <div class="d-flex gap-2">
+        {% if work.link and work.sourceType.value != 'Manual' %}
+            <form method="post" action="{{ path('app_work_refresh', {id: work.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('refresh_work_' ~ work.id) }}">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    {{ 'work.refresh.button'|trans({'%source%': work.sourceType.value}) }}
+                </button>
+            </form>
+        {% endif %}
+        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary">
+            {{ 'nav.home'|trans }}
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">
