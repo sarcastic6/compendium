@@ -2,7 +2,6 @@ nav:
     main: 'Main navigation'
     home: 'My List'
     new_entry: 'New Entry'
-    import: 'Import'
     stats: 'Stats'
     admin: 'Admin'
     profile: 'Profile'
@@ -130,6 +129,7 @@ work:
     created: 'Work saved.'
     select_heading: 'Select a Work'
     select_prompt: 'Search for an existing work or create a new one.'
+    import_separator: 'or import from URL'
     select_search_placeholder: 'Search by title...'
     select_search: 'Search'
     select_no_results: 'No works found.'
@@ -356,7 +356,6 @@ flash:
     warning: 'Warning'
 
 import:
-    heading: 'Import from URL'
     url_field: 'Work URL'
     url_placeholder: 'https://archiveofourown.org/works/...'
     url_help: 'Enter an AO3 work URL to automatically import its metadata. You can review and edit the details before saving.'

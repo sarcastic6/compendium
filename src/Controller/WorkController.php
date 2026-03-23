@@ -257,10 +257,64 @@ class WorkController extends AbstractController
 
     /**
      * Step 1b: Select an existing Work to create a ReadingEntry for (e.g., re-reads).
+     * Also handles POST to import a Work from an external URL (merged from ImportController).
      */
-    #[Route('/select', name: 'app_work_select', methods: ['GET'])]
+    #[Route('/select', name: 'app_work_select', methods: ['GET', 'POST'])]
     public function select(Request $request): Response
     {
+        if ($request->isMethod('POST')) {
+            if (!$this->isCsrfTokenValid('import_url', $request->request->getString('_import_token'))) {
+                throw $this->createAccessDeniedException();
+            }
+
+            $url = trim($request->request->getString('import_url'));
+
+            if ($url === '') {
+                $this->addFlash('error', 'import.url.not_blank');
+
+                return $this->redirectToRoute('app_work_select');
+            }
+
+            if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+                $this->addFlash('error', 'import.url.invalid');
+
+                return $this->redirectToRoute('app_work_select');
+            }
+
+            $scraper = $this->scraperRegistry->getScraperForUrl($url);
+            if ($scraper === null) {
+                $this->addFlash('error', 'import.error.unsupported_url');
+
+                return $this->redirectToRoute('app_work_select');
+            }
+
+            try {
+                $scraped = $scraper->scrape($url);
+            } catch (ScrapingException $e) {
+                $this->logger->error('Import scrape failed', [
+                    'url'         => $url,
+                    'http_status' => $e->getHttpStatus(),
+                    'error'       => $e->getMessage(),
+                ]);
+                $this->addFlash('error', 'import.error.scrape_failed');
+
+                return $this->redirectToRoute('app_work_select');
+            }
+
+            // Duplicate detection: if a work with this URL already exists, warn the user
+            if ($scraped->sourceUrl !== null) {
+                $existing = $this->workRepository->findByLink($scraped->sourceUrl);
+                if ($existing !== null) {
+                    $this->addFlash('warning', 'import.warning.duplicate');
+                }
+            }
+
+            // Store DTO in session — WorkController::new() reads it on the next GET and applies mapping
+            $request->getSession()->set('import_scraped_work', $scraped);
+
+            return $this->redirectToRoute('app_work_new');
+        }
+
         $query = $request->query->getString('q', '');
         $works = [];
 

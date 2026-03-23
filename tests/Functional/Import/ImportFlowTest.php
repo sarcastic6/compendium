@@ -61,51 +61,58 @@ class ImportFlowTest extends AbstractFunctionalTest
         static::getContainer()->set('http_client', $mockClient);
     }
 
+    /**
+     * Submits the URL import form (the second form on the select page).
+     *
+     * @param array<string, mixed> $formData
+     */
+    private function submitImportForm(array $formData): void
+    {
+        $crawler = $this->client->getCrawler();
+        $form = $crawler->filter('form')->eq(1)->form($formData);
+        $this->client->submit($form);
+    }
+
     // --- Auth boundary ---
 
     public function test_anonymous_user_is_redirected_to_login(): void
     {
-        $this->client->request('GET', '/import');
+        $this->client->request('GET', '/work/select');
 
         $this->assertResponseRedirects('/login');
     }
 
-    public function test_import_page_accessible_when_logged_in(): void
+    public function test_old_import_route_returns_404(): void
     {
         $this->loginAsUser();
 
         $this->client->request('GET', '/import');
 
-        $this->assertResponseIsSuccessful();
+        $this->assertResponseStatusCodeSame(404);
     }
 
     // --- URL validation ---
 
-    public function test_empty_url_shows_validation_error(): void
+    public function test_empty_url_redirects_with_error(): void
     {
         $this->loginAsUser();
 
-        $this->client->request('GET', '/import');
-        $this->submitFirstForm($this->client, [
-            'import_url_form[url]' => '',
-        ]);
+        $this->client->request('GET', '/work/select');
+        $this->submitImportForm(['import_url' => '']);
 
-        // Symfony 7 returns 422 for invalid form submissions (not a redirect)
-        $this->assertResponseStatusCodeSame(422);
+        $this->assertResponseRedirects('/work/select');
     }
 
     public function test_unsupported_url_shows_error_flash(): void
     {
         $this->loginAsUser();
 
-        $this->client->request('GET', '/import');
-        $this->submitFirstForm($this->client, [
-            'import_url_form[url]' => 'https://www.fanfiction.net/s/12345',
-        ]);
+        $this->client->request('GET', '/work/select');
+        $this->submitImportForm(['import_url' => 'https://www.fanfiction.net/s/12345']);
 
-        $this->assertResponseIsSuccessful();
+        $this->assertResponseRedirects('/work/select');
 
-        // Flash message is translated — check for the translated English text
+        $this->client->followRedirect();
         $content = (string) $this->client->getResponse()->getContent();
         $this->assertStringContainsString('AO3 work URLs are supported', $content);
     }
@@ -118,10 +125,8 @@ class ImportFlowTest extends AbstractFunctionalTest
         $this->configureMockHttpClient($this->fixture('minimal_work'));
         $this->loginAsUser();
 
-        $this->client->request('GET', '/import');
-        $this->submitFirstForm($this->client, [
-            'import_url_form[url]' => 'https://archiveofourown.org/works/55555',
-        ]);
+        $this->client->request('GET', '/work/select');
+        $this->submitImportForm(['import_url' => 'https://archiveofourown.org/works/55555']);
 
         $this->assertResponseRedirects('/work/new');
     }
@@ -131,10 +136,8 @@ class ImportFlowTest extends AbstractFunctionalTest
         $this->configureMockHttpClient($this->fixture('minimal_work'));
         $this->loginAsUser();
 
-        $this->client->request('GET', '/import');
-        $this->submitFirstForm($this->client, [
-            'import_url_form[url]' => 'https://archiveofourown.org/works/55555',
-        ]);
+        $this->client->request('GET', '/work/select');
+        $this->submitImportForm(['import_url' => 'https://archiveofourown.org/works/55555']);
 
         $this->client->followRedirect();
         $this->assertResponseIsSuccessful();
@@ -154,10 +157,8 @@ class ImportFlowTest extends AbstractFunctionalTest
         $this->em->persist($work);
         $this->em->flush();
 
-        $this->client->request('GET', '/import');
-        $this->submitFirstForm($this->client, [
-            'import_url_form[url]' => 'https://archiveofourown.org/works/55555',
-        ]);
+        $this->client->request('GET', '/work/select');
+        $this->submitImportForm(['import_url' => 'https://archiveofourown.org/works/55555']);
 
         // Follow redirect to /work/new and check for duplicate warning
         $this->client->followRedirect();

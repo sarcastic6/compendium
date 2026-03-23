@@ -53,7 +53,27 @@
     {% endif %}
 {% endif %}
 
-<a href="{{ path('app_work_new') }}" class="btn btn-primary">
+<div class="d-flex align-items-center gap-3 my-4">
+    <hr class="flex-grow-1 m-0">
+    <span class="text-muted small">{{ 'work.import_separator'|trans }}</span>
+    <hr class="flex-grow-1 m-0">
+</div>
+
+<form method="post" action="{{ path('app_work_select') }}" class="mb-5">
+    <input type="hidden" name="_import_token" value="{{ csrf_token('import_url') }}">
+    <label for="import_url" class="form-label">{{ 'import.url_field'|trans }}</label>
+    <input type="url" id="import_url" name="import_url"
+           class="form-control mb-2"
+           placeholder="{{ 'import.url_placeholder'|trans }}"
+           autocomplete="off">
+    <div class="form-text mb-2">{{ 'import.url_help'|trans }}</div>
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-cloud-download" aria-hidden="true"></i>
+        {{ 'import.submit'|trans }}
+    </button>
+</form>
+
+<a href="{{ path('app_work_new') }}" class="btn btn-outline-secondary">
     <i class="bi bi-plus-lg" aria-hidden="true"></i>
     {{ 'work.create_new'|trans }}
 </a>
