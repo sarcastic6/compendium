@@ -1502,6 +1502,153 @@ class ReadingEntryRepository extends ServiceEntityRepository
         }
     }
 
+    /**
+     * Returns ranking data grouped by series for the given user.
+     *
+     * Uses two ORM queries merged by series ID in PHP, plus one DBAL lookup
+     * for series metadata (numberOfParts, totalWords, isComplete, AO3 link):
+     *   Q1: entry count + avg review per series (all statuses, year-filtered)
+     *   Q2: works read (COUNT DISTINCT) + words read per series (countsAsRead=true, year-filtered)
+     *   Q3 (DBAL): series.numberOfParts, series.totalWords, series.isComplete, AO3 link
+     *
+     * The SoftDeleteFilter is disabled so soft-deleted works still contribute.
+     *
+     * @return array<array{
+     *   sid: int,
+     *   name: string,
+     *   ao3Link: string|null,
+     *   count: int,
+     *   worksRead: int,
+     *   totalWorks: int|null,
+     *   wordsRead: int,
+     *   totalWords: int|null,
+     *   avgReview: float|null,
+     *   isComplete: bool|null,
+     * }>
+     */
+    public function getSeriesRankingsData(User $user, ?int $year = null): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            // Q1: entry count + avg review per series (all statuses)
+            $qb1 = $this->createQueryBuilder('re')
+                ->select('s.id as sid, s.name as name, COUNT(re.id) as cnt, AVG(re.reviewStars) as avgReview')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.series', 's')
+                ->where('re.user = :user')
+                ->setParameter('user', $user)
+                ->groupBy('s.id, s.name');
+
+            $this->applyYearFilter($qb1, $year);
+
+            $mainRows = $qb1->getQuery()->getArrayResult();
+
+            if ($mainRows === []) {
+                return [];
+            }
+
+            // Q2: works read (distinct works completed) + words read (countsAsRead=true)
+            $qb2 = $this->createQueryBuilder('re')
+                ->select('s.id as sid, COUNT(DISTINCT w.id) as worksRead, SUM(COALESCE(w.words, 0)) as wordsRead')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.series', 's')
+                ->innerJoin('re.status', 'st')
+                ->where('re.user = :user')
+                ->andWhere('st.countsAsRead = :countsAsRead')
+                ->setParameter('user', $user)
+                ->setParameter('countsAsRead', true)
+                ->groupBy('s.id');
+
+            $this->applyYearFilter($qb2, $year);
+
+            $readRows = $qb2->getQuery()->getArrayResult();
+
+            // Q4: coverage words — sum of words for distinct works the user has ever started in each series,
+            // year-independent (all-time coverage, regardless of the active year filter)
+            $qb4 = $this->createQueryBuilder('re')
+                ->select('s.id as sid, w.id as wid, w.words as wwords')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('w.series', 's')
+                ->innerJoin('re.status', 'st')
+                ->where('re.user = :user')
+                ->andWhere('st.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('started', true)
+                ->groupBy('s.id, w.id');
+
+            $coverageRows = $qb4->getQuery()->getArrayResult();
+
+            // Sum per-work words by series in PHP to get total words covered
+            $coverageMap = [];
+            foreach ($coverageRows as $row) {
+                $sid = (int) $row['sid'];
+                $coverageMap[$sid] = ($coverageMap[$sid] ?? 0) + (int) ($row['wwords'] ?? 0);
+            }
+
+            // Q3 (DBAL): series metadata + AO3 link — year-independent (static data)
+            $seriesIds = array_map(static fn (array $r): int => (int) $r['sid'], $mainRows);
+            $placeholders = implode(',', array_fill(0, count($seriesIds), '?'));
+            $conn = $em->getConnection();
+            $metaRows = $conn->executeQuery(
+                "SELECT s.id, s.number_of_parts, s.total_words, s.is_complete, ssl.link as ao3Link
+                   FROM series s
+                   LEFT JOIN series_source_links ssl ON ssl.series_id = s.id AND ssl.source_type = ?
+                  WHERE s.id IN ($placeholders)",
+                array_merge([\App\Enum\SourceType::AO3->value], $seriesIds),
+            )->fetchAllAssociative();
+
+            // Index secondary results by series ID for O(1) lookup
+            $readWorksMap = [];
+            $readWordsMap = [];
+            foreach ($readRows as $row) {
+                $readWorksMap[(int) $row['sid']] = (int) $row['worksRead'];
+                $readWordsMap[(int) $row['sid']] = (int) $row['wordsRead'];
+            }
+
+            $metaMap = [];
+            foreach ($metaRows as $row) {
+                $metaMap[(int) $row['id']] = [
+                    'totalWorks' => $row['number_of_parts'] !== null ? (int) $row['number_of_parts'] : null,
+                    'totalWords' => $row['total_words'] !== null ? (int) $row['total_words'] : null,
+                    'isComplete' => $row['is_complete'] !== null ? (bool) $row['is_complete'] : null,
+                    'ao3Link'    => $row['ao3Link'] !== null ? (string) $row['ao3Link'] : null,
+                ];
+            }
+
+            return array_map(
+                static function (array $row) use ($readWorksMap, $readWordsMap, $coverageMap, $metaMap): array {
+                    $sid  = (int) $row['sid'];
+                    $meta = $metaMap[$sid] ?? ['totalWorks' => null, 'totalWords' => null, 'isComplete' => null, 'ao3Link' => null];
+
+                    return [
+                        'sid'           => $sid,
+                        'name'          => (string) $row['name'],
+                        'ao3Link'       => $meta['ao3Link'],
+                        'count'         => (int) $row['cnt'],
+                        'worksRead'     => $readWorksMap[$sid] ?? 0,
+                        'totalWorks'    => $meta['totalWorks'],
+                        'wordsRead'     => $readWordsMap[$sid] ?? 0,
+                        'coverageWords' => $coverageMap[$sid] ?? 0,
+                        'totalWords'    => $meta['totalWords'],
+                        'avgReview'     => $row['avgReview'] !== null ? round((float) $row['avgReview'], 2) : null,
+                        'isComplete'    => $meta['isComplete'],
+                    ];
+                },
+                $mainRows,
+            );
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
@@ -1670,6 +1817,12 @@ class ReadingEntryRepository extends ServiceEntityRepository
             $qb->innerJoin('w.language', 'lang_filter')
                 ->andWhere('lang_filter.name = :filter_language')
                 ->setParameter('filter_language', $filterParams['language']);
+        }
+
+        if (!empty($filterParams['series'])) {
+            // Filter by series ID. Used by the Series rankings drill-down links.
+            $qb->andWhere('w.series = :filter_series')
+                ->setParameter('filter_series', (int) $filterParams['series']);
         }
 
         if (!empty($filterParams['mainPairing'])) {

@@ -452,6 +452,75 @@ class StatisticsService
         return $items;
     }
 
+    /**
+     * Returns ranking data grouped by series, sorted by the requested column.
+     *
+     * Null values for wordsRead, totalWorks, totalWords, and avgReview sort to the
+     * bottom regardless of sort direction (missing data, not a low value).
+     *
+     * Valid $sortColumn values: name, count, works_read, words_read, avg_review
+     * Default sort: count DESC
+     *
+     * @return array<array{
+     *   sid: int,
+     *   name: string,
+     *   ao3Link: string|null,
+     *   count: int,
+     *   worksRead: int,
+     *   totalWorks: int|null,
+     *   wordsRead: int,
+     *   totalWords: int|null,
+     *   avgReview: float|null,
+     *   isComplete: bool|null,
+     * }>
+     */
+    public function getSeriesRankings(
+        User $user,
+        string $sortColumn,
+        string $sortDir,
+        ?int $year,
+    ): array {
+        $rows = $this->readingEntryRepository->getSeriesRankingsData($user, $year);
+
+        usort($rows, static function (array $a, array $b) use ($sortColumn, $sortDir): int {
+            $valA = match ($sortColumn) {
+                'name'       => $a['name'],
+                'count'      => $a['count'],
+                'works_read' => $a['worksRead'],
+                'words_read' => $a['wordsRead'],
+                'coverage'   => $a['coverageWords'],
+                'avg_review' => $a['avgReview'],
+                default      => $a['count'],
+            };
+            $valB = match ($sortColumn) {
+                'name'       => $b['name'],
+                'count'      => $b['count'],
+                'works_read' => $b['worksRead'],
+                'words_read' => $b['wordsRead'],
+                'coverage'   => $b['coverageWords'],
+                'avg_review' => $b['avgReview'],
+                default      => $b['count'],
+            };
+
+            // Null values always sort to the bottom regardless of direction
+            if ($valA === null && $valB === null) {
+                return 0;
+            }
+            if ($valA === null) {
+                return 1;
+            }
+            if ($valB === null) {
+                return -1;
+            }
+
+            $cmp = is_string($valA) ? strcmp($valA, $valB) : ($valA <=> $valB);
+
+            return $sortDir === 'asc' ? $cmp : -$cmp;
+        });
+
+        return $rows;
+    }
+
     private function buildRankingItems(
         array $rows,
         int $totalEntries,

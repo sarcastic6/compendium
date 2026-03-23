@@ -253,6 +253,10 @@
                        class="btn btn-outline-secondary btn-sm">
                         {{ 'stats.rankings.type_author'|trans }}
                     </a>
+                    <a href="{{ path('app_stats_rankings_series', {'year': year}) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        {{ 'stats.rankings.type_series'|trans }}
+                    </a>
                     {% for typeName in rankingTypes %}
                         {% if typeName != 'Author' %}
                             <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"

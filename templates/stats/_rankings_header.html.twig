@@ -50,6 +50,7 @@
         {'label': 'stats.rankings.type_language'|trans,     'route': 'app_stats_rankings_language',     'params': {}, 'key': 'Language'},
         {'label': 'stats.rankings.type_main_pairing'|trans, 'route': 'app_stats_rankings_main_pairing', 'params': {}, 'key': 'Main Pairing'},
         {'label': 'stats.rankings.type_author'|trans,       'route': 'app_stats_rankings_author',       'params': {}, 'key': 'Author'},
+        {'label': 'stats.rankings.type_series'|trans,       'route': 'app_stats_rankings_series',       'params': {}, 'key': 'Series'},
     ] %}
     {% for item in fixedTypes %}
         <a href="{{ path(item.route, {'year': year}) }}"

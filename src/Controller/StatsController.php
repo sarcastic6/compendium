@@ -154,6 +154,32 @@ class StatsController extends AbstractController
         ]);
     }
 
+    #[Route('/rankings/by-series', name: 'app_stats_rankings_series')]
+    public function rankingsBySeries(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $year = $this->parseYearParam($request);
+        $availableYears = $this->statisticsService->getDashboardSummary($user, null)['availableYears'];
+        [$sortColumn, $sortDir] = $this->parseSeriesSortParams($request);
+
+        $rankings = $this->statisticsService->getSeriesRankings($user, $sortColumn, $sortDir, $year);
+        $rankingTypes = $this->statisticsService->getAvailableRankingTypes($user, $year);
+
+        return $this->render('stats/series_rankings.html.twig', [
+            'type'               => 'Series',
+            'rankings'           => $rankings,
+            'rankingTypes'       => $rankingTypes,
+            'year'               => $year,
+            'availableYears'     => $availableYears,
+            'sortColumn'         => $sortColumn,
+            'sortDir'            => $sortDir,
+            'rankingRoute'       => 'app_stats_rankings_series',
+            'rankingRouteParams' => [],
+        ]);
+    }
+
     #[Route('/rankings/by-author', name: 'app_stats_rankings_author')]
     public function rankingsByAuthor(Request $request): Response
     {
@@ -363,6 +389,27 @@ class StatsController extends AbstractController
     private function parseAuthorSortParams(Request $request): array
     {
         $validColumns = ['name', 'count', 'words', 'chapters', 'wpc', 'read', 'read_in_words', 'avg_review'];
+        $column = $request->query->get('sort', 'count');
+        if (!in_array($column, $validColumns, true)) {
+            $column = 'count';
+        }
+
+        $dir = $request->query->get('dir', 'desc');
+        if ($dir !== 'asc' && $dir !== 'desc') {
+            $dir = 'desc';
+        }
+
+        return [$column, $dir];
+    }
+
+    /**
+     * Extracts and validates sort params for the series rankings page.
+     *
+     * @return array{string, string}
+     */
+    private function parseSeriesSortParams(Request $request): array
+    {
+        $validColumns = ['name', 'count', 'works_read', 'words_read', 'coverage', 'avg_review'];
         $column = $request->query->get('sort', 'count');
         if (!in_array($column, $validColumns, true)) {
             $column = 'count';

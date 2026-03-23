@@ -88,6 +88,7 @@ reading:
         title: 'Filter Entries'
         status: 'Status'
         author: 'Author'
+        series: 'Series'
         starred: 'Favorites only'
         rating: 'Min. review'
         date_from: 'Finished from'
@@ -316,6 +317,7 @@ stats:
         type_main_pairing: 'Main Pairing'
         type_relationships: 'Relationships'
         type_author: 'Author'
+        type_series: 'Series'
         col_chapters: 'Chapters'
         col_wpc: 'Words / Chapter'
         col_read: 'Read'
@@ -323,7 +325,15 @@ stats:
         col_avg_review: 'Avg Review'
         col_abandon_rate: 'Abandon Rate'
         col_fandoms: 'Fandoms'
+        col_series_works: 'Works Read'
+        col_series_words: 'Words Read'
+        col_series_coverage: 'Coverage'
+        col_series_status: 'Publication'
+        series_coverage_note: '* Coverage shows words in distinct works you have started, across all time, regardless of the selected year filter.'
         author_ao3_link: 'View AO3 Profile'
+        series_ao3_link: 'View AO3 Series'
+        series_complete: 'Complete'
+        series_ongoing: 'Ongoing'
 
 reset_password:
     request:

@@ -13,6 +13,7 @@ use App\Repository\LanguageRepository;
 use App\Repository\MetadataRepository;
 use App\Repository\MetadataTypeRepository;
 use App\Repository\ReadingEntryRepository;
+use App\Repository\SeriesRepository;
 use App\Repository\StatusRepository;
 use App\Repository\WorkRepository;
 use App\Service\ReadingEntryService;
@@ -36,6 +37,7 @@ class ReadingEntryController extends AbstractController
         private readonly MetadataTypeRepository $metadataTypeRepository,
         private readonly LanguageRepository $languageRepository,
         private readonly MetadataRepository $metadataRepository,
+        private readonly SeriesRepository $seriesRepository,
     ) {
     }
 
@@ -87,6 +89,8 @@ class ReadingEntryController extends AbstractController
             'spiceExact'  => $request->query->get('spiceExact', ''),
             'wordsMin'    => $request->query->get('wordsMin', ''),
             'wordsMax'    => $request->query->get('wordsMax', ''),
+            // Set by Series rankings drill-down links. Value is a series ID (int as string).
+            'series'      => $request->query->get('series', ''),
         ];
 
         // Use strict empty check so spice=0 (a valid value) is treated as an active filter.
@@ -108,6 +112,13 @@ class ReadingEntryController extends AbstractController
         $allLanguages = $this->languageRepository->findAll();
         $metadataDropdownValues = $this->metadataRepository->findDropdownValuesByTypeName();
 
+        // Look up series name for the active series filter chip.
+        $seriesName = null;
+        if ($filterParams['series'] !== '') {
+            $series = $this->seriesRepository->find((int) $filterParams['series']);
+            $seriesName = $series?->getName();
+        }
+
         return $this->render('reading_entry/list.html.twig', [
             'entries' => $entries,
             'page' => $page,
@@ -120,6 +131,7 @@ class ReadingEntryController extends AbstractController
             'metadataTypes' => $allMetadataTypes,
             'languages' => $allLanguages,
             'metadataDropdownValues' => $metadataDropdownValues,
+            'seriesName' => $seriesName,
         ]);
     }
 
