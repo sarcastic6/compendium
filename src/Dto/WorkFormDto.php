@@ -37,6 +37,15 @@ class WorkFormDto
 
     public ?int $placeInSeries = null;
 
+    /** Populated by scraper only; not exposed on the work form. */
+    public ?int $seriesNumberOfParts = null;
+
+    /** Populated by scraper only; not exposed on the work form. */
+    public ?int $seriesTotalWords = null;
+
+    /** Populated by scraper only; not exposed on the work form. */
+    public ?bool $seriesIsComplete = null;
+
     public ?Language $language = null;
 
     public ?DateTimeImmutable $publishedDate = null;

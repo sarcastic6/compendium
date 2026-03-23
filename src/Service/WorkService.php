@@ -63,7 +63,14 @@ class WorkService
             }
             $work->setSeries($series);
         } elseif ($dto->seriesName !== null && trim($dto->seriesName) !== '') {
-            $series = $this->findOrCreateSeries(trim($dto->seriesName), $dto->seriesUrl, $dto->sourceType);
+            $series = $this->findOrCreateSeries(
+                trim($dto->seriesName),
+                $dto->seriesUrl,
+                $dto->sourceType,
+                $dto->seriesNumberOfParts,
+                $dto->seriesTotalWords,
+                $dto->seriesIsComplete,
+            );
             $work->setSeries($series);
         }
 
@@ -92,8 +99,14 @@ class WorkService
         return $work;
     }
 
-    private function findOrCreateSeries(string $name, ?string $sourceUrl, SourceType $workSourceType): Series
-    {
+    private function findOrCreateSeries(
+        string $name,
+        ?string $sourceUrl,
+        SourceType $workSourceType,
+        ?int $numberOfParts = null,
+        ?int $totalWords = null,
+        ?bool $isComplete = null,
+    ): Series {
         $series = $this->seriesRepository->findOneBy(['name' => $name]);
         if ($series === null) {
             $series = new Series($name);
@@ -102,6 +115,19 @@ class WorkService
 
         if ($sourceUrl !== null && $sourceUrl !== '') {
             $this->upsertSeriesSourceLink($series, $workSourceType, $sourceUrl);
+        }
+
+        // Always overwrite with fresh scraped values when present — series grow over time
+        // (new works added, series completed), so the scraped data is more up-to-date than
+        // whatever was stored when the series was first created.
+        if ($numberOfParts !== null) {
+            $series->setNumberOfParts($numberOfParts);
+        }
+        if ($totalWords !== null) {
+            $series->setTotalWords($totalWords);
+        }
+        if ($isComplete !== null) {
+            $series->setIsComplete($isComplete);
         }
 
         return $series;

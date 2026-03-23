@@ -99,11 +99,16 @@ class ImportService
             $dto->language = $language;
         }
 
-        // Series — pass name + URL as raw strings; WorkService does find-or-create + source link upsert
+        // Series — pass name + URL as raw strings; WorkService does find-or-create + source link upsert.
+        // numberOfParts, totalWords, and isComplete come from the series page (fetched by the scraper)
+        // and are passed through so WorkService can update the Series entity with authoritative data.
         if ($scraped->seriesName !== null) {
-            $dto->seriesName = $scraped->seriesName;
-            $dto->seriesUrl = $scraped->seriesUrl;
-            $dto->placeInSeries = $scraped->placeInSeries;
+            $dto->seriesName          = $scraped->seriesName;
+            $dto->seriesUrl           = $scraped->seriesUrl;
+            $dto->placeInSeries       = $scraped->placeInSeries;
+            $dto->seriesNumberOfParts = $scraped->seriesNumberOfParts;
+            $dto->seriesTotalWords    = $scraped->seriesTotalWords;
+            $dto->seriesIsComplete    = $scraped->seriesIsComplete;
         }
 
         // Metadata

@@ -111,7 +111,19 @@ class Ao3Scraper implements ScraperInterface
             );
         }
 
-        return $this->parse($html, $normalizedUrl);
+        $dto = $this->parse($html, $normalizedUrl);
+
+        // If the work belongs to a series, fetch the series page to get the work count,
+        // total word count, and completion status. These can't be derived from the work
+        // page alone — the series page is the authoritative source.
+        if ($dto->seriesUrl !== null) {
+            $seriesData = $this->fetchSeriesData($dto->seriesUrl);
+            $dto->seriesNumberOfParts = $seriesData['numberOfParts'];
+            $dto->seriesTotalWords    = $seriesData['totalWords'];
+            $dto->seriesIsComplete    = $seriesData['isComplete'];
+        }
+
+        return $dto;
     }
 
     private function normalizeUrl(string $url): string
@@ -391,6 +403,101 @@ class Ao3Scraper implements ScraperInterface
 
             return [null, null, null];
         }
+    }
+
+    /**
+     * Fetches the AO3 series page and extracts series-level metadata.
+     * Returns null for any field that cannot be determined.
+     *
+     * @return array{numberOfParts: int|null, totalWords: int|null, isComplete: bool|null}
+     */
+    private function fetchSeriesData(string $seriesUrl): array
+    {
+        $empty = ['numberOfParts' => null, 'totalWords' => null, 'isComplete' => null];
+
+        $this->logger->debug('AO3 scraper: fetching series page', ['url' => $seriesUrl]);
+
+        try {
+            $response = $this->httpClient->request('GET', $seriesUrl, [
+                'headers' => [
+                    'User-Agent' => $this->userAgent,
+                    'Cookie' => 'view_adult=true',
+                ],
+            ]);
+
+            $statusCode = $response->getStatusCode();
+            if ($statusCode !== 200) {
+                $this->logger->warning('AO3 scraper: series page returned non-200', [
+                    'url' => $seriesUrl,
+                    'http_status' => $statusCode,
+                ]);
+
+                return $empty;
+            }
+
+            return $this->parseSeriesPage($response->getContent());
+        } catch (\Throwable $e) {
+            $this->logger->warning('AO3 scraper: failed to fetch series page', [
+                'url' => $seriesUrl,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $empty;
+        }
+    }
+
+    /**
+     * Parses series metadata from the AO3 series page HTML.
+     *
+     * All three fields are scoped to dl.series.meta.group dl.stats to avoid collisions
+     * with the per-work dl.stats blocks that appear in the series work listing below.
+     * The "Complete:" dt has no class, so it is located via XPath.
+     *
+     * @return array{numberOfParts: int|null, totalWords: int|null, isComplete: bool|null}
+     */
+    private function parseSeriesPage(string $html): array
+    {
+        $result = ['numberOfParts' => null, 'totalWords' => null, 'isComplete' => null];
+
+        try {
+            $crawler = new Crawler($html);
+
+            // Scope to the series metadata stats block. The series work listing below
+            // also contains dl.stats elements (one per work), so without this scoping
+            // the first filter match would be an individual work's stats, not the series total.
+            $statsBlock = $crawler->filter('dl.series.meta.group dl.stats');
+            if ($statsBlock->count() === 0) {
+                $this->logger->warning('AO3 scraper: series metadata stats block not found');
+
+                return $result;
+            }
+
+            $worksNode = $statsBlock->filter('dd.works');
+            if ($worksNode->count() > 0) {
+                $text = str_replace(',', '', trim($worksNode->text()));
+                $result['numberOfParts'] = (int) $text ?: null;
+            }
+
+            $wordsNode = $statsBlock->filter('dd.words');
+            if ($wordsNode->count() > 0) {
+                $text = str_replace(',', '', trim($wordsNode->text()));
+                $result['totalWords'] = (int) $text ?: null;
+            }
+
+            // "Complete:" dt has no class; XPath targets it by text content.
+            $completeNode = $crawler->filterXPath(
+                '//dl[contains(@class,"series") and contains(@class,"meta") and contains(@class,"group")]'
+                . '//dl[contains(@class,"stats")]'
+                . '//dt[normalize-space(text())="Complete:"]/following-sibling::dd[1]',
+            );
+            if ($completeNode->count() > 0) {
+                $result['isComplete'] = strtolower(trim($completeNode->text())) === 'yes';
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning('AO3 scraper: failed to parse series page', ['error' => $e->getMessage()]);
+        }
+
+        return $result;
     }
 
     /**

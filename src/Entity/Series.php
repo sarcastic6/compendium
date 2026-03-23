@@ -25,6 +25,12 @@ class Series
     #[ORM\Column(nullable: true)]
     private ?int $numberOfParts = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $totalWords = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $isComplete = null;
+
     /** @var Collection<int, SeriesSourceLink> */
     #[ORM\OneToMany(targetEntity: SeriesSourceLink::class, mappedBy: 'series', cascade: ['persist'])]
     private Collection $sourceLinks;
@@ -61,6 +67,30 @@ class Series
     public function setNumberOfParts(?int $numberOfParts): static
     {
         $this->numberOfParts = $numberOfParts;
+
+        return $this;
+    }
+
+    public function getTotalWords(): ?int
+    {
+        return $this->totalWords;
+    }
+
+    public function setTotalWords(?int $totalWords): static
+    {
+        $this->totalWords = $totalWords;
+
+        return $this;
+    }
+
+    public function getIsComplete(): ?bool
+    {
+        return $this->isComplete;
+    }
+
+    public function setIsComplete(?bool $isComplete): static
+    {
+        $this->isComplete = $isComplete;
 
         return $this;
     }

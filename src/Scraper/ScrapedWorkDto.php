@@ -47,6 +47,12 @@ class ScrapedWorkDto
 
     public ?int $placeInSeries = null;
 
+    public ?int $seriesNumberOfParts = null;
+
+    public ?int $seriesTotalWords = null;
+
+    public ?bool $seriesIsComplete = null;
+
     /**
      * Metadata tags keyed by the source category name.
      * Each entry is {name: string, link: string|null}.
