@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\SourceType;
 use App\Repository\SeriesRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -99,6 +100,21 @@ class Series
     public function getSourceLinks(): Collection
     {
         return $this->sourceLinks;
+    }
+
+    /**
+     * Returns the URL for the given source type, or null if none is stored.
+     * Used by templates to conditionally render the series name as a link.
+     */
+    public function getLinkForSource(SourceType $sourceType): ?string
+    {
+        foreach ($this->sourceLinks as $sourceLink) {
+            if ($sourceLink->getSourceType() === $sourceType) {
+                return $sourceLink->getLink();
+            }
+        }
+
+        return null;
     }
 
     public function addSourceLink(SeriesSourceLink $sourceLink): static

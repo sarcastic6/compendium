@@ -75,7 +75,12 @@
             {% if work.series %}
                 <dt class="col-sm-4">{{ 'work.field.series'|trans }}</dt>
                 <dd class="col-sm-8">
-                    {{ work.series.name }}
+                    {% set seriesLink = work.series.getLinkForSource(work.sourceType) %}
+                    {% if seriesLink %}
+                        <a href="{{ seriesLink }}" target="_blank" rel="noopener noreferrer">{{ work.series.name }}</a>
+                    {% else %}
+                        {{ work.series.name }}
+                    {% endif %}
                     {% if work.placeInSeries %}
                         (#{{ work.placeInSeries }})
                     {% endif %}
