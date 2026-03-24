@@ -187,6 +187,8 @@ work:
     preview:
         view_details: 'View Full Details'
         load_error: 'Failed to load preview.'
+    action:
+        log_entry: 'Log Entry'
     show:
         heading: 'Work details'
         no_metadata: 'No metadata attached to this work.'

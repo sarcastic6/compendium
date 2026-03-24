@@ -1,0 +1,181 @@
+// =============================================================================
+// _work.scss
+// Work detail page layout and components.
+// =============================================================================
+
+@use 'variables' as *;
+
+// -------------------------------------------------------------------------
+// Back link
+// -------------------------------------------------------------------------
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--transition-fast);
+
+    &:hover {
+        color: var(--color-primary);
+    }
+}
+
+// -------------------------------------------------------------------------
+// Cover column
+// -------------------------------------------------------------------------
+
+.work-cover-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    @media (max-width: #{$breakpoint-md - 1px}) {
+        align-items: center;
+    }
+}
+
+// -------------------------------------------------------------------------
+// Title + author
+// -------------------------------------------------------------------------
+
+.work-detail-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-extrabold);
+    color: var(--color-primary);
+    line-height: var(--leading-tight);
+    margin: 0;
+}
+
+.work-detail-authors {
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
+    margin: 0;
+
+    a {
+        color: var(--color-primary-light);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+.work-detail-updated {
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+    white-space: nowrap;
+    padding-top: 6px; // align with title baseline
+}
+
+// -------------------------------------------------------------------------
+// Stat boxes (word count, chapters, published, language)
+// -------------------------------------------------------------------------
+
+.work-detail-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.work-stat-box {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-4);
+    min-width: 80px;
+}
+
+.work-stat-value {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    color: var(--color-primary);
+    line-height: 1.2;
+}
+
+.work-stat-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+}
+
+// -------------------------------------------------------------------------
+// Summary
+// -------------------------------------------------------------------------
+
+.work-detail-summary {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    line-height: var(--leading-relaxed);
+    padding: var(--space-4);
+    background: var(--color-surface-tint);
+    border-left: 3px solid var(--color-secondary);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    white-space: pre-wrap;
+}
+
+// -------------------------------------------------------------------------
+// Metadata groups (Warning, Rating, Fandom, etc.)
+// -------------------------------------------------------------------------
+
+.work-detail-metadata {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.work-meta-group {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.work-meta-label {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    padding-top: 3px; // align with chip text
+    min-width: 90px;
+}
+
+.work-meta-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+
+    .chip {
+        max-width: none; // override chip-tag truncation on this page
+    }
+}
+
+// -------------------------------------------------------------------------
+// Series info (below cover)
+// -------------------------------------------------------------------------
+
+.work-series-info {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-top: var(--space-3);
+
+    a {
+        color: var(--color-primary-light);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
