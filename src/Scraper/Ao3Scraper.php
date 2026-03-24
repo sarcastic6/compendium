@@ -66,9 +66,9 @@ class Ao3Scraper implements ScraperInterface
             $response = $this->httpClient->request('GET', $normalizedUrl, [
                 'headers' => [
                     'User-Agent' => $this->userAgent,
-                    // AO3 redirects canonical work URLs to /chapters/{id} and drops the
-                    // ?view_adult=true query param. Sending it as a cookie ensures the
-                    // adult-content bypass persists through the entire redirect chain.
+                    // AO3 redirects canonical work URLs to /chapters/{id} and drops query
+                    // params. Sending view_adult as a cookie ensures the adult-content
+                    // bypass persists through the entire redirect chain.
                     'Cookie' => 'view_adult=true',
                 ],
             ]);
@@ -142,7 +142,7 @@ class Ao3Scraper implements ScraperInterface
             $path = $matches[1];
         }
 
-        return 'https://' . self::AO3_HOST . $path . '?view_adult=true';
+        return 'https://' . self::AO3_HOST . $path;
     }
 
     private function parse(string $html, string $sourceUrl): ScrapedWorkDto

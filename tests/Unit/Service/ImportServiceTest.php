@@ -55,7 +55,7 @@ class ImportServiceTest extends TestCase
         $dto->chapters = 5;
         $dto->publishedDate = '2023-01-15';
         $dto->lastUpdatedDate = null;
-        $dto->sourceUrl = 'https://archiveofourown.org/works/11111?view_adult=true';
+        $dto->sourceUrl = 'https://archiveofourown.org/works/11111';
         $dto->sourceType = 'AO3';
         $dto->workType = 'Fanfiction';
         $dto->language = null;

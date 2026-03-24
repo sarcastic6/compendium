@@ -153,7 +153,7 @@ class ImportFlowTest extends AbstractFunctionalTest
         // Create an existing work with the canonical URL that the scraper will produce
         $work = new Work(WorkType::Fanfiction, 'Existing Work');
         $work->setSourceType(SourceType::AO3);
-        $work->setLink('https://archiveofourown.org/works/55555?view_adult=true');
+        $work->setLink('https://archiveofourown.org/works/55555');
         $this->em->persist($work);
         $this->em->flush();
 

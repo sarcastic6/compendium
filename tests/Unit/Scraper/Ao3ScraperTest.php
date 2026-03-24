@@ -219,7 +219,7 @@ class Ao3ScraperTest extends TestCase
         $scraper = $this->makeScraper($this->fixture('minimal_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/55555/chapters/99999');
 
-        // sourceUrl should be the canonical works/{id}?view_adult=true URL
+        // sourceUrl should be the canonical works/{id} URL
         $this->assertStringContainsString('archiveofourown.org/works/55555', $dto->sourceUrl ?? '');
         $this->assertStringNotContainsString('/chapters/', $dto->sourceUrl ?? '');
     }
