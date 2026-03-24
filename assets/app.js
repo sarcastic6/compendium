@@ -15,3 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('shown.bs.tab', () => {
     window.dispatchEvent(new Event('resize'));
 });
+
+// Flash message dismiss
+document.addEventListener('click', e => {
+    const btn = e.target.closest('.flash-dismiss');
+    if (btn) btn.closest('.flash').remove();
+});

@@ -100,6 +100,25 @@
 }
 
 // -------------------------------------------------------------------------
+// Generic empty state
+// -------------------------------------------------------------------------
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-8) var(--space-4);
+    gap: var(--space-3);
+}
+
+.empty-state-text {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+// -------------------------------------------------------------------------
 // Screen-reader only
 // -------------------------------------------------------------------------
 

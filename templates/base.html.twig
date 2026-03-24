@@ -256,12 +256,16 @@
             </div>
 
             {# Flash messages #}
-            <div class="flash-container">
+            <div class="flash-container" role="status" aria-live="polite">
                 {% for type, messages in app.flashes %}
                     {% for message in messages %}
-                        <div class="alert alert-{{ type == 'error' ? 'danger' : type }} alert-dismissible fade show mb-0 rounded-0" role="alert">
-                            {{ message|trans }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'action.close'|trans }}"></button>
+                        {% set iconMap = {success: 'bi-check-circle-fill', error: 'bi-exclamation-triangle-fill', warning: 'bi-exclamation-circle-fill', info: 'bi-info-circle-fill'} %}
+                        <div class="flash flash-{{ type }}" role="alert">
+                            <i class="bi {{ iconMap[type] ?? 'bi-info-circle-fill' }}" aria-hidden="true"></i>
+                            <span class="flash-body">{{ message|trans }}</span>
+                            <button type="button" class="flash-dismiss" aria-label="{{ 'action.close'|trans }}">
+                                <i class="bi bi-x-lg" aria-hidden="true"></i>
+                            </button>
                         </div>
                     {% endfor %}
                 {% endfor %}
