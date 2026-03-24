@@ -62,14 +62,14 @@ class ImportFlowTest extends AbstractFunctionalTest
     }
 
     /**
-     * Submits the URL import form (the second form on the select page).
+     * Submits the URL import form (the first form on the select page).
      *
      * @param array<string, mixed> $formData
      */
     private function submitImportForm(array $formData): void
     {
         $crawler = $this->client->getCrawler();
-        $form = $crawler->filter('form')->eq(1)->form($formData);
+        $form = $crawler->filter('form')->eq(0)->form($formData);
         $this->client->submit($form);
     }
 
@@ -145,7 +145,7 @@ class ImportFlowTest extends AbstractFunctionalTest
 
     // --- Duplicate detection ---
 
-    public function test_duplicate_url_shows_warning_flash(): void
+    public function test_duplicate_url_redirects_to_select_with_prompt(): void
     {
         $this->configureMockHttpClient($this->fixture('minimal_work'));
         $this->loginAsUser();
@@ -160,11 +160,14 @@ class ImportFlowTest extends AbstractFunctionalTest
         $this->client->request('GET', '/work/select');
         $this->submitImportForm(['import_url' => 'https://archiveofourown.org/works/55555']);
 
-        // Follow redirect to /work/new and check for duplicate warning
+        // Should redirect back to /work/select (not /work/new)
+        $this->assertResponseRedirects('/work/select');
         $this->client->followRedirect();
-        $content = (string) $this->client->getResponse()->getContent();
 
-        $this->assertStringContainsString('already exists in the database', $content);
+        // The select page should show the duplicate prompt with the existing work title
+        $content = (string) $this->client->getResponse()->getContent();
+        $this->assertStringContainsString('Existing Work', $content);
+        $this->assertStringContainsString('update-from-import', $content);
     }
 
     // --- Session cleared after WorkController consumes it ---

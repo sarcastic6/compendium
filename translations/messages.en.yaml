@@ -371,5 +371,14 @@ import:
     error:
         unsupported_url: 'This URL is not supported. Currently only AO3 work URLs are supported.'
         scrape_failed: 'Could not retrieve data from the URL. Please check the URL and try again.'
+        session_expired: 'The import session expired. Please try again.'
     warning:
         duplicate: 'A work with this URL already exists in the database. You can still create a new entry below.'
+    duplicate:
+        heading: 'This work already exists'
+        body: 'A work matching this URL is already in the database. What would you like to do?'
+        update_btn: 'Update existing work'
+        log_btn: 'Log a read without updating'
+        create_btn: 'Import as new work'
+    success:
+        updated: 'Work updated successfully.'
