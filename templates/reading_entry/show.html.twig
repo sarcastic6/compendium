@@ -21,6 +21,15 @@
         {% endif %}
     </div>
     <div class="d-flex flex-wrap gap-2 flex-shrink-0 ms-3">
+        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary btn-sm">
+            &larr; {{ 'reading.entry.back_to_list'|trans }}
+        </a>
+        {% if not entry.work.deleted %}
+            <a href="{{ path('app_work_show', {id: entry.work.id}) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-book" aria-hidden="true"></i>
+                {{ 'reading.entry.view_work'|trans }}
+            </a>
+        {% endif %}
         <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}" class="btn btn-outline-primary btn-sm">
             <i class="bi bi-pencil" aria-hidden="true"></i>
             {{ 'reading.entry.edit'|trans }}
@@ -32,9 +41,6 @@
             <i class="bi bi-trash" aria-hidden="true"></i>
             {{ 'reading.entry.delete'|trans }}
         </button>
-        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary btn-sm">
-            &larr; {{ 'reading.entry.back_to_list'|trans }}
-        </a>
     </div>
 </div>
 
@@ -108,14 +114,6 @@
     </div>
 {% endif %}
 
-{% if not entry.work.deleted %}
-    <div class="border-top pt-3">
-        <a href="{{ path('app_work_show', {id: entry.work.id}) }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-book" aria-hidden="true"></i>
-            {{ 'reading.entry.view_work'|trans }}
-        </a>
-    </div>
-{% endif %}
 
 {# Delete confirmation modal — CSRF token protects against cross-site deletion #}
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
