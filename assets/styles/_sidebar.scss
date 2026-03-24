@@ -173,7 +173,17 @@
     .sidebar-nav-item {
         font-size: var(--text-xs);
         min-height: 34px;
-        padding: var(--space-1) var(--space-5) var(--space-1) 0;
+        padding: var(--space-1) var(--space-5) var(--space-1) var(--space-3);
+
+        // Suppress the mid-sidebar accent bar; use a left border on the item instead
+        &::before {
+            display: none;
+        }
+
+        &.active {
+            border-left: 3px solid var(--color-secondary);
+            padding-left: calc(var(--space-3) - 3px); // compensate for border width
+        }
     }
 }
 

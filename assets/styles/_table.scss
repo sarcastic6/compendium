@@ -131,6 +131,13 @@
     font-size: var(--text-sm);
 }
 
+// Cover thumbnail cell — fixed-width column for the typographic cover art
+.cover-col {
+    width: 56px; // 44px cover + padding
+    padding-right: 0 !important;
+    vertical-align: middle;
+}
+
 // Table wrapper (adds scroll on small screens)
 .table-wrapper {
     background: var(--color-surface);

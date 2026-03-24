@@ -1,3 +1,35 @@
+entry:
+    list:
+        heading: 'My Library'
+        add: 'Add Entry'
+        entry_count: '%count% entries'
+        entry_count_one: '1 entry'
+        entry_count_filtered: '%count% of %total% entries'
+        col_fandom: 'Fandom'
+        stat_total_words: 'Total Words'
+        stat_finish_rate: 'Finish Rate'
+        stat_avg_review: 'Avg Review'
+        stat_this_year: 'In %year%'
+        favorite_work: 'Favorite work'
+        favorite_entry: 'Favorite entry'
+        view_comment: 'View comment'
+        stars: 'stars'
+        actions: 'Entry actions'
+        pagination: 'Reading entries pagination'
+    empty:
+        heading: 'Your archive is empty'
+        text: 'Start building your reading log by adding your first entry.'
+        no_results_heading: 'No entries match your filters'
+        no_results_text: 'Try adjusting or clearing your filters to see more results.'
+    filter:
+        panel_title: 'Filter Entries'
+        show_filters: 'Filters'
+        clear_all: 'Clear all'
+        section_text: 'Text Search'
+        section_metrics: 'Metrics'
+        section_classify: 'Status & Type'
+        section_metadata: 'Tags & Metadata'
+
 nav:
     main: 'Main navigation'
     home: 'My List'

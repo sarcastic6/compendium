@@ -98,6 +98,12 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 ->addSelect('w')
                 ->innerJoin('re.status', 's')
                 ->addSelect('s')
+                // Eager-load work metadata and its type to avoid N+1 queries when the
+                // list template iterates metadata for the fandom column display.
+                ->leftJoin('w.metadata', 'wm')
+                ->addSelect('wm')
+                ->leftJoin('wm.metadataType', 'wmt')
+                ->addSelect('wmt')
                 ->where('re.user = :user')
                 ->setParameter('user', $user)
                 ->orderBy('re.createdAt', 'DESC')

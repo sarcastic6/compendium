@@ -90,6 +90,51 @@
 }
 
 // -------------------------------------------------------------------------
+// Stat strip (reading list summary row)
+// A horizontal row of small summary cards below the page header.
+// -------------------------------------------------------------------------
+
+.stat-strip {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+}
+
+.stat-strip-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-5);
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    box-shadow: var(--shadow-xs);
+}
+
+.stat-strip-value {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-extrabold);
+    color: var(--color-primary);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-strip-value--empty {
+    color: var(--color-text-faint);
+}
+
+.stat-strip-label {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+// -------------------------------------------------------------------------
 // Chart card
 // -------------------------------------------------------------------------
 

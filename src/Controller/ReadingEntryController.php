@@ -119,6 +119,19 @@ class ReadingEntryController extends AbstractController
             $seriesName = $series?->getName();
         }
 
+        // Summary stat strip — all-time aggregates for the current user.
+        // These are always unfiltered (library-wide) so the strip stays stable
+        // regardless of what the user is currently filtering for.
+        $currentYear = (int) date('Y');
+        $totalWordsAllTime = $this->readingEntryRepository->getTotalWordsSumForUser($user);
+        $totalEntriesAllTime = $this->readingEntryRepository->countByUser($user);
+        $finishedAllTime = $this->readingEntryRepository->countFinished($user);
+        $finishRate = $totalEntriesAllTime > 0
+            ? (int) round($finishedAllTime / $totalEntriesAllTime * 100)
+            : 0;
+        $avgReview = $this->readingEntryRepository->getAverageRating($user);
+        $thisYearCount = $this->readingEntryRepository->countByUser($user, $currentYear);
+
         return $this->render('reading_entry/list.html.twig', [
             'entries' => $entries,
             'page' => $page,
@@ -132,6 +145,12 @@ class ReadingEntryController extends AbstractController
             'languages' => $allLanguages,
             'metadataDropdownValues' => $metadataDropdownValues,
             'seriesName' => $seriesName,
+            // Summary stat strip
+            'stat_total_words' => $totalWordsAllTime,
+            'stat_finish_rate' => $finishRate,
+            'stat_avg_review' => $avgReview,
+            'stat_this_year' => $thisYearCount,
+            'stat_current_year' => $currentYear,
         ]);
     }
 

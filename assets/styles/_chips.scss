@@ -63,6 +63,42 @@
 }
 
 // -------------------------------------------------------------------------
+// Solid status chips — used in the redesigned reading entry list table.
+// Fixed semantic colors (not palette), white text, no border.
+// Match by lowercase status name via data-status attribute or modifier class.
+// -------------------------------------------------------------------------
+
+.chip--completed {
+    background: #2d6a4f;
+    color: #fff;
+    border: none;
+}
+
+.chip--reading {
+    background: #1d4e89;
+    color: #fff;
+    border: none;
+}
+
+.chip--on-hold {
+    background: #b5541c;
+    color: #fff;
+    border: none;
+}
+
+.chip--dnf {
+    background: #6b2d2d;
+    color: #fff;
+    border: none;
+}
+
+.chip--tbr {
+    background: #4a5568;
+    color: #fff;
+    border: none;
+}
+
+// -------------------------------------------------------------------------
 // Tag / metadata chips (fandom, character, pairing, etc.)
 // -------------------------------------------------------------------------
 
