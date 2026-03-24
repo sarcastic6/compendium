@@ -85,14 +85,28 @@
         color: var(--color-text-muted);
     }
 
+    .entry-date-finished {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        margin-top: 6px;
+
+        .entry-date-none {
+            color: var(--color-text-faint);
+        }
+    }
+
     .entry-comment-trigger {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
+        // display: inline prevents the button from inflating the line height of the
+        // title div. A single icon needs no flex context.
+        display: inline;
+        padding: 0;
+        border: none;
+        background: none;
         font-size: var(--text-xs);
         color: var(--color-text-faint);
         cursor: pointer;
         margin-left: var(--space-2);
+        vertical-align: middle;
         transition: color var(--transition-fast);
 
         &:hover {

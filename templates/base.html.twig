@@ -8,6 +8,11 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
         <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,400;1,600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        {# Bootstrap Icons: preload the woff2 so the browser fetches it before parsing
+           the CSS, eliminating the flash of unstyled icon text (FOUT). The stylesheet
+           is loaded directly so font paths resolve correctly relative to the vendor dir. #}
+        <link rel="preload" href="{{ asset('vendor/bootstrap-icons/font/fonts/bootstrap-icons.woff2') }}" as="font" type="font/woff2" crossorigin="anonymous">
+        <link rel="stylesheet" href="{{ asset('vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
         {% block stylesheets %}{% endblock %}
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}

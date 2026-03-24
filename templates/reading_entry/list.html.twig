@@ -264,7 +264,6 @@
                                aria-label="{{ 'reading.bulk.select_all'|trans }}">
                     </th>
                     <th scope="col" class="cover-col" aria-hidden="true"></th>
-                    <th scope="col">{{ 'reading.entry.col_date_finished'|trans }}</th>
                     <th scope="col">{{ 'reading.entry.col_title'|trans }}</th>
                     <th scope="col" class="d-none d-lg-table-cell">{{ 'entry.list.col_fandom'|trans }}</th>
                     <th scope="col">{{ 'reading.entry.col_words'|trans }}</th>
@@ -307,12 +306,6 @@
                             {% endif %}
                         </td>
 
-                        {# Date finished #}
-                        <td data-label="{{ 'reading.entry.col_date_finished'|trans }}"
-                            class="words-col">
-                            {{ entry.dateFinished ? entry.dateFinished|date('Y-m-d') : '—' }}
-                        </td>
-
                         {# Title + author stacked #}
                         <td data-label="{{ 'reading.entry.col_title'|trans }}">
                             <div class="entry-title-cell">
@@ -336,7 +329,7 @@
                                         {% endif %}
                                         {% if entry.comments %}
                                             <button type="button"
-                                                    class="btn-icon btn-ghost entry-comment-trigger"
+                                                    class="btn-ghost entry-comment-trigger"
                                                     data-bs-toggle="offcanvas"
                                                     data-bs-target="#commentOffcanvas"
                                                     data-comment-title="{{ entry.work.title|e('html_attr') }}"
@@ -348,6 +341,14 @@
                                     </div>
                                     <div class="entry-author">
                                         {{ entry.work.authors|map(a => a.name)|join(', ')|default('—') }}
+                                    </div>
+                                    <div class="entry-date-finished">
+                                        {% if entry.dateFinished %}
+                                            <i class="bi bi-calendar3" aria-hidden="true"></i>
+                                            {{ entry.dateFinished|date('d M Y') }}
+                                        {% else %}
+                                            <span class="entry-date-none">—</span>
+                                        {% endif %}
                                     </div>
                                 {% endif %}
                             </div>
