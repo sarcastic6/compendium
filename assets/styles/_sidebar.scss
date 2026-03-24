@@ -1,6 +1,6 @@
 // =============================================================================
 // _sidebar.scss
-// Left navigation sidebar (fixed on tablet+, offcanvas on mobile).
+// Left navigation sidebar (fixed on desktop 992px+, offcanvas on mobile/tablet).
 // =============================================================================
 
 @use 'variables' as *;
@@ -21,8 +21,8 @@
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 
-    // Hidden on mobile — shown as offcanvas instead
-    @media (max-width: #{$breakpoint-md - 1px}) {
+    // Hidden below lg — shown as offcanvas instead
+    @media (max-width: #{$breakpoint-lg - 1px}) {
         display: none;
     }
 }

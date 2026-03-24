@@ -166,18 +166,6 @@
         {# =====================================================================
            Mobile top bar + offcanvas sidebar
            ===================================================================== #}
-        <div class="mobile-topbar" aria-hidden="true">
-            <button class="mobile-topbar-toggle"
-                    type="button"
-                    data-bs-toggle="offcanvas"
-                    data-bs-target="#sidebar-offcanvas"
-                    aria-controls="sidebar-offcanvas"
-                    aria-label="{{ 'nav.open_menu'|trans }}">
-                <i class="bi bi-list" aria-hidden="true"></i>
-            </button>
-            <span class="mobile-topbar-brand">Compendium</span>
-        </div>
-
         <div class="offcanvas offcanvas-start offcanvas-sidebar"
              tabindex="-1"
              id="sidebar-offcanvas"
@@ -252,6 +240,20 @@
            Main content area
            ===================================================================== #}
         <div class="app-main">
+
+            {# Mobile top bar — must be inside app-main (the flex column) so it renders
+               across the top of the content area, not as a left column in the flex row. #}
+            <div class="mobile-topbar" aria-hidden="true">
+                <button class="mobile-topbar-toggle"
+                        type="button"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#sidebar-offcanvas"
+                        aria-controls="sidebar-offcanvas"
+                        aria-label="{{ 'nav.open_menu'|trans }}">
+                    <i class="bi bi-list" aria-hidden="true"></i>
+                </button>
+                <span class="mobile-topbar-brand">Compendium</span>
+            </div>
 
             {# Flash messages #}
             <div class="flash-container">
