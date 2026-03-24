@@ -4,101 +4,267 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}Compendium{% endblock %} | Compendium</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>📚</text></svg>">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
         <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,400;1,600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>📚</text></svg>">
         {% block stylesheets %}{% endblock %}
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
-    <body>
-        <nav class="navbar navbar-expand-md navbar-dark bg-dark" aria-label="{{ 'nav.main'|trans }}">
-            <div class="container">
-                <a class="navbar-brand" href="{{ path('app_stats_dashboard') }}">
-                    📚 Reading Stats
-                </a>
-                <button class="navbar-toggler" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#main-nav"
-                        aria-controls="main-nav" aria-expanded="false"
-                        aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="main-nav">
-                    <ul class="navbar-nav me-auto mb-2 mb-md-0">
-                        {% if is_granted('ROLE_USER') %}
-                            <li class="nav-item">
-                                <a class="nav-link{% if app.request.attributes.get('_route') starts with 'app_reading_entry' %} active{% endif %}"
-                                   href="{{ path('app_reading_entry_list') }}">
-                                    {{ 'nav.home'|trans }}
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_work_select') }}">
-                                    {{ 'nav.new_entry'|trans }}
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link{% if app.request.attributes.get('_route') starts with 'app_stats' %} active{% endif %}"
-                                   href="{{ path('app_stats_dashboard') }}">
-                                    {{ 'nav.stats'|trans }}
-                                </a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                    {% if is_granted('ROLE_USER') %}
-                        <ul class="navbar-nav ms-auto mb-2 mb-md-0">
-                            {% if is_granted('ROLE_ADMIN') %}
-                                <li class="nav-item">
-                                    <a class="nav-link{% if app.request.attributes.get('_route') starts with 'app_admin' %} active{% endif %}"
-                                       href="{{ path('app_admin_index') }}">
-                                        {{ 'nav.admin'|trans }}
-                                    </a>
-                                </li>
-                            {% endif %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_profile') }}">
-                                    {{ 'nav.profile'|trans }}
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_logout') }}">
-                                    {{ 'nav.logout'|trans }}
-                                </a>
-                            </li>
-                        </ul>
-                    {% else %}
-                        <ul class="navbar-nav ms-auto mb-2 mb-md-0">
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_login') }}">
-                                    {{ 'nav.login'|trans }}
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ path('app_register') }}">
-                                    {{ 'nav.register'|trans }}
-                                </a>
-                            </li>
-                        </ul>
-                    {% endif %}
-                </div>
-            </div>
-        </nav>
+    <body class="app-shell">
 
-        <div class="flash-container">
-            {% for type, messages in app.flashes %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ type == 'error' ? 'danger' : type }} alert-dismissible fade show mb-0 rounded-0" role="alert">
-                        {{ message|trans }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        {# =====================================================================
+           Sidebar (desktop — fixed; hidden on mobile via CSS)
+           ===================================================================== #}
+        {% set currentRoute = app.request.attributes.get('_route') %}
+        {% set onRankingsPage = currentRoute starts with 'app_stats_rankings' %}
+
+        <aside class="sidebar" aria-label="{{ 'nav.main'|trans }}">
+
+            {# Brand #}
+            <div class="sidebar-brand">
+                <a href="{{ is_granted('ROLE_USER') ? path('app_reading_entry_list') : path('app_login') }}" class="sidebar-brand-name text-decoration-none">
+                    Compendium
+                </a>
+                <div class="sidebar-brand-sub">{{ 'nav.brand_sub'|trans }}</div>
+            </div>
+
+            {# User avatar #}
+            {% if is_granted('ROLE_USER') %}
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar" aria-hidden="true">
+                        {{ app.user.name|first|upper }}
                     </div>
-                {% endfor %}
-            {% endfor %}
+                    <span class="sidebar-user-name">{{ app.user.name }}</span>
+                </div>
+            {% endif %}
+
+            {# Navigation #}
+            <nav class="sidebar-nav">
+                {% if is_granted('ROLE_USER') %}
+
+                    <a href="{{ path('app_reading_entry_list') }}"
+                       class="sidebar-nav-item{% if currentRoute starts with 'app_reading_entry' or currentRoute starts with 'app_work' %} active{% endif %}">
+                        <i class="bi bi-book sidebar-nav-icon" aria-hidden="true"></i>
+                        {{ 'nav.library'|trans }}
+                    </a>
+
+                    <a href="{{ path('app_stats_dashboard') }}"
+                       class="sidebar-nav-item{% if currentRoute == 'app_stats_dashboard' %} active{% endif %}">
+                        <i class="bi bi-bar-chart-line sidebar-nav-icon" aria-hidden="true"></i>
+                        {{ 'nav.analytics'|trans }}
+                    </a>
+
+                    {# Rankings — collapsible sub-nav #}
+                    <button type="button"
+                            class="sidebar-nav-item sidebar-nav-group-toggle w-100 text-start{% if onRankingsPage %} active{% endif %}"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#rankings-subnav"
+                            aria-expanded="{{ onRankingsPage ? 'true' : 'false' }}"
+                            aria-controls="rankings-subnav">
+                        <span class="d-flex align-items-center gap-2 flex-grow-1">
+                            <i class="bi bi-trophy sidebar-nav-icon" aria-hidden="true"></i>
+                            {{ 'nav.rankings'|trans }}
+                        </span>
+                        <i class="bi bi-chevron-down sidebar-nav-group-caret" aria-hidden="true"></i>
+                    </button>
+
+                    <div class="collapse{% if onRankingsPage %} show{% endif %}" id="rankings-subnav">
+                        <div class="sidebar-nav-sub">
+                            <a href="{{ path('app_stats_rankings_author') }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings_author' %} active{% endif %}">
+                                {{ 'nav.rankings_authors'|trans }}
+                            </a>
+                            <a href="{{ path('app_stats_rankings', {type: 'Fandom'}) }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Fandom' %} active{% endif %}">
+                                {{ 'nav.rankings_fandoms'|trans }}
+                            </a>
+                            <a href="{{ path('app_stats_rankings', {type: 'Character'}) }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Character' %} active{% endif %}">
+                                {{ 'nav.rankings_characters'|trans }}
+                            </a>
+                            <a href="{{ path('app_stats_rankings', {type: 'Relationships'}) }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Relationships' %} active{% endif %}">
+                                {{ 'nav.rankings_relationships'|trans }}
+                            </a>
+                            <a href="{{ path('app_stats_rankings', {type: 'Tag'}) }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Tag' %} active{% endif %}">
+                                {{ 'nav.rankings_tags'|trans }}
+                            </a>
+                            <a href="{{ path('app_stats_rankings', {type: 'Rating'}) }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Rating' %} active{% endif %}">
+                                {{ 'nav.rankings_ratings'|trans }}
+                            </a>
+                            <a href="{{ path('app_stats_rankings', {type: 'Warning'}) }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Warning' %} active{% endif %}">
+                                {{ 'nav.rankings_warnings'|trans }}
+                            </a>
+                            <a href="{{ path('app_stats_rankings', {type: 'Category'}) }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Category' %} active{% endif %}">
+                                {{ 'nav.rankings_categories'|trans }}
+                            </a>
+                            <a href="{{ path('app_stats_rankings_series') }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings_series' %} active{% endif %}">
+                                {{ 'nav.rankings_series'|trans }}
+                            </a>
+                            <a href="{{ path('app_stats_rankings_main_pairing') }}"
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings_main_pairing' %} active{% endif %}">
+                                {{ 'nav.rankings_main_pairings'|trans }}
+                            </a>
+                        </div>
+                    </div>
+
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('app_admin_index') }}"
+                           class="sidebar-nav-item{% if currentRoute starts with 'app_admin' %} active{% endif %}">
+                            <i class="bi bi-gear sidebar-nav-icon" aria-hidden="true"></i>
+                            {{ 'nav.admin'|trans }}
+                        </a>
+                    {% endif %}
+
+                {% else %}
+                    <a href="{{ path('app_login') }}"
+                       class="sidebar-nav-item{% if currentRoute == 'app_login' %} active{% endif %}">
+                        <i class="bi bi-box-arrow-in-right sidebar-nav-icon" aria-hidden="true"></i>
+                        {{ 'nav.login'|trans }}
+                    </a>
+                    <a href="{{ path('app_register') }}"
+                       class="sidebar-nav-item{% if currentRoute == 'app_register' %} active{% endif %}">
+                        <i class="bi bi-person-plus sidebar-nav-icon" aria-hidden="true"></i>
+                        {{ 'nav.register'|trans }}
+                    </a>
+                {% endif %}
+            </nav>
+
+            {# Footer #}
+            {% if is_granted('ROLE_USER') %}
+                <div class="sidebar-footer">
+                    <a href="{{ path('app_work_select') }}" class="btn btn-primary btn-sm w-100 justify-content-center">
+                        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                        {{ 'nav.new_entry'|trans }}
+                    </a>
+                    <a href="{{ path('app_profile') }}" class="sidebar-footer-link">
+                        <i class="bi bi-person-circle me-1" aria-hidden="true"></i>
+                        {{ 'nav.settings'|trans }}
+                    </a>
+                    <a href="{{ path('app_logout') }}" class="sidebar-footer-link">
+                        <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
+                        {{ 'nav.logout'|trans }}
+                    </a>
+                </div>
+            {% endif %}
+
+        </aside>
+
+        {# =====================================================================
+           Mobile top bar + offcanvas sidebar
+           ===================================================================== #}
+        <div class="mobile-topbar" aria-hidden="true">
+            <button class="mobile-topbar-toggle"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#sidebar-offcanvas"
+                    aria-controls="sidebar-offcanvas"
+                    aria-label="{{ 'nav.open_menu'|trans }}">
+                <i class="bi bi-list" aria-hidden="true"></i>
+            </button>
+            <span class="mobile-topbar-brand">Compendium</span>
         </div>
 
-        <main class="container py-4">
-            {% block body %}{% endblock %}
-        </main>
+        <div class="offcanvas offcanvas-start offcanvas-sidebar"
+             tabindex="-1"
+             id="sidebar-offcanvas"
+             aria-labelledby="sidebar-offcanvas-label">
+            <div class="offcanvas-header">
+                <span class="offcanvas-title" id="sidebar-offcanvas-label">Compendium</span>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ 'action.close'|trans }}"></button>
+            </div>
+            <div class="offcanvas-body">
+
+                {% if is_granted('ROLE_USER') %}
+                    <div class="sidebar-user px-0 py-3 border-bottom mb-2">
+                        <div class="sidebar-user-avatar" aria-hidden="true">{{ app.user.name|first|upper }}</div>
+                        <span class="sidebar-user-name">{{ app.user.name }}</span>
+                    </div>
+                {% endif %}
+
+                <nav aria-label="{{ 'nav.main'|trans }}">
+                    {% if is_granted('ROLE_USER') %}
+                        <a href="{{ path('app_reading_entry_list') }}"
+                           class="sidebar-nav-item{% if currentRoute starts with 'app_reading_entry' or currentRoute starts with 'app_work' %} active{% endif %}"
+                           data-bs-dismiss="offcanvas">
+                            <i class="bi bi-book sidebar-nav-icon" aria-hidden="true"></i>
+                            {{ 'nav.library'|trans }}
+                        </a>
+                        <a href="{{ path('app_stats_dashboard') }}"
+                           class="sidebar-nav-item{% if currentRoute == 'app_stats_dashboard' %} active{% endif %}"
+                           data-bs-dismiss="offcanvas">
+                            <i class="bi bi-bar-chart-line sidebar-nav-icon" aria-hidden="true"></i>
+                            {{ 'nav.analytics'|trans }}
+                        </a>
+                        <a href="{{ path('app_stats_rankings_author') }}"
+                           class="sidebar-nav-item{% if onRankingsPage %} active{% endif %}"
+                           data-bs-dismiss="offcanvas">
+                            <i class="bi bi-trophy sidebar-nav-icon" aria-hidden="true"></i>
+                            {{ 'nav.rankings'|trans }}
+                        </a>
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <a href="{{ path('app_admin_index') }}"
+                               class="sidebar-nav-item{% if currentRoute starts with 'app_admin' %} active{% endif %}"
+                               data-bs-dismiss="offcanvas">
+                                <i class="bi bi-gear sidebar-nav-icon" aria-hidden="true"></i>
+                                {{ 'nav.admin'|trans }}
+                            </a>
+                        {% endif %}
+                        <div class="mt-3 px-3 d-flex flex-column gap-2">
+                            <a href="{{ path('app_work_select') }}" class="btn btn-primary btn-sm w-100 justify-content-center" data-bs-dismiss="offcanvas">
+                                <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                                {{ 'nav.new_entry'|trans }}
+                            </a>
+                            <a href="{{ path('app_profile') }}" class="sidebar-footer-link" data-bs-dismiss="offcanvas">
+                                {{ 'nav.settings'|trans }}
+                            </a>
+                            <a href="{{ path('app_logout') }}" class="sidebar-footer-link" data-bs-dismiss="offcanvas">
+                                {{ 'nav.logout'|trans }}
+                            </a>
+                        </div>
+                    {% else %}
+                        <a href="{{ path('app_login') }}" class="sidebar-nav-item" data-bs-dismiss="offcanvas">
+                            {{ 'nav.login'|trans }}
+                        </a>
+                        <a href="{{ path('app_register') }}" class="sidebar-nav-item" data-bs-dismiss="offcanvas">
+                            {{ 'nav.register'|trans }}
+                        </a>
+                    {% endif %}
+                </nav>
+
+            </div>
+        </div>
+
+        {# =====================================================================
+           Main content area
+           ===================================================================== #}
+        <div class="app-main">
+
+            {# Flash messages #}
+            <div class="flash-container">
+                {% for type, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ type == 'error' ? 'danger' : type }} alert-dismissible fade show mb-0 rounded-0" role="alert">
+                            {{ message|trans }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'action.close'|trans }}"></button>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+
+            <div class="app-content">
+                {% block body %}{% endblock %}
+            </div>
+
+        </div>
+
     </body>
 </html>
