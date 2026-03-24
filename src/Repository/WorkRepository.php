@@ -28,6 +28,32 @@ class WorkRepository extends ServiceEntityRepository
     }
 
     /**
+     * Title search for the work autocomplete API.
+     *
+     * Returns up to $limit active (non-deleted) Work entities whose title
+     * contains $q, ordered by title. Author metadata is joined eagerly to
+     * avoid N+1 queries when the caller formats the subtitle string.
+     *
+     * Author names are assembled in PHP rather than via SQL aggregation
+     * (GROUP_CONCAT / STRING_AGG) to remain database-portable across
+     * SQLite, MySQL, and PostgreSQL.
+     *
+     * @return Work[]
+     */
+    public function searchByTitle(string $q, int $limit = 15): array
+    {
+        return $this->createQueryBuilder('w')
+            ->leftJoin('w.metadata', 'm')->addSelect('m')
+            ->leftJoin('m.metadataType', 'mt')->addSelect('mt')
+            ->where('w.title LIKE :q')
+            ->orderBy('w.title', 'ASC')
+            ->setMaxResults($limit)
+            ->setParameter('q', '%' . $q . '%')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Fetches a work with all related entities in a single query to avoid N+1 problems.
      * Used by the work detail page.
      */

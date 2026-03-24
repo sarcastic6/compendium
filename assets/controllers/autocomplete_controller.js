@@ -10,13 +10,19 @@ import { Controller } from '@hotwired/stimulus';
  *     become chips; each chip carries embedded hidden form fields.
  *
  * Configuration (Stimulus values on the controller element):
- *   data-autocomplete-url-value          API endpoint URL (fixed params included, e.g. ?typeId=3)
- *   data-autocomplete-min-chars-value    Minimum characters before searching (default: 2)
- *   data-autocomplete-allow-new-value    Show "Create: {term}" option (default: false)
- *   data-autocomplete-multi-value-value  Multi-value chip mode (default: false)
- *   data-autocomplete-field-prefix-value Hidden field name prefix, e.g. "work_form[metadata]"
+ *   data-autocomplete-url-value              API endpoint URL (fixed params included, e.g. ?typeId=3)
+ *   data-autocomplete-min-chars-value        Minimum characters before searching (default: 2)
+ *   data-autocomplete-allow-new-value        Show "Create: {term}" / "No results" option (default: false)
+ *   data-autocomplete-multi-value-value      Multi-value chip mode (default: false)
+ *   data-autocomplete-field-prefix-value     Hidden field name prefix, e.g. "work_form[metadata]"
  *   data-autocomplete-index-attribute-value  camelCase key on form.dataset for the shared index counter
- *   data-autocomplete-type-id-value      MetadataType entity ID (emitted into [metadataType] field)
+ *   data-autocomplete-type-id-value          MetadataType entity ID (emitted into [metadataType] field)
+ *   data-autocomplete-submit-on-select-value Fill input + submit form on selection (default: false).
+ *                                            When true, no hidden ID field or chips are used.
+ *                                            Uses form.requestSubmit() so the submit event fires
+ *                                            (required for loading-form controller on the same form).
+ *   data-autocomplete-create-url-value       URL to navigate to when the "No results" option is clicked
+ *                                            (only used when submitOnSelect=true and allowNew=true).
  *
  * Targets:
  *   input         The visible text input the user types into
@@ -33,6 +39,8 @@ export default class extends Controller {
         fieldPrefix:    { type: String, default: '' },
         indexAttribute: { type: String, default: '' },
         typeId:         { type: Number, default: 0 },
+        submitOnSelect: { type: Boolean, default: false },
+        createUrl:      { type: String, default: '' },
     };
 
     static targets = ['input', 'results', 'hiddenField', 'chipContainer'];
@@ -166,16 +174,26 @@ export default class extends Controller {
             ? results.filter((r) => !this.#selected.has(r.name.toLowerCase()))
             : results;
 
-        const showCreate = this.allowNewValue
-            && term.length >= this.minCharsValue
-            && !this.#selected.has(term.toLowerCase())
-            // Single-select: only show "Create" when there are no suggestions.
-            // Multi-value: always show "Create" so the user can add exact text.
-            && (this.multiValueValue || filtered.length === 0);
+        // submitOnSelect mode: show "No results — create new work" (navigation, not creation).
+        // Multi-value / regular single-select: show "Create: {term}" when no match (or always for multi).
+        let createItem = null;
+        if (this.allowNewValue && term.length >= this.minCharsValue) {
+            if (this.submitOnSelectValue) {
+                // Only shown when there are no suggestions; navigates to createUrl.
+                if (filtered.length === 0) {
+                    createItem = { name: term, isNew: true, isNavigate: true };
+                }
+            } else if (!this.#selected.has(term.toLowerCase())) {
+                // Multi-value: always show. Single-select: only when no suggestions.
+                if (this.multiValueValue || filtered.length === 0) {
+                    createItem = { name: term, isNew: true, isNavigate: false };
+                }
+            }
+        }
 
         this.#items = [
             ...filtered,
-            ...(showCreate ? [{ name: term, isNew: true }] : []),
+            ...(createItem !== null ? [createItem] : []),
         ];
 
         if (this.#items.length === 0) {
@@ -191,7 +209,27 @@ export default class extends Controller {
             li.setAttribute('data-ac-index', String(i));
             li.className = 'dropdown-item';
             li.style.cursor = 'pointer';
-            li.textContent = item.isNew ? `Create: "${item.name}"` : item.name;
+
+            if (item.isNew && item.isNavigate) {
+                // "No results — create new work" label (static text, typed term not shown).
+                li.textContent = 'No results — create new work';
+                li.classList.add('text-muted', 'fst-italic');
+            } else if (item.isNew) {
+                // "Create: {term}" label for regular metadata autocomplete.
+                li.textContent = `Create: "${item.name}"`;
+            } else {
+                // Normal result: title on one line, subtitle (if present) on a second line.
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = item.name;
+                li.appendChild(titleSpan);
+
+                if (item.subtitle) {
+                    const subtitleEl = document.createElement('small');
+                    subtitleEl.className = 'd-block text-muted';
+                    subtitleEl.textContent = item.subtitle;
+                    li.appendChild(subtitleEl);
+                }
+            }
 
             li.addEventListener('mousedown', (e) => {
                 e.preventDefault(); // Prevent input blur before click registers.
@@ -229,12 +267,30 @@ export default class extends Controller {
     // -------------------------------------------------------------------------
 
     #selectItem(item) {
+        this.#closeDropdown();
+
+        // "No results — create new work": navigate to the work creation page.
+        if (item.isNew && item.isNavigate) {
+            if (this.createUrlValue) {
+                window.location.href = this.createUrlValue;
+            }
+            return;
+        }
+
+        if (this.submitOnSelectValue) {
+            // Fill the input with the selected title and submit the form.
+            // requestSubmit() (not submit()) is used so the submit event fires,
+            // which allows other controllers (e.g. loading-form) on the same form to react.
+            this.inputTarget.value = item.name;
+            this.#form?.requestSubmit();
+            return;
+        }
+
         if (this.multiValueValue) {
             this.#addChip(item);
         } else {
             this.#setSingleValue(item);
         }
-        this.#closeDropdown();
     }
 
     // --- Single-select ---

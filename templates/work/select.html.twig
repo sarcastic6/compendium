@@ -6,15 +6,53 @@
 <h1 class="h3 mb-4">{{ 'work.select_heading'|trans }}</h1>
 <p class="text-muted">{{ 'work.select_prompt'|trans }}</p>
 
+{# Import form — most common workflow, shown first #}
+<form method="post" action="{{ path('app_work_select') }}" class="mb-5"
+      data-controller="loading-form">
+    <input type="hidden" name="_import_token" value="{{ csrf_token('import_url') }}">
+    <label for="import_url" class="form-label">{{ 'import.url_field'|trans }}</label>
+    <input type="url" id="import_url" name="import_url"
+           class="form-control mb-2"
+           placeholder="{{ 'import.url_placeholder'|trans }}"
+           autocomplete="off"
+           data-loading-form-target="field">
+    <div class="form-text mb-2">{{ 'import.url_help'|trans }}</div>
+    <button type="submit" class="btn btn-primary"
+            data-loading-form-target="submit"
+            data-loading-text="{{ 'import.submit_loading'|trans }}">
+        <i class="bi bi-cloud-download" aria-hidden="true"></i>
+        {{ 'import.submit'|trans }}
+    </button>
+</form>
+
+<div class="d-flex align-items-center gap-3 my-4">
+    <hr class="flex-grow-1 m-0">
+    <span class="text-muted small">{{ 'work.search_separator'|trans }}</span>
+    <hr class="flex-grow-1 m-0">
+</div>
+
+{# Search form with autocomplete — full-page-reload search with type-ahead convenience layer #}
 <form method="get" action="{{ path('app_work_select') }}" class="mb-4">
-    <div class="input-group">
-        <input type="search" name="q" value="{{ query }}"
-               class="form-control" placeholder="{{ 'work.select_search_placeholder'|trans }}"
-               aria-label="{{ 'work.select_search'|trans }}">
-        <button type="submit" class="btn btn-outline-secondary">
-            <i class="bi bi-search" aria-hidden="true"></i>
-            {{ 'work.select_search'|trans }}
-        </button>
+    <div class="position-relative"
+         data-controller="autocomplete"
+         data-autocomplete-url-value="{{ path('api_work_search') }}"
+         data-autocomplete-submit-on-select-value="true"
+         data-autocomplete-allow-new-value="true"
+         data-autocomplete-create-url-value="{{ path('app_work_new') }}"
+         data-autocomplete-min-chars-value="2">
+        <div class="input-group">
+            <input type="search" name="q" value="{{ query }}"
+                   class="form-control"
+                   placeholder="{{ 'work.select_search_placeholder'|trans }}"
+                   aria-label="{{ 'work.select_search'|trans }}"
+                   autocomplete="off"
+                   data-autocomplete-target="input">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                {{ 'work.select_search'|trans }}
+            </button>
+        </div>
+        <ul class="dropdown-menu w-100" data-autocomplete-target="results" style="display:none; max-height:200px; overflow-y:auto;"></ul>
     </div>
 </form>
 
@@ -52,26 +90,6 @@
         </div>
     {% endif %}
 {% endif %}
-
-<div class="d-flex align-items-center gap-3 my-4">
-    <hr class="flex-grow-1 m-0">
-    <span class="text-muted small">{{ 'work.import_separator'|trans }}</span>
-    <hr class="flex-grow-1 m-0">
-</div>
-
-<form method="post" action="{{ path('app_work_select') }}" class="mb-5">
-    <input type="hidden" name="_import_token" value="{{ csrf_token('import_url') }}">
-    <label for="import_url" class="form-label">{{ 'import.url_field'|trans }}</label>
-    <input type="url" id="import_url" name="import_url"
-           class="form-control mb-2"
-           placeholder="{{ 'import.url_placeholder'|trans }}"
-           autocomplete="off">
-    <div class="form-text mb-2">{{ 'import.url_help'|trans }}</div>
-    <button type="submit" class="btn btn-primary">
-        <i class="bi bi-cloud-download" aria-hidden="true"></i>
-        {{ 'import.submit'|trans }}
-    </button>
-</form>
 
 <a href="{{ path('app_work_new') }}" class="btn btn-outline-secondary">
     <i class="bi bi-plus-lg" aria-hidden="true"></i>
