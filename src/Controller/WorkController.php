@@ -256,6 +256,24 @@ class WorkController extends AbstractController
     }
 
     /**
+     * HTML fragment for the work preview offcanvas on the select page.
+     * Returns a partial template (no base layout) consumed via fetch().
+     */
+    #[Route('/{id}/preview', name: 'app_work_preview', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function preview(int $id): Response
+    {
+        $work = $this->workRepository->findWithAllRelations($id);
+
+        if ($work === null) {
+            throw $this->createNotFoundException();
+        }
+
+        return $this->render('work/_preview.html.twig', [
+            'work' => $work,
+        ]);
+    }
+
+    /**
      * Step 1b: Select an existing Work to create a ReadingEntry for (e.g., re-reads).
      * Also handles POST to import a Work from an external URL (merged from ImportController).
      */

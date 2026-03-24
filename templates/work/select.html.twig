@@ -65,9 +65,17 @@
                 <div class="list-group-item">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <a href="{{ path('app_work_show', {id: work.id}) }}" class="fw-bold text-decoration-none">
+                            {# Opens the preview offcanvas; full detail page remains accessible from within it #}
+                            <button type="button"
+                                    class="btn btn-link p-0 fw-bold text-decoration-none text-start work-preview-trigger"
+                                    data-bs-toggle="offcanvas"
+                                    data-bs-target="#workPreviewOffcanvas"
+                                    data-work-title="{{ work.title|e('html_attr') }}"
+                                    data-preview-url="{{ path('app_work_preview', {id: work.id}) }}"
+                                    data-entry-url="{{ path('app_reading_entry_new', {workId: work.id}) }}"
+                                    data-detail-url="{{ path('app_work_show', {id: work.id}) }}">
                                 {{ work.title }}
-                            </a>
+                            </button>
                             {% if work.authors is not empty %}
                                 <span class="text-muted ms-2">
                                     {{ 'work.select_author_by'|trans }} {{ work.authors|map(a => a.name)|join(', ') }}
@@ -95,4 +103,67 @@
     <i class="bi bi-plus-lg" aria-hidden="true"></i>
     {{ 'work.create_new'|trans }}
 </a>
+
+{# Work preview offcanvas — populated via fetch() when a result title is clicked #}
+<div class="offcanvas offcanvas-end" tabindex="-1" id="workPreviewOffcanvas"
+     aria-labelledby="workPreviewOffcanvasTitle"
+     style="width: min(500px, 90vw)">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title text-truncate" id="workPreviewOffcanvasTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ 'action.close'|trans }}"></button>
+    </div>
+    <div class="offcanvas-body" id="workPreviewOffcanvasBody"></div>
+    <div class="border-top p-3 d-flex gap-2" id="workPreviewOffcanvasFooter"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var offcanvasEl = document.getElementById('workPreviewOffcanvas');
+    if (!offcanvasEl) { return; }
+
+    offcanvasEl.addEventListener('show.bs.offcanvas', function (event) {
+        var trigger = event.relatedTarget;
+        if (!trigger) { return; }
+
+        var title      = trigger.getAttribute('data-work-title') || '';
+        var previewUrl = trigger.getAttribute('data-preview-url') || '';
+        var entryUrl   = trigger.getAttribute('data-entry-url') || '';
+        var detailUrl  = trigger.getAttribute('data-detail-url') || '';
+
+        // Populate header title
+        document.getElementById('workPreviewOffcanvasTitle').textContent = title;
+
+        // Show loading spinner while fetch is in flight
+        document.getElementById('workPreviewOffcanvasBody').innerHTML =
+            '<div class="d-flex justify-content-center py-5">' +
+                '<div class="spinner-border text-secondary" role="status">' +
+                    '<span class="visually-hidden">Loading\u2026</span>' +
+                '</div>' +
+            '</div>';
+
+        // Footer actions
+        document.getElementById('workPreviewOffcanvasFooter').innerHTML =
+            '<a href="' + entryUrl + '" class="btn btn-primary">' +
+                '<i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{{ 'reading.entry.add'|trans }}' +
+            '</a>' +
+            '<a href="' + detailUrl + '" class="btn btn-outline-secondary">' +
+                '{{ 'work.preview.view_details'|trans }}' +
+            '</a>';
+
+        // Fetch and inject partial HTML
+        if (!previewUrl) { return; }
+        fetch(previewUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) {
+                return r.ok ? r.text() : Promise.reject(r.status);
+            })
+            .then(function (html) {
+                document.getElementById('workPreviewOffcanvasBody').innerHTML = html;
+            })
+            .catch(function () {
+                document.getElementById('workPreviewOffcanvasBody').innerHTML =
+                    '<p class="text-danger">{{ 'work.preview.load_error'|trans }}</p>';
+            });
+    });
+});
+</script>
 {% endblock %}

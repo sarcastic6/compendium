@@ -15,9 +15,9 @@ action:
     add: 'Add'
     remove: 'Remove'
     edit: 'Edit'
+    close: 'Close'
     delete: 'Delete'
     confirm: 'Confirm'
-    close: 'Close'
     yes: 'Yes'
     no: 'No'
 
@@ -136,6 +136,9 @@ work:
     select_no_results: 'No works found.'
     select_author_by: 'by'
     create_new: 'Create New Work'
+    preview:
+        view_details: 'View Full Details'
+        load_error: 'Failed to load preview.'
     show:
         heading: 'Work details'
         no_metadata: 'No metadata attached to this work.'

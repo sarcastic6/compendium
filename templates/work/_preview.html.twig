@@ -1,0 +1,114 @@
+{#
+  Partial template — no layout.
+  Rendered as an HTML fragment for the work preview offcanvas on the select page.
+  Title and action buttons are rendered by the offcanvas shell in select.html.twig;
+  this template only provides the scrollable body content.
+#}
+{% macro metadataBadge(item, sourceType) %}
+    {% set link = item.getLinkForSource(sourceType) %}
+    {% if link %}
+        <a href="{{ link }}" target="_blank" rel="noopener noreferrer"
+           class="badge bg-secondary me-1 text-decoration-none">{{ item.name }}</a>
+    {% else %}
+        <span class="badge bg-secondary me-1">{{ item.name }}</span>
+    {% endif %}
+{% endmacro %}
+
+<dl class="row mb-0 small">
+
+    {% if work.authors is not empty %}
+        <dt class="col-sm-4 text-muted fw-normal">{{ 'work.field.authors'|trans }}</dt>
+        <dd class="col-sm-8 mb-1">
+            {% for author in work.authors %}
+                {% set authorLink = author.getLinkForSource(work.sourceType) %}
+                {% if authorLink %}
+                    <a href="{{ authorLink }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
+                {% else %}
+                    {{ author.name }}
+                {% endif %}
+                {%- if not loop.last %}, {% endif %}
+            {% endfor %}
+        </dd>
+    {% endif %}
+
+    <dt class="col-sm-4 text-muted fw-normal">{{ 'work.field.type'|trans }}</dt>
+    <dd class="col-sm-8 mb-1">{{ work.type.value }}</dd>
+
+    {% if work.language %}
+        <dt class="col-sm-4 text-muted fw-normal">{{ 'work.field.language'|trans }}</dt>
+        <dd class="col-sm-8 mb-1">{{ work.language.name }}</dd>
+    {% endif %}
+
+    {% if work.series %}
+        <dt class="col-sm-4 text-muted fw-normal">{{ 'work.field.series'|trans }}</dt>
+        <dd class="col-sm-8 mb-1">
+            {{ work.series.name }}
+            {% if work.placeInSeries %}(#{{ work.placeInSeries }}){% endif %}
+        </dd>
+    {% endif %}
+
+    {% if work.words %}
+        <dt class="col-sm-4 text-muted fw-normal">{{ 'work.field.words'|trans }}</dt>
+        <dd class="col-sm-8 mb-1">{{ work.words|number_format }}</dd>
+    {% endif %}
+
+    {% if work.chapters %}
+        <dt class="col-sm-4 text-muted fw-normal">{{ 'work.field.chapters'|trans }}</dt>
+        <dd class="col-sm-8 mb-1">{{ work.chapters }}</dd>
+    {% endif %}
+
+    {% if work.link %}
+        <dt class="col-sm-4 text-muted fw-normal">{{ 'work.field.source_type'|trans }}</dt>
+        <dd class="col-sm-8 mb-1">
+            <a href="{{ work.link }}" target="_blank" rel="noopener noreferrer">
+                {{ work.sourceType.value }} <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+            </a>
+        </dd>
+    {% endif %}
+
+</dl>
+
+{% if work.summary %}
+    <hr class="my-2">
+    <p class="small text-muted mb-0" style="white-space: pre-wrap; max-height: 220px; overflow-y: auto;">{{ work.summary }}</p>
+{% endif %}
+
+{# Metadata badges grouped by type — same order as the full detail page #}
+{% set metadataTypeOrder = ['Warning', 'Rating', 'Category', 'Fandom', 'Relationships', 'Character', 'Tag'] %}
+
+{% set grouped = {} %}
+{% for item in work.metadata %}
+    {% set key = item.metadataType.name %}
+    {% if key != 'Author' %}
+        {% if key not in grouped|keys %}
+            {% set grouped = grouped|merge({(key): []}) %}
+        {% endif %}
+        {% set grouped = grouped|merge({(key): grouped[key]|merge([item])}) %}
+    {% endif %}
+{% endfor %}
+
+{% if grouped is not empty %}
+    <hr class="my-2">
+    <div class="d-flex flex-column gap-1 small">
+        {% for typeName in metadataTypeOrder %}
+            {% if typeName in grouped|keys %}
+                <div>
+                    <span class="text-muted me-1">{{ typeName }}:</span>
+                    {% for item in grouped[typeName] %}
+                        {{ _self.metadataBadge(item, work.sourceType) }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+        {% for typeName, items in grouped %}
+            {% if typeName not in metadataTypeOrder %}
+                <div>
+                    <span class="text-muted me-1">{{ typeName }}:</span>
+                    {% for item in items %}
+                        {{ _self.metadataBadge(item, work.sourceType) }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
