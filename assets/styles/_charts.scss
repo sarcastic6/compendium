@@ -1,0 +1,97 @@
+// =============================================================================
+// _charts.scss
+// Chart.js colour overrides and chart card layout helpers.
+// =============================================================================
+
+// Chart container sizing
+.chart-container {
+    position: relative;
+    width: 100%;
+}
+
+.chart-container-sm  { height: 200px; }
+.chart-container-md  { height: 280px; }
+.chart-container-lg  { height: 360px; }
+.chart-container-xl  { height: 440px; }
+
+// Chart.js default colours injected via JS; CSS can't set them directly.
+// These classes are used to pass palette values to JS via computed styles.
+.chart-palette {
+    --chart-1: var(--color-primary);
+    --chart-2: var(--color-secondary);
+    --chart-3: var(--color-tertiary-dark);
+    --chart-4: #5a8a74;
+    --chart-5: #a8cfc5;
+    --chart-6: #d4e4d3;
+    --chart-grid: rgba(221, 232, 228, 0.6);
+    --chart-tick:  var(--color-text-faint);
+}
+
+// Year filter pill toggles (above cards on analytics page)
+.year-filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+}
+
+.year-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast),
+        border-color var(--transition-fast);
+
+    &:hover {
+        background: var(--color-surface-tint);
+        color: var(--color-primary);
+        text-decoration: none;
+    }
+
+    &.active {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: #fff;
+    }
+}
+
+// Tab nav for Overview / Breakdown tabs on analytics dashboard
+.analytics-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-6);
+}
+
+.analytics-tab {
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+
+    &:hover {
+        color: var(--color-primary);
+        text-decoration: none;
+    }
+
+    &.active {
+        color: var(--color-primary);
+        border-bottom-color: var(--color-primary);
+        font-weight: var(--weight-semibold);
+    }
+}

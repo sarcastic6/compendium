@@ -1,0 +1,199 @@
+// =============================================================================
+// _forms.scss
+// Inputs, selects, textareas, labels, focus states.
+// =============================================================================
+
+// -------------------------------------------------------------------------
+// Labels
+// -------------------------------------------------------------------------
+
+.form-label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-body);
+    margin-bottom: var(--space-1);
+    display: block;
+}
+
+// Optional indicator
+.form-label-optional {
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+    font-weight: var(--weight-normal);
+    margin-left: var(--space-1);
+}
+
+// -------------------------------------------------------------------------
+// Text inputs, number inputs, date inputs, textareas
+// -------------------------------------------------------------------------
+
+.form-control {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    color: var(--color-text-body);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    min-height: 36px;
+    width: 100%;
+    transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+
+    &::placeholder {
+        color: var(--color-text-faint);
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-primary-light);
+        box-shadow: 0 0 0 3px rgba(59, 107, 82, 0.15);
+        background: var(--color-surface);
+    }
+
+    &:disabled,
+    &[readonly] {
+        background: var(--color-surface-tint);
+        color: var(--color-text-muted);
+        cursor: not-allowed;
+    }
+
+    &.is-invalid {
+        border-color: var(--color-danger);
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+        }
+    }
+}
+
+// -------------------------------------------------------------------------
+// Select
+// -------------------------------------------------------------------------
+
+.form-select {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    color: var(--color-text-body);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
+    min-height: 36px;
+    width: 100%;
+    cursor: pointer;
+    transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-primary-light);
+        box-shadow: 0 0 0 3px rgba(59, 107, 82, 0.15);
+    }
+}
+
+// -------------------------------------------------------------------------
+// Checkbox + radio
+// -------------------------------------------------------------------------
+
+.form-check-input {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+    flex-shrink: 0;
+    margin-top: 0;
+
+    &:checked {
+        background-color: var(--color-primary);
+        border-color: var(--color-primary);
+    }
+
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 107, 82, 0.15);
+    }
+}
+
+.form-check-label {
+    font-size: var(--text-sm);
+    color: var(--color-text-body);
+    cursor: pointer;
+    padding-left: var(--space-2);
+}
+
+// -------------------------------------------------------------------------
+// Help text / error text
+// -------------------------------------------------------------------------
+
+.form-text {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: var(--space-1);
+}
+
+.invalid-feedback {
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+    margin-top: var(--space-1);
+    display: block;
+}
+
+// -------------------------------------------------------------------------
+// Form group spacing
+// -------------------------------------------------------------------------
+
+.mb-3 {
+    margin-bottom: var(--space-5) !important;
+}
+
+// -------------------------------------------------------------------------
+// Input group (icon prefix/suffix)
+// -------------------------------------------------------------------------
+
+.input-group {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+
+    .input-group-text {
+        display: flex;
+        align-items: center;
+        padding: var(--space-2) var(--space-3);
+        background: var(--color-surface-tint);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+    }
+
+    .form-control,
+    .form-select {
+        flex: 1;
+    }
+
+    // Joined appearance
+    > *:not(:first-child) {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: none;
+    }
+
+    > *:not(:last-child) {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    > *:first-child {
+        border-top-left-radius: var(--radius-md);
+        border-bottom-left-radius: var(--radius-md);
+    }
+
+    > *:last-child {
+        border-top-right-radius: var(--radius-md);
+        border-bottom-right-radius: var(--radius-md);
+    }
+}

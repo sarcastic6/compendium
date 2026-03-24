@@ -1,0 +1,38 @@
+// =============================================================================
+// _reset.scss
+// Minimal resets layered on top of Bootstrap's reboot.
+// =============================================================================
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+// Remove default list styling when lists are used for navigation
+nav ul,
+nav ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+// Ensure images are block-level and responsive by default
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+// Remove default button chrome
+button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+// Prevent text from being selectable on interactive UI chrome
+.no-select {
+    user-select: none;
+}

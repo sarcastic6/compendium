@@ -1,0 +1,198 @@
+// =============================================================================
+// _buttons.scss
+// Primary, secondary, ghost, danger button styles.
+// =============================================================================
+
+// -------------------------------------------------------------------------
+// Base overrides (all buttons)
+// -------------------------------------------------------------------------
+
+.btn {
+    font-family: var(--font-ui);
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-sm);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-4);
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        color var(--transition-fast);
+    line-height: 1;
+    border-width: 1px;
+    border-style: solid;
+    white-space: nowrap;
+
+    &:focus-visible {
+        outline: 2px solid var(--color-primary-light);
+        outline-offset: 2px;
+    }
+
+    &:disabled,
+    &[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+}
+
+// -------------------------------------------------------------------------
+// Primary
+// -------------------------------------------------------------------------
+
+.btn-primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+
+    &:hover,
+    &:focus {
+        background: var(--color-primary-hover);
+        border-color: var(--color-primary-hover);
+        color: #fff;
+        box-shadow: var(--shadow-sm);
+    }
+
+    &:active {
+        background: #162a1c;
+        border-color: #162a1c;
+    }
+}
+
+// -------------------------------------------------------------------------
+// Secondary (outlined, primary tones)
+// -------------------------------------------------------------------------
+
+.btn-secondary {
+    background: transparent;
+    border-color: var(--color-border);
+    color: var(--color-text-body);
+
+    &:hover,
+    &:focus {
+        background: var(--color-surface-tint);
+        border-color: var(--color-secondary);
+        color: var(--color-primary);
+    }
+}
+
+// -------------------------------------------------------------------------
+// Ghost (minimal, text-only feel)
+// -------------------------------------------------------------------------
+
+.btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--color-text-muted);
+
+    &:hover,
+    &:focus {
+        background: var(--color-surface-tint);
+        border-color: transparent;
+        color: var(--color-text-body);
+    }
+}
+
+// -------------------------------------------------------------------------
+// Outline primary (border + primary colour, no fill)
+// -------------------------------------------------------------------------
+
+.btn-outline-primary {
+    background: transparent;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+
+    &:hover,
+    &:focus {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: #fff;
+    }
+}
+
+// -------------------------------------------------------------------------
+// Danger
+// -------------------------------------------------------------------------
+
+.btn-danger {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+    color: #fff;
+
+    &:hover,
+    &:focus {
+        background: #a93226;
+        border-color: #a93226;
+        color: #fff;
+    }
+}
+
+.btn-outline-danger {
+    background: transparent;
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+
+    &:hover,
+    &:focus {
+        background: var(--color-danger);
+        border-color: var(--color-danger);
+        color: #fff;
+    }
+}
+
+// -------------------------------------------------------------------------
+// Size variants
+// -------------------------------------------------------------------------
+
+.btn-sm {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-3);
+    min-height: 30px;
+    border-radius: var(--radius-sm);
+}
+
+.btn-lg {
+    font-size: var(--text-base);
+    padding: var(--space-3) var(--space-6);
+    min-height: 44px;
+    border-radius: var(--radius-lg);
+}
+
+// -------------------------------------------------------------------------
+// Icon-only button
+// -------------------------------------------------------------------------
+
+.btn-icon {
+    padding: var(--space-2);
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: var(--radius-md);
+}
+
+// -------------------------------------------------------------------------
+// Touch target floor (for nav links / pagination)
+// -------------------------------------------------------------------------
+
+a.nav-link,
+.pagination .page-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.form-check {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.form-check .form-check-input {
+    margin-top: 0;
+    flex-shrink: 0;
+}

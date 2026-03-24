@@ -1,0 +1,123 @@
+// =============================================================================
+// _auth.scss
+// Auth page layout — outside the sidebar shell, own page structure.
+// Login, register, forgot password, MFA challenge/setup.
+// =============================================================================
+
+.auth-page {
+    min-height: 100vh;
+    background: var(--color-neutral);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8) var(--space-4);
+}
+
+// -------------------------------------------------------------------------
+// Auth card
+// -------------------------------------------------------------------------
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+// -------------------------------------------------------------------------
+// Auth header (app name + tagline above form)
+// -------------------------------------------------------------------------
+
+.auth-header {
+    text-align: center;
+}
+
+.auth-app-name {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-extrabold);
+    color: var(--color-primary);
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-1);
+}
+
+.auth-app-sub {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+// -------------------------------------------------------------------------
+// Auth form body
+// -------------------------------------------------------------------------
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.auth-submit-btn {
+    width: 100%;
+    justify-content: center;
+    font-size: var(--text-base);
+    padding: var(--space-3) var(--space-5);
+    min-height: 44px;
+}
+
+// -------------------------------------------------------------------------
+// Auth footer (links: register / forgot password / login)
+// -------------------------------------------------------------------------
+
+.auth-footer {
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+
+    a {
+        color: var(--color-primary-light);
+        font-weight: var(--weight-medium);
+
+        &:hover {
+            color: var(--color-primary);
+        }
+    }
+}
+
+// -------------------------------------------------------------------------
+// Quote below the card
+// -------------------------------------------------------------------------
+
+.auth-quote {
+    margin-top: var(--space-6);
+    text-align: center;
+    max-width: 320px;
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+    font-style: italic;
+    line-height: var(--leading-relaxed);
+}
+
+// -------------------------------------------------------------------------
+// Page footer (privacy policy)
+// -------------------------------------------------------------------------
+
+.auth-page-footer {
+    margin-top: var(--space-8);
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+
+    a {
+        color: var(--color-text-faint);
+        text-decoration: underline;
+
+        &:hover {
+            color: var(--color-text-muted);
+        }
+    }
+}

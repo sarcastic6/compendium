@@ -1,0 +1,114 @@
+// =============================================================================
+// _layout.scss
+// App shell: sidebar + main content area, page header.
+// =============================================================================
+
+@use 'variables' as *;
+
+// -------------------------------------------------------------------------
+// App Shell
+// -------------------------------------------------------------------------
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--color-neutral);
+}
+
+// Main content area (to the right of the sidebar)
+.app-main {
+    flex: 1;
+    min-width: 0; // prevent flex children from overflowing
+    display: flex;
+    flex-direction: column;
+
+    @media (min-width: $breakpoint-md) {
+        margin-left: var(--sidebar-width);
+    }
+}
+
+.app-content {
+    flex: 1;
+    padding: var(--page-padding-y) var(--page-padding-x);
+    max-width: var(--content-max-width);
+    width: 100%;
+    margin: 0 auto;
+}
+
+// -------------------------------------------------------------------------
+// Page Header
+// -------------------------------------------------------------------------
+
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+    flex-wrap: wrap;
+}
+
+.page-header-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-shrink: 0;
+}
+
+// -------------------------------------------------------------------------
+// Mobile top bar (visible only on mobile, triggers sidebar offcanvas)
+// -------------------------------------------------------------------------
+
+.mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-primary);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-overlay);
+
+    @media (min-width: $breakpoint-md) {
+        display: none;
+    }
+}
+
+.mobile-topbar-brand {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    color: #fff;
+    flex: 1;
+}
+
+.mobile-topbar-toggle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: var(--text-xl);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+// -------------------------------------------------------------------------
+// Flash / toast messages (full-width strip above content)
+// -------------------------------------------------------------------------
+
+.flash-container {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-toast);
+}
