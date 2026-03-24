@@ -465,6 +465,13 @@
                             </td>
                             <td>
                                 <div class="d-flex gap-1 align-items-center">
+                                    {% if not entry.work.deleted %}
+                                        <a href="{{ path('app_work_show', {id: entry.work.id}) }}"
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-book" aria-hidden="true"></i>
+                                            {{ 'reading.entry.view_work'|trans }}
+                                        </a>
+                                    {% endif %}
                                     <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}"
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-pencil" aria-hidden="true"></i>
@@ -477,13 +484,6 @@
                                             aria-label="{{ 'reading.entry.delete'|trans }}">
                                         <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
-                                    {% if not entry.work.deleted %}
-                                        <a href="{{ path('app_work_show', {id: entry.work.id}) }}"
-                                           class="btn btn-sm btn-outline-secondary">
-                                            <i class="bi bi-book" aria-hidden="true"></i>
-                                            {{ 'reading.entry.view_work'|trans }}
-                                        </a>
-                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
