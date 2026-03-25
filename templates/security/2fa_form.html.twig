@@ -1,39 +1,45 @@
-{% extends 'base.html.twig' %}
+{% extends 'auth_base.html.twig' %}
 
 {% block title %}{{ 'mfa.code_prompt'|trans }}{% endblock %}
 
 {% block body %}
-<div class="row justify-content-center">
-    <div class="col-md-5 col-lg-4">
-        <div class="card shadow-sm mt-4">
-            <div class="card-body p-4">
-                <h1 class="h4 card-title mb-4">{{ 'mfa.code_prompt'|trans }}</h1>
+<div class="auth-card">
 
-                {% if authenticationError %}
-                    <div class="alert alert-danger" role="alert">
-                        {{ authenticationError.messageKey|trans(authenticationError.messageData, 'security') }}
-                    </div>
-                {% endif %}
-
-                <form method="post" action="{{ path('2fa_login_check') }}">
-                    <div class="mb-3">
-                        <label for="auth_code" class="form-label">{{ 'mfa.code_field'|trans }}</label>
-                        <input type="text" id="auth_code" name="_auth_code"
-                               class="form-control" autocomplete="one-time-code"
-                               inputmode="numeric" pattern="[0-9]*"
-                               maxlength="6" required autofocus>
-                    </div>
-
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('2fa') }}">
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            {{ 'action.confirm'|trans }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <div class="auth-header">
+        <div class="auth-app-name">Compendium</div>
+        <div class="auth-app-sub">{{ 'mfa.code_prompt'|trans }}</div>
     </div>
+
+    {% if authenticationError %}
+        <div class="flash flash-error" role="alert">
+            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            <span class="flash-body">{{ authenticationError.messageKey|trans(authenticationError.messageData, 'security') }}</span>
+        </div>
+    {% endif %}
+
+    <form method="post" action="{{ path('2fa_login_check') }}" class="auth-form">
+
+        <div>
+            <label for="auth_code" class="form-label">{{ 'mfa.code_field'|trans }}</label>
+            <input type="text" id="auth_code" name="_auth_code"
+                   class="form-control"
+                   autocomplete="one-time-code"
+                   inputmode="numeric" pattern="[0-9]*"
+                   maxlength="6" required autofocus
+                   style="font-size: var(--text-xl); letter-spacing: 0.3em; text-align: center;">
+        </div>
+
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('2fa') }}">
+
+        <button type="submit" class="btn btn-primary auth-submit-btn">
+            {{ 'action.confirm'|trans }} →
+        </button>
+
+    </form>
+
+    <div class="auth-footer">
+        <a href="{{ path('app_login') }}">← {{ 'nav.login'|trans }}</a>
+    </div>
+
 </div>
 {% endblock %}

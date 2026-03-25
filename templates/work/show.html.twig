@@ -1,170 +1,208 @@
 {% extends 'base.html.twig' %}
 
-{% macro metadataBadge(item, sourceType) %}
+{% macro metadataChip(item, sourceType, chipClass) %}
     {% set link = item.getLinkForSource(sourceType) %}
     {% if link %}
-        <a href="{{ link }}" target="_blank" rel="noopener noreferrer" class="badge bg-secondary me-1 text-decoration-none">{{ item.name }}</a>
+        <a href="{{ link }}" target="_blank" rel="noopener noreferrer"
+           class="chip {{ chipClass }} text-decoration-none">{{ item.name }}</a>
     {% else %}
-        <span class="badge bg-secondary me-1">{{ item.name }}</span>
+        <span class="chip {{ chipClass }}">{{ item.name }}</span>
     {% endif %}
 {% endmacro %}
 
 {% block title %}{{ work.title }}{% endblock %}
 
 {% block body %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">
-        {{ work.title }}
-        {% if work.starred %}
-            <i class="bi bi-star-fill text-warning ms-1" aria-label="Favorite work"></i>
-        {% endif %}
-    </h1>
-    <div class="d-flex gap-2">
+
+{# Page header: back link + actions #}
+<div class="page-header">
+    <div class="page-header-text">
+        <a href="{{ path('app_reading_entry_list') }}" class="back-link">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            {{ 'nav.library'|trans }}
+        </a>
+    </div>
+    <div class="page-header-actions">
         {% if work.link and work.sourceType.value != 'Manual' %}
-            <form method="post" action="{{ path('app_work_refresh', {id: work.id}) }}">
+            <form method="post" action="{{ path('app_work_refresh', {id: work.id}) }}" class="d-inline">
                 <input type="hidden" name="_token" value="{{ csrf_token('refresh_work_' ~ work.id) }}">
-                <button type="submit" class="btn btn-outline-primary">
-                    <i class="bi bi-arrow-clockwise me-1"></i>
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
                     {{ 'work.refresh.button'|trans({'%source%': work.sourceType.value}) }}
                 </button>
             </form>
         {% endif %}
-        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary">
-            {{ 'nav.home'|trans }}
+        <a href="{{ path('app_reading_entry_new', {workId: work.id}) }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+            {{ 'work.action.log_entry'|trans }}
         </a>
     </div>
 </div>
 
-<div class="row g-4">
-    {# Left column: core details #}
-    <div class="col-md-6">
-        <dl class="row mb-0">
+<div class="row g-4 g-lg-5">
 
-            {% if work.authors is not empty %}
-                <dt class="col-sm-4">{{ 'work.field.authors'|trans }}</dt>
-                <dd class="col-sm-8">
-                    {% for author in work.authors %}
-                        {% set authorLink = author.getLinkForSource(work.sourceType) %}
-                        {% if authorLink %}
-                            <a href="{{ authorLink }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
-                        {% else %}
-                            {{ author.name }}
-                        {% endif %}
-                        {%- if not loop.last %}, {% endif %}
-                    {% endfor %}
-                </dd>
-            {% endif %}
+    {# ── Left column: cover art + badges ── #}
+    <div class="col-12 col-md-4 col-lg-3">
+        <div class="work-cover-col">
 
-            <dt class="col-sm-4">{{ 'work.field.type'|trans }}</dt>
-            <dd class="col-sm-8">{{ work.type.value }}</dd>
+            {# Large typographic cover #}
+            <div class="cover cover-lg {{ cover_font_class(work.type.value) }}"
+                 style="{{ cover_gradient(work.id) }}"
+                 aria-hidden="true">
+                <span class="cover-title">{{ work.title }}</span>
+            </div>
 
-            <dt class="col-sm-4">{{ 'work.field.source_type'|trans }}</dt>
-            <dd class="col-sm-8">
+            {# Type + source badges #}
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <span class="chip chip-tag">{{ work.type.value }}</span>
                 {% if work.link %}
-                    <a href="{{ work.link }}" target="_blank" rel="noopener noreferrer">{{ work.sourceType.value }}</a>
+                    <a href="{{ work.link }}" target="_blank" rel="noopener noreferrer"
+                       class="chip chip-tag text-decoration-none">
+                        {{ work.sourceType.value }}
+                        <i class="bi bi-box-arrow-up-right" style="font-size: 0.65em;" aria-hidden="true"></i>
+                    </a>
                 {% else %}
-                    {{ work.sourceType.value }}
+                    <span class="chip chip-tag">{{ work.sourceType.value }}</span>
                 {% endif %}
-            </dd>
+            </div>
 
-            {% if work.language %}
-                <dt class="col-sm-4">{{ 'work.field.language'|trans }}</dt>
-                <dd class="col-sm-8">{{ work.language.name }}</dd>
-            {% endif %}
-
+            {# Series info #}
             {% if work.series %}
-                <dt class="col-sm-4">{{ 'work.field.series'|trans }}</dt>
-                <dd class="col-sm-8">
+                <div class="work-series-info">
                     {% set seriesLink = work.series.getLinkForSource(work.sourceType) %}
+                    <i class="bi bi-collection me-1" aria-hidden="true"></i>
                     {% if seriesLink %}
                         <a href="{{ seriesLink }}" target="_blank" rel="noopener noreferrer">{{ work.series.name }}</a>
                     {% else %}
                         {{ work.series.name }}
                     {% endif %}
                     {% if work.placeInSeries %}
-                        (#{{ work.placeInSeries }})
+                        &nbsp;#{{ work.placeInSeries }}
                     {% endif %}
-                </dd>
+                </div>
             {% endif %}
 
-        </dl>
+        </div>
     </div>
 
-    {# Right column: counts and dates #}
-    <div class="col-md-6">
-        <dl class="row mb-0">
+    {# ── Right column: metadata ── #}
+    <div class="col-12 col-md-8 col-lg-9">
 
-            {% if work.words %}
-                <dt class="col-sm-5">{{ 'work.field.words'|trans }}</dt>
-                <dd class="col-sm-7">{{ work.words|number_format }}</dd>
-            {% endif %}
-
-            {% if work.chapters %}
-                <dt class="col-sm-5">{{ 'work.field.chapters'|trans }}</dt>
-                <dd class="col-sm-7">{{ work.chapters }}</dd>
-            {% endif %}
-
-            {% if work.publishedDate %}
-                <dt class="col-sm-5">{{ 'work.show.field.published_date'|trans }}</dt>
-                <dd class="col-sm-7">{{ work.publishedDate|date('Y-m-d') }}</dd>
-            {% endif %}
-
+        {# Title + last updated date #}
+        <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+            <h1 class="work-detail-title">
+                {{ work.title }}
+                {% if work.starred %}
+                    <i class="bi bi-star-fill ms-1"
+                       style="color: #f4b942; font-size: 0.6em; vertical-align: middle;"
+                       aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+                {% endif %}
+            </h1>
             {% if work.lastUpdatedDate %}
-                <dt class="col-sm-5">{{ 'work.show.field.last_updated_date'|trans }}</dt>
-                <dd class="col-sm-7">{{ work.lastUpdatedDate|date('Y-m-d') }}</dd>
+                <span class="work-detail-updated">
+                    {{ 'work.show.field.last_updated_date'|trans }}: {{ work.lastUpdatedDate|date }}
+                </span>
             {% endif %}
+        </div>
 
-        </dl>
+        {# Authors #}
+        {% if work.authors is not empty %}
+            <p class="work-detail-authors mb-0">
+                {% for author in work.authors %}
+                    {% set authorLink = author.getLinkForSource(work.sourceType) %}
+                    {% if authorLink %}
+                        <a href="{{ authorLink }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
+                    {% else %}
+                        {{ author.name }}
+                    {% endif %}
+                    {%- if not loop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+        {% endif %}
+
+        {# Stat boxes #}
+        {% if work.words or work.chapters or work.publishedDate or work.language %}
+            <div class="work-detail-stats">
+                {% if work.words %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value">{{ work.words|number_format }}</span>
+                        <span class="work-stat-label">{{ 'work.field.words'|trans }}</span>
+                    </div>
+                {% endif %}
+                {% if work.chapters %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value">{{ work.chapters }}</span>
+                        <span class="work-stat-label">{{ 'work.field.chapters'|trans }}</span>
+                    </div>
+                {% endif %}
+                {% if work.publishedDate %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value" title="{{ work.publishedDate|date }}">{{ work.publishedDate|date('Y') }}</span>
+                        <span class="work-stat-label">{{ 'work.show.field.published_date'|trans }}</span>
+                    </div>
+                {% endif %}
+                {% if work.language %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value">{{ work.language.name }}</span>
+                        <span class="work-stat-label">{{ 'work.field.language'|trans }}</span>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {# Summary #}
+        {% if work.summary %}
+            <div class="work-detail-summary mt-4">{{ work.summary }}</div>
+        {% endif %}
+
+        {# Metadata chips, grouped by type #}
+        {% set metadataTypeOrder = ['Warning', 'Rating', 'Category', 'Fandom', 'Relationships', 'Character', 'Tag'] %}
+
+        {% set grouped = {} %}
+        {% for item in work.metadata %}
+            {% set key = item.metadataType.name %}
+            {% if key != 'Author' %}
+                {% if key not in grouped|keys %}
+                    {% set grouped = grouped|merge({(key): []}) %}
+                {% endif %}
+                {% set grouped = grouped|merge({(key): grouped[key]|merge([item])}) %}
+            {% endif %}
+        {% endfor %}
+
+        {% if grouped is not empty %}
+            <div class="work-detail-metadata mt-4">
+                {% for typeName in metadataTypeOrder %}
+                    {% if typeName in grouped|keys %}
+                        {% set chipClass = typeName == 'Rating' ? 'chip-tag-rating' : (typeName == 'Warning' ? 'chip-tag-warning' : 'chip-tag') %}
+                        <div class="work-meta-group">
+                            <span class="work-meta-label">{{ typeName }}</span>
+                            <div class="work-meta-chips">
+                                {% for item in grouped[typeName] %}
+                                    {{ _self.metadataChip(item, work.sourceType, chipClass) }}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {# Any types not in the preferred order #}
+                {% for typeName, items in grouped %}
+                    {% if typeName not in metadataTypeOrder %}
+                        <div class="work-meta-group">
+                            <span class="work-meta-label">{{ typeName }}</span>
+                            <div class="work-meta-chips">
+                                {% for item in items %}
+                                    {{ _self.metadataChip(item, work.sourceType, 'chip-tag') }}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="mt-4" style="color: var(--color-text-muted);">{{ 'work.show.no_metadata'|trans }}</p>
+        {% endif %}
+
     </div>
 </div>
 
-{% if work.summary %}
-    <hr>
-    <p class="text-muted mb-0" style="white-space: pre-wrap;">{{ work.summary }}</p>
-{% endif %}
-
-<hr>
-
-{# Metadata grouped by type #}
-{# Authors are excluded here — they are already shown in the core details section above. #}
-{# Known types are rendered in this preferred order; any unrecognized types follow at the end. #}
-{% set metadataTypeOrder = ['Warning', 'Rating', 'Category', 'Fandom', 'Relationships', 'Character', 'Tag'] %}
-
-{% set grouped = {} %}
-{% for item in work.metadata %}
-    {% set key = item.metadataType.name %}
-    {% if key != 'Author' %}
-        {% if key not in grouped|keys %}
-            {% set grouped = grouped|merge({(key): []}) %}
-        {% endif %}
-        {% set grouped = grouped|merge({(key): grouped[key]|merge([item])}) %}
-    {% endif %}
-{% endfor %}
-
-{% if grouped is empty %}
-    <p class="text-muted">{{ 'work.show.no_metadata'|trans }}</p>
-{% else %}
-    <div class="row g-2">
-        {% for typeName in metadataTypeOrder %}
-            {% if typeName in grouped|keys %}
-                <div class="col-12">
-                    <span class="fw-semibold me-2">{{ typeName }}:</span>
-                    {% for item in grouped[typeName] %}
-                        {{ _self.metadataBadge(item, work.sourceType) }}
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endfor %}
-        {% for typeName, items in grouped %}
-            {% if typeName not in metadataTypeOrder %}
-                <div class="col-12">
-                    <span class="fw-semibold me-2">{{ typeName }}:</span>
-                    {% for item in items %}
-                        {{ _self.metadataBadge(item, work.sourceType) }}
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-{% endif %}
 {% endblock %}

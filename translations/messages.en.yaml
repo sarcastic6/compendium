@@ -1,3 +1,36 @@
+entry:
+    list:
+        heading: 'My Library'
+        add: 'Add Entry'
+        entry_count: '%count% entries'
+        entry_count_one: '1 entry'
+        entry_count_filtered: '%count% of %total% entries'
+        col_fandom: 'Fandom'
+        stat_total_words: 'Total Words'
+        stat_finish_rate: 'Finish Rate'
+        stat_avg_review: 'Avg Review'
+        stat_this_year: 'In %year%'
+        stat_completed: 'Completed'
+        favorite_work: 'Favorite work'
+        favorite_entry: 'Favorite entry'
+        view_comment: 'View comment'
+        stars: 'stars'
+        actions: 'Entry actions'
+        pagination: 'Reading entries pagination'
+    empty:
+        heading: 'Your archive is empty'
+        text: 'Start building your reading log by adding your first entry.'
+        no_results_heading: 'No entries match your filters'
+        no_results_text: 'Try adjusting or clearing your filters to see more results.'
+    filter:
+        panel_title: 'Filter Entries'
+        show_filters: 'Filters'
+        clear_all: 'Clear all'
+        section_text: 'Text Search'
+        section_metrics: 'Metrics'
+        section_classify: 'Status & Type'
+        section_metadata: 'Tags & Metadata'
+
 nav:
     main: 'Main navigation'
     home: 'My List'
@@ -8,6 +41,23 @@ nav:
     logout: 'Log out'
     login: 'Log in'
     register: 'Register'
+    brand_sub: 'Reading Archive'
+    privacy: 'Privacy Policy'
+    library: 'My Library'
+    analytics: 'Analytics'
+    rankings: 'Rankings'
+    rankings_authors: 'Authors'
+    rankings_fandoms: 'Fandoms'
+    rankings_characters: 'Characters'
+    rankings_relationships: 'Relationships'
+    rankings_tags: 'Tags'
+    rankings_ratings: 'Ratings'
+    rankings_warnings: 'Warnings'
+    rankings_categories: 'Categories'
+    rankings_series: 'Series'
+    rankings_main_pairings: 'Main Pairings'
+    settings: 'Settings'
+    open_menu: 'Open navigation menu'
 
 action:
     save: 'Save'
@@ -139,6 +189,8 @@ work:
     preview:
         view_details: 'View Full Details'
         load_error: 'Failed to load preview.'
+    action:
+        log_entry: 'Log Entry'
     show:
         heading: 'Work details'
         no_metadata: 'No metadata attached to this work.'
@@ -177,9 +229,11 @@ work:
 
 admin:
     heading: 'Admin Panel'
+    subheading: 'Configure application settings'
     statuses:
         heading: 'Statuses'
         manage: 'Manage Statuses'
+        description: 'Define reading statuses and how they affect statistics'
         new_heading: 'New Status'
         edit_heading: 'Edit Status'
         empty: 'No statuses created yet.'
@@ -190,6 +244,7 @@ admin:
     metadata_types:
         heading: 'Metadata Types'
         manage: 'Manage Metadata Types'
+        description: 'Configure tag categories, dropdowns, and multi-value rules'
         new_heading: 'New Metadata Type'
         edit_heading: 'Edit Metadata Type'
         empty: 'No metadata types created yet.'
@@ -201,14 +256,21 @@ admin:
 
 profile:
     heading: 'My Profile'
+    display_name: 'Display Name'
     saved: 'Profile saved.'
     current_password:
         invalid: 'Current password is incorrect.'
     password_changed: 'Password changed.'
     change_password: 'Change Password'
+    change_email: 'Change Email'
+    current_email: 'Current email'
+    email_changed: 'Email address updated.'
+    email:
+        already_in_use: 'That email address is already in use.'
     field:
         name: 'Display Name'
         email: 'Email'
+        new_email: 'New Email Address'
         current_password: 'Current Password'
         new_password: 'New Password'
         new_password_confirm: 'Confirm New Password'
@@ -338,6 +400,13 @@ stats:
         series_ao3_link: 'View AO3 Series'
         series_complete: 'Complete'
         series_ongoing: 'Ongoing'
+        spotlight_most_read: 'Most Read'
+        spotlight_most_words: 'Most Words'
+        spotlight_most_words_read: 'Most Words Read'
+        spotlight_best_rated: 'Best Rated'
+        spotlight_reads: 'reads'
+        spotlight_words: 'words'
+        spotlight_avg_review: 'avg review'
 
 reset_password:
     request:

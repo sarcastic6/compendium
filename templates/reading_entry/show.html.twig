@@ -1,5 +1,15 @@
 {% extends 'base.html.twig' %}
 
+{% macro metadataChip(item, sourceType, chipClass) %}
+    {% set link = item.getLinkForSource(sourceType) %}
+    {% if link %}
+        <a href="{{ link }}" target="_blank" rel="noopener noreferrer"
+           class="chip {{ chipClass }} text-decoration-none">{{ item.name }}</a>
+    {% else %}
+        <span class="chip {{ chipClass }}">{{ item.name }}</span>
+    {% endif %}
+{% endmacro %}
+
 {% block title %}
     {% if entry.work.deleted %}
         {{ 'reading.entry.title'|trans }}
@@ -9,128 +19,331 @@
 {% endblock %}
 
 {% block body %}
-<div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-        {% if entry.work.deleted %}
-            <h1 class="h3 mb-1 text-muted">{{ 'reading.entry.work_deleted'|trans }}</h1>
-        {% else %}
-            <h1 class="h3 mb-1">{{ entry.work.title }}</h1>
-            {% if entry.work.authors is not empty %}
-                <p class="text-muted mb-0">{{ entry.work.authors|map(a => a.name)|join(', ') }}</p>
-            {% endif %}
-        {% endif %}
-    </div>
-    <div class="d-flex flex-wrap gap-2 flex-shrink-0 ms-3">
-        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary btn-sm">
-            &larr; {{ 'reading.entry.back_to_list'|trans }}
+
+{# ── Page header ── #}
+<div class="page-header">
+    <div class="page-header-text">
+        <a href="{{ path('app_reading_entry_list') }}" class="back-link">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            {{ 'nav.library'|trans }}
         </a>
-        {% if not entry.work.deleted %}
-            <a href="{{ path('app_work_show', {id: entry.work.id}) }}" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-book" aria-hidden="true"></i>
-                {{ 'reading.entry.view_work'|trans }}
-            </a>
+    </div>
+    <div class="page-header-actions">
+        {% if not entry.work.deleted and entry.work.link and entry.work.sourceType.value != 'Manual' %}
+            <form method="post" action="{{ path('app_work_refresh', {id: entry.work.id}) }}" class="d-inline">
+                <input type="hidden" name="_token" value="{{ csrf_token('refresh_work_' ~ entry.work.id) }}">
+                <button type="submit" class="btn btn-ghost btn-sm">
+                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                    {{ 'work.refresh.button'|trans({'%source%': entry.work.sourceType.value}) }}
+                </button>
+            </form>
         {% endif %}
-        <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}" class="btn btn-outline-primary btn-sm">
+        <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}" class="btn btn-secondary btn-sm">
             <i class="bi bi-pencil" aria-hidden="true"></i>
             {{ 'reading.entry.edit'|trans }}
         </a>
-        <button type="button" class="btn btn-outline-danger btn-sm"
-                data-bs-toggle="modal" data-bs-target="#deleteModal"
-                data-entry-id="{{ entry.id }}"
-                data-delete-url="{{ path('app_reading_entry_delete', {id: entry.id}) }}">
+        <button type="button" class="btn btn-danger btn-sm"
+                data-bs-toggle="modal" data-bs-target="#deleteModal">
             <i class="bi bi-trash" aria-hidden="true"></i>
             {{ 'reading.entry.delete'|trans }}
         </button>
     </div>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-6">
-        <dl class="row mb-0">
-            <dt class="col-sm-5">{{ 'reading.field.status'|trans }}</dt>
-            <dd class="col-sm-7">
-                <span class="badge {% if entry.status.countsAsRead %}bg-success{% else %}bg-secondary{% endif %}">
-                    {{ entry.status.name }}
-                </span>
-            </dd>
+<div class="row g-4 g-lg-5">
 
-            <dt class="col-sm-5">{{ 'reading.field.date_started'|trans }}</dt>
-            <dd class="col-sm-7">{{ entry.dateStarted ? entry.dateStarted|date('Y-m-d') : '—' }}</dd>
+    {# ── Left column: cover + work badges + reading-specific data ── #}
+    <div class="col-12 col-md-4 col-lg-3">
+        <div class="work-cover-col">
 
-            <dt class="col-sm-5">{{ 'reading.field.date_finished'|trans }}</dt>
-            <dd class="col-sm-7">{{ entry.dateFinished ? entry.dateFinished|date('Y-m-d') : '—' }}</dd>
+            {# Large typographic cover #}
+            {% if entry.work.deleted %}
+                <div class="cover cover-lg" style="background: var(--color-surface-tint); opacity: 0.5;" aria-hidden="true">
+                    <span class="cover-title" style="color: var(--color-text-faint);">{{ 'reading.entry.work_deleted'|trans }}</span>
+                </div>
+            {% else %}
+                <div class="cover cover-lg {{ cover_font_class(entry.work.type.value) }}"
+                     style="{{ cover_gradient(entry.work.id) }}"
+                     aria-hidden="true">
+                    <span class="cover-title">{{ entry.work.title }}</span>
+                </div>
+            {% endif %}
 
-            <dt class="col-sm-5">{{ 'reading.field.last_chapter'|trans }}</dt>
-            <dd class="col-sm-7">{{ entry.lastReadChapter ?? '—' }}</dd>
-        </dl>
-    </div>
-    <div class="col-md-6">
-        <dl class="row mb-0">
-            <dt class="col-sm-5">{{ 'reading.field.review_stars'|trans }}</dt>
-            <dd class="col-sm-7">
-                {% if entry.reviewStars %}
-                    <span aria-label="{{ entry.reviewStars }} stars">
-                        {% for i in range(1, entry.reviewStars) %}⭐{% endfor %}
-                    </span>
-                {% else %}
-                    —
-                {% endif %}
-            </dd>
-
-            <dt class="col-sm-5">{{ 'reading.field.spice_stars'|trans }}</dt>
-            <dd class="col-sm-7">
-                {% if entry.spiceStars is not null %}
-                    {% if entry.spiceStars == 0 %}
-                        <span aria-label="0 out of 5">🚫</span>
+            {# Type + source badges #}
+            {% if not entry.work.deleted %}
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <span class="chip chip-tag">{{ entry.work.type.value }}</span>
+                    {% if entry.work.link %}
+                        <a href="{{ entry.work.link }}" target="_blank" rel="noopener noreferrer"
+                           class="chip chip-tag text-decoration-none">
+                            {{ entry.work.sourceType.value }}
+                            <i class="bi bi-box-arrow-up-right" style="font-size: 0.65em;" aria-hidden="true"></i>
+                        </a>
                     {% else %}
-                        <span aria-label="{{ entry.spiceStars }} out of 5">
-                            {% for i in range(1, entry.spiceStars) %}🌶️{% endfor %}
+                        <span class="chip chip-tag">{{ entry.work.sourceType.value }}</span>
+                    {% endif %}
+                </div>
+
+                {# Series info #}
+                {% if entry.work.series %}
+                    <div class="work-series-info">
+                        {% set seriesLink = entry.work.series.getLinkForSource(entry.work.sourceType) %}
+                        <i class="bi bi-collection me-1" aria-hidden="true"></i>
+                        {% if seriesLink %}
+                            <a href="{{ seriesLink }}" target="_blank" rel="noopener noreferrer">{{ entry.work.series.name }}</a>
+                        {% else %}
+                            {{ entry.work.series.name }}
+                        {% endif %}
+                        {% if entry.work.placeInSeries %}
+                            &nbsp;#{{ entry.work.placeInSeries }}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            {# ── Reading-specific data ── #}
+            <div class="mt-4">
+
+                {# Status chip #}
+                {% set statusSlug = entry.status.name|lower|replace({' ': '-'}) %}
+                <div>
+                    <span class="chip chip--{{ statusSlug }}">{{ entry.status.name }}</span>
+                    {% if entry.starred %}
+                        <span class="ms-2" style="color: #f4b942; font-size: var(--text-sm);">
+                            <i class="bi bi-heart-fill" aria-label="{{ 'reading.field.starred'|trans }}"></i>
                         </span>
                     {% endif %}
-                {% else %}
-                    —
-                {% endif %}
-            </dd>
+                </div>
 
-            <dt class="col-sm-5">{{ 'reading.field.main_pairing'|trans }}</dt>
-            <dd class="col-sm-7">{{ entry.mainPairing ? entry.mainPairing.name : '—' }}</dd>
+                {# Dates + last chapter #}
+                <div class="work-detail-stats mt-3">
+                    {% if entry.dateStarted %}
+                        <div class="work-stat-box">
+                            <span class="work-stat-value">{{ entry.dateStarted|date }}</span>
+                            <span class="work-stat-label">{{ 'reading.field.date_started'|trans }}</span>
+                        </div>
+                    {% endif %}
+                    {% if entry.dateFinished %}
+                        <div class="work-stat-box">
+                            <span class="work-stat-value">{{ entry.dateFinished|date }}</span>
+                            <span class="work-stat-label">{{ 'reading.field.date_finished'|trans }}</span>
+                        </div>
+                    {% endif %}
+                    {% if entry.lastReadChapter %}
+                        <div class="work-stat-box">
+                            <span class="work-stat-value">{{ entry.lastReadChapter }}</span>
+                            <span class="work-stat-label">{{ 'reading.field.last_chapter'|trans }}</span>
+                        </div>
+                    {% endif %}
+                </div>
 
-            <dt class="col-sm-5">{{ 'reading.field.starred'|trans }}</dt>
-            <dd class="col-sm-7">
-                {% if entry.starred %}
-                    <i class="bi bi-heart-fill text-danger" aria-label="Yes"></i>
-                {% else %}
-                    —
+                {# Review + spice #}
+                {% if entry.reviewStars or entry.spiceStars is not null %}
+                    <div class="d-flex flex-wrap gap-3 mt-3" style="font-size: var(--text-sm); color: var(--color-text-muted);">
+                        {% if entry.reviewStars %}
+                            <div>
+                                <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); display: block; margin-bottom: 2px;">
+                                    {{ 'reading.field.review_stars'|trans }}
+                                </span>
+                                <span aria-label="{{ entry.reviewStars }} {{ 'reading.field.review_stars'|trans }}">
+                                    {% for i in range(1, entry.reviewStars) %}⭐{% endfor %}
+                                </span>
+                            </div>
+                        {% endif %}
+                        {% if entry.spiceStars is not null %}
+                            <div>
+                                <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); display: block; margin-bottom: 2px;">
+                                    {{ 'reading.field.spice_stars'|trans }}
+                                </span>
+                                {% if entry.spiceStars == 0 %}
+                                    <span aria-label="No spice">🚫</span>
+                                {% else %}
+                                    <span aria-label="{{ entry.spiceStars }} out of 5">
+                                        {% for i in range(1, entry.spiceStars) %}🌶️{% endfor %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
                 {% endif %}
-            </dd>
-        </dl>
+
+                {# Main pairing #}
+                {% if entry.mainPairing %}
+                    <div class="mt-3">
+                        <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); color: var(--color-text-muted); display: block; margin-bottom: var(--space-1);">
+                            {{ 'reading.field.main_pairing'|trans }}
+                        </span>
+                        <span class="chip chip-tag chip-tag--full">{{ entry.mainPairing.name }}</span>
+                    </div>
+                {% endif %}
+
+            </div>
+
+        </div>
+    </div>
+
+    {# ── Right column: work details + comments + summary ── #}
+    <div class="col-12 col-md-8 col-lg-9">
+
+        {# Title + last updated date #}
+        {% if entry.work.deleted %}
+            <h1 class="work-detail-title" style="color: var(--color-text-faint);">
+                {{ 'reading.entry.work_deleted'|trans }}
+            </h1>
+        {% else %}
+            <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+                <h1 class="work-detail-title">
+                    {{ entry.work.title }}
+                    {% if entry.work.starred %}
+                        <i class="bi bi-star-fill ms-1"
+                           style="color: #f4b942; font-size: 0.6em; vertical-align: middle;"
+                           aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+                    {% endif %}
+                </h1>
+                {% if entry.work.lastUpdatedDate %}
+                    <span class="work-detail-updated">
+                        {{ 'work.show.field.last_updated_date'|trans }}: {{ entry.work.lastUpdatedDate|date }}
+                    </span>
+                {% endif %}
+            </div>
+
+            {# Authors #}
+            {% if entry.work.authors is not empty %}
+                <p class="work-detail-authors mb-0">
+                    {% for author in entry.work.authors %}
+                        {% set authorLink = author.getLinkForSource(entry.work.sourceType) %}
+                        {% if authorLink %}
+                            <a href="{{ authorLink }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
+                        {% else %}
+                            {{ author.name }}
+                        {% endif %}
+                        {%- if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+            {% endif %}
+        {% endif %}
+
+        {# Work stat boxes: words / chapters / published / language #}
+        {% if entry.work.words or entry.work.chapters or entry.work.publishedDate or entry.work.language %}
+            <div class="work-detail-stats">
+                {% if entry.work.words %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value">{{ entry.work.words|number_format }}</span>
+                        <span class="work-stat-label">{{ 'work.field.words'|trans }}</span>
+                    </div>
+                {% endif %}
+                {% if entry.work.chapters %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value">{{ entry.work.chapters }}</span>
+                        <span class="work-stat-label">{{ 'work.field.chapters'|trans }}</span>
+                    </div>
+                {% endif %}
+                {% if entry.work.publishedDate %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value" title="{{ entry.work.publishedDate|date }}">{{ entry.work.publishedDate|date('Y') }}</span>
+                        <span class="work-stat-label">{{ 'work.show.field.published_date'|trans }}</span>
+                    </div>
+                {% endif %}
+                {% if entry.work.language %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value">{{ entry.work.language.name }}</span>
+                        <span class="work-stat-label">{{ 'work.field.language'|trans }}</span>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {# Metadata chips, grouped by type #}
+        {% if not entry.work.deleted %}
+            {% set metadataTypeOrder = ['Warning', 'Rating', 'Category', 'Fandom', 'Relationships', 'Character', 'Tag'] %}
+            {% set grouped = {} %}
+            {% for item in entry.work.metadata %}
+                {% set key = item.metadataType.name %}
+                {% if key != 'Author' %}
+                    {% if key not in grouped|keys %}
+                        {% set grouped = grouped|merge({(key): []}) %}
+                    {% endif %}
+                    {% set grouped = grouped|merge({(key): grouped[key]|merge([item])}) %}
+                {% endif %}
+            {% endfor %}
+
+            {% if grouped is not empty %}
+                <div class="work-detail-metadata mt-4">
+                    {% for typeName in metadataTypeOrder %}
+                        {% if typeName in grouped|keys %}
+                            {% set chipClass = typeName == 'Rating' ? 'chip-tag-rating' : (typeName == 'Warning' ? 'chip-tag-warning' : 'chip-tag') %}
+                            <div class="work-meta-group">
+                                <span class="work-meta-label">{{ typeName }}</span>
+                                <div class="work-meta-chips">
+                                    {% for item in grouped[typeName] %}
+                                        {{ _self.metadataChip(item, entry.work.sourceType, chipClass) }}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    {# Any types not in the preferred order #}
+                    {% for typeName, items in grouped %}
+                        {% if typeName not in metadataTypeOrder %}
+                            <div class="work-meta-group">
+                                <span class="work-meta-label">{{ typeName }}</span>
+                                <div class="work-meta-chips">
+                                    {% for item in items %}
+                                        {{ _self.metadataChip(item, entry.work.sourceType, 'chip-tag') }}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {# Comments #}
+        {% if entry.comments %}
+            <div class="mt-4">
+                <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); color: var(--color-text-muted); display: block; margin-bottom: var(--space-2);">
+                    {{ 'reading.field.comments'|trans }}
+                </span>
+                <div class="chart-card">
+                    <div class="chart-card-body" style="white-space: pre-wrap; font-size: var(--text-sm); color: var(--color-text-body);">{{ entry.comments }}</div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# Summary #}
+        {% if not entry.work.deleted and entry.work.summary %}
+            <div class="mt-4">
+                <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); color: var(--color-text-muted); display: block; margin-bottom: var(--space-2);">
+                    {{ 'work.field.summary'|trans }}
+                </span>
+                <div class="work-detail-summary">{{ entry.work.summary }}</div>
+            </div>
+        {% endif %}
+
     </div>
 </div>
 
-{% if entry.comments %}
-    <div class="mb-4">
-        <h2 class="h6 text-muted text-uppercase mb-2">{{ 'reading.field.comments'|trans }}</h2>
-        <p class="mb-0" style="white-space: pre-wrap">{{ entry.comments }}</p>
-    </div>
-{% endif %}
-
-
-{# Delete confirmation modal — CSRF token protects against cross-site deletion #}
+{# ── Delete confirmation modal ── #}
+{# CSRF token is hard-coded at render time; the form action is fixed to this entry's delete URL #}
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">{{ 'reading.entry.delete_confirm'|trans }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'action.cancel'|trans }}"></button>
+        <div class="modal-content" style="border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--color-border); padding: var(--space-4) var(--space-5);">
+                <h5 class="modal-title" id="deleteModalLabel" style="font-weight: var(--weight-semibold); color: var(--color-primary);">
+                    {{ 'reading.entry.delete_confirm'|trans }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="{{ 'action.cancel'|trans }}"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding: var(--space-5); color: var(--color-text-body);">
                 {{ 'reading.entry.delete_confirm_message'|trans }}
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <div class="modal-footer" style="border-top: 1px solid var(--color-border); padding: var(--space-4) var(--space-5);">
+                <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">
                     {{ 'action.cancel'|trans }}
                 </button>
-                <form id="deleteForm" method="post" action="">
+                <form id="deleteForm" method="post" action="{{ path('app_reading_entry_delete', {id: entry.id}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete-entry-' ~ entry.id) }}">
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-trash" aria-hidden="true"></i>
@@ -142,16 +355,4 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var deleteModal = document.getElementById('deleteModal');
-    if (deleteModal) {
-        deleteModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var deleteUrl = button.getAttribute('data-delete-url');
-            document.getElementById('deleteForm').action = deleteUrl;
-        });
-    }
-});
-</script>
 {% endblock %}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Compendium{% endblock %} | Compendium</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>📚</text></svg>">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+        <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,400;1,600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="preload" href="{{ asset('vendor/bootstrap-icons/font/fonts/bootstrap-icons.woff2') }}" as="font" type="font/woff2" crossorigin="anonymous">
+        <link rel="stylesheet" href="{{ asset('vendor/bootstrap-icons/font/bootstrap-icons.css') }}">
+        {% block stylesheets %}{% endblock %}
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+    </head>
+    <body>
+
+        <div class="auth-page">
+
+            {# Flash messages #}
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    {% set iconMap = {success: 'bi-check-circle-fill', error: 'bi-exclamation-triangle-fill', warning: 'bi-exclamation-circle-fill', info: 'bi-info-circle-fill'} %}
+                    <div class="flash flash-{{ type }}" role="alert" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+                        <i class="bi {{ iconMap[type] ?? 'bi-info-circle-fill' }}" aria-hidden="true"></i>
+                        <span class="flash-body">{{ message|trans }}</span>
+                        <button type="button" class="flash-dismiss" aria-label="{{ 'action.close'|trans }}">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            {% block body %}{% endblock %}
+
+            <div style="text-align: center; margin-top: var(--space-6); font-size: var(--text-xs); color: var(--color-text-faint);">
+                <a href="{{ path('app_privacy') }}" style="color: inherit;">{{ 'nav.privacy'|trans }}</a>
+            </div>
+
+        </div>
+
+    </body>
+</html>

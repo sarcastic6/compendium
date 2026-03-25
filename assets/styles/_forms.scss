@@ -1,0 +1,222 @@
+// =============================================================================
+// _forms.scss
+// Inputs, selects, textareas, labels, focus states.
+// =============================================================================
+
+// -------------------------------------------------------------------------
+// Labels
+// -------------------------------------------------------------------------
+
+.form-label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-body);
+    margin-bottom: var(--space-1);
+    display: block;
+}
+
+// Optional indicator
+.form-label-optional {
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+    font-weight: var(--weight-normal);
+    margin-left: var(--space-1);
+}
+
+// -------------------------------------------------------------------------
+// Text inputs, number inputs, date inputs, textareas
+// -------------------------------------------------------------------------
+
+.form-control {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    color: var(--color-text-body);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    min-height: 36px;
+    width: 100%;
+    transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+
+    &::placeholder {
+        color: var(--color-text-faint);
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-primary-light);
+        box-shadow: 0 0 0 3px rgba(59, 107, 82, 0.15);
+        background: var(--color-surface);
+    }
+
+    &:disabled,
+    &[readonly] {
+        background: var(--color-surface-tint);
+        color: var(--color-text-muted);
+        cursor: not-allowed;
+    }
+
+    &.is-invalid {
+        border-color: var(--color-danger);
+
+        &:focus {
+            box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+        }
+    }
+}
+
+// -------------------------------------------------------------------------
+// Select
+// -------------------------------------------------------------------------
+
+.form-select {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    color: var(--color-text-body);
+    background-color: var(--color-surface);
+    // Restore native appearance so OS popup renders option highlights full-width.
+    // Bootstrap sets appearance: none + a custom SVG arrow, which causes the
+    // native dropdown popup to highlight options at content-width only (macOS/Chrome).
+    appearance: auto;
+    background-image: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    min-height: 36px;
+    width: 100%;
+    cursor: pointer;
+    transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-primary-light);
+        box-shadow: 0 0 0 3px rgba(59, 107, 82, 0.15);
+    }
+}
+
+// -------------------------------------------------------------------------
+// Checkbox + radio
+// -------------------------------------------------------------------------
+
+.form-check-input {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+    flex-shrink: 0;
+    margin-top: 0;
+
+    &:checked {
+        background-color: var(--color-primary);
+        border-color: var(--color-primary);
+    }
+
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 107, 82, 0.15);
+    }
+}
+
+.form-check-label {
+    font-size: var(--text-sm);
+    color: var(--color-text-body);
+    cursor: pointer;
+    padding-left: var(--space-2);
+}
+
+// -------------------------------------------------------------------------
+// Autocomplete dropdown
+// Bootstrap 5.3 scopes --bs-dropdown-* onto .dropdown-menu itself, so
+// :root overrides are shadowed. We must re-declare at the same level,
+// after Bootstrap loads, to get our surface colour and shadow.
+// -------------------------------------------------------------------------
+
+.dropdown-menu {
+    --bs-dropdown-bg:               var(--color-surface);
+    --bs-dropdown-border-color:     var(--color-border);
+    --bs-dropdown-box-shadow:       var(--shadow-md);
+    --bs-dropdown-link-color:       var(--color-text-body);
+    --bs-dropdown-link-hover-bg:    var(--color-surface-tint);
+    --bs-dropdown-link-hover-color: var(--color-text-body);
+    --bs-dropdown-link-active-bg:   var(--color-secondary-bg);
+    --bs-dropdown-link-active-color: var(--color-text-body);
+}
+
+// -------------------------------------------------------------------------
+// Help text / error text
+// -------------------------------------------------------------------------
+
+.form-text {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: var(--space-1);
+}
+
+.invalid-feedback {
+    font-size: var(--text-xs);
+    color: var(--color-danger);
+    margin-top: var(--space-1);
+    display: block;
+}
+
+// -------------------------------------------------------------------------
+// Form group spacing
+// -------------------------------------------------------------------------
+
+.mb-3 {
+    margin-bottom: var(--space-5) !important;
+}
+
+// -------------------------------------------------------------------------
+// Input group (icon prefix/suffix)
+// -------------------------------------------------------------------------
+
+.input-group {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+
+    .input-group-text {
+        display: flex;
+        align-items: center;
+        padding: var(--space-2) var(--space-3);
+        background: var(--color-surface-tint);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-muted);
+        font-size: var(--text-sm);
+    }
+
+    .form-control,
+    .form-select {
+        flex: 1;
+    }
+
+    // Joined appearance
+    > *:not(:first-child) {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: none;
+    }
+
+    > *:not(:last-child) {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    > *:first-child {
+        border-top-left-radius: var(--radius-md);
+        border-bottom-left-radius: var(--radius-md);
+    }
+
+    > *:last-child {
+        border-top-right-radius: var(--radius-md);
+        border-bottom-right-radius: var(--radius-md);
+    }
+}

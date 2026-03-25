@@ -110,15 +110,14 @@ class ReauthenticationTest extends AbstractFunctionalTest
         $this->logIn($this->client, $user->getEmail(), self::PASSWORD);
         $this->client->followRedirect();
 
-        $this->client->request('GET', '/profile');
+        $this->client->request('GET', '/profile/change-email');
         $this->submitFirstForm($this->client, [
-            'profile_form[name]' => $user->getName(),
-            'profile_form[email]' => 'changed@example.com',
-            'profile_form[currentPassword]' => '',
+            'change_email_form[currentPassword]' => '',
+            'change_email_form[newEmail]' => 'changed@example.com',
         ]);
 
-        // The profile form has no NotBlank on currentPassword — controller re-renders with 200 + flash.
-        $this->assertResponseIsSuccessful();
+        // currentPassword has NotBlank — Symfony 7 returns 422 when form validation fails.
+        $this->assertResponseStatusCodeSame(422);
 
         $this->em->clear();
         $fresh = $this->em->find(User::class, $userId);
@@ -139,8 +138,6 @@ class ReauthenticationTest extends AbstractFunctionalTest
         $this->client->request('GET', '/profile');
         $this->submitFirstForm($this->client, [
             'profile_form[name]' => 'Updated Name',
-            'profile_form[email]' => $user->getEmail(),
-            'profile_form[currentPassword]' => '',
         ]);
 
         $this->assertResponseRedirects('/profile');

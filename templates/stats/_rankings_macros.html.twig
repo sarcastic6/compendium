@@ -7,30 +7,35 @@
     sortHeader — renders a sortable column header link.
 
     Parameters:
-    - col:               the sort key for this column
-    - label:             translated label string
-    - align:             'start' or 'end' (Bootstrap text-align utility suffix)
-    - extraClass:        optional extra classes on the <th>
-    - sortColumn:        currently active sort column
-    - sortDir:           currently active sort direction ('asc'|'desc')
-    - rankingRoute:      route name for this rankings page
-    - rankingRouteParams: extra route params (e.g. {type: 'Fandom'})
-    - year:              currently selected year (null for all-time)
+    - col, label, align, extraClass, sortColumn, sortDir,
+      rankingRoute, rankingRouteParams, year
 #}
+{#
+    staticHeader — non-sortable column header that matches the height of sortHeader.
+#}
+{% macro staticHeader(label, align, extraClass) %}
+    <th class="text-{{ align }}{{ extraClass ? ' ' ~ extraClass : '' }}">
+        <div class="d-flex flex-column align-items-{{ align == 'end' ? 'end' : 'start' }} gap-1 text-muted">
+            <span>{{ label }}</span>
+            <i class="bi bi-chevron-expand opacity-0" style="font-size: 0.6em;" aria-hidden="true"></i>
+        </div>
+    </th>
+{% endmacro %}
+
 {% macro sortHeader(col, label, align, extraClass, sortColumn, sortDir, rankingRoute, rankingRouteParams, year) %}
     {% set isActive = (sortColumn == col) %}
     {% set nextDir = (isActive and sortDir == 'desc') ? 'asc' : 'desc' %}
-    <th class="text-{{ align }}{{ extraClass ? ' ' ~ extraClass : '' }}{{ isActive ? ' table-primary' : '' }}">
+    <th class="text-{{ align }}{{ extraClass ? ' ' ~ extraClass : '' }}{% if isActive %} th-sort-active{% endif %}">
         <a href="{{ path(rankingRoute, rankingRouteParams|merge({
             'year': year,
             'sort': col,
             'dir': nextDir
-        })) }}" class="d-flex flex-column align-items-{{ align == 'end' ? 'end' : 'start' }} text-decoration-none {{ isActive ? 'fw-semibold' : 'text-muted' }}">
+        })) }}" class="d-flex flex-column align-items-{{ align == 'end' ? 'end' : 'start' }} text-decoration-none gap-1 {{ isActive ? 'fw-semibold text-body' : 'text-muted' }}">
             <span>{{ label }}</span>
             {% if isActive %}
-                <i class="bi bi-caret-{{ sortDir == 'asc' ? 'up' : 'down' }}-fill"></i>
+                <i class="bi bi-caret-{{ sortDir == 'asc' ? 'up' : 'down' }}-fill" style="font-size: 0.6em;"></i>
             {% else %}
-                <i class="bi bi-chevron-expand opacity-25"></i>
+                <i class="bi bi-chevron-expand opacity-25" style="font-size: 0.6em;"></i>
             {% endif %}
         </a>
     </th>

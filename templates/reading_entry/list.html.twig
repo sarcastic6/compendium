@@ -1,36 +1,74 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ 'reading.entry.list_heading'|trans }}{% endblock %}
+{% block title %}{{ 'entry.list.heading'|trans }}{% endblock %}
 
 {% block body %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">{{ 'reading.entry.list_heading'|trans }}</h1>
-    <a href="{{ path('app_work_select') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg" aria-hidden="true"></i>
-        {{ 'reading.entry.add'|trans }}
-    </a>
-</div>
 
-{# ── Filter toggle + clear all ────────────────────────────────────────────── #}
-<div class="d-flex align-items-center gap-2 mb-2">
-    <button class="btn btn-outline-secondary btn-sm" type="button"
-            data-bs-toggle="collapse" data-bs-target="#filterBar"
-            aria-expanded="false" aria-controls="filterBar">
-        <i class="bi bi-funnel" aria-hidden="true"></i>
-        {{ 'reading.filter.show_filters'|trans }}
-        {% if has_filters %}
-            <span class="badge bg-primary ms-1">{{ active_filter_count }}</span>
-        {% endif %}
-    </button>
-    {% if has_filters %}
-        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-x-lg" aria-hidden="true"></i>
-            {{ 'reading.filter.clear'|trans }}
+{# ── Page header ──────────────────────────────────────────────────────────── #}
+<div class="page-header">
+    <div class="page-header-text">
+        <h1 class="page-title">{{ 'entry.list.heading'|trans }}</h1>
+        <p class="page-subtitle text-muted mb-0">
+            {% if has_filters %}
+                {{ 'entry.list.entry_count_filtered'|trans({'%count%': total, '%total%': stat_total_words|number_format}) }}
+            {% else %}
+                {% if total == 1 %}
+                    {{ 'entry.list.entry_count_one'|trans({'%count%': total}) }}
+                {% else %}
+                    {{ 'entry.list.entry_count'|trans({'%count%': total}) }}
+                {% endif %}
+            {% endif %}
+        </p>
+    </div>
+    <div class="page-header-actions">
+        {# Filter toggle — offcanvas trigger #}
+        <button class="btn btn-secondary btn-sm" type="button"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#filterOffcanvas"
+                aria-controls="filterOffcanvas">
+            <i class="bi bi-funnel" aria-hidden="true"></i>
+            {{ 'entry.filter.show_filters'|trans }}
+            {% if has_filters %}
+                <span class="filter-badge ms-1">{{ active_filter_count }}</span>
+            {% endif %}
+        </button>
+        <a href="{{ path('app_work_select') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+            {{ 'entry.list.add'|trans }}
         </a>
-    {% endif %}
+    </div>
 </div>
 
-{# ── Active filter chips — always visible, outside the collapse ───────────── #}
+{# ── Summary stat strip ───────────────────────────────────────────────────── #}
+<div class="stat-strip">
+    <div class="stat-strip-item">
+        <span class="stat-strip-value">{{ stat_total_words|number_format }}</span>
+        <span class="stat-strip-label">{{ 'entry.list.stat_total_words'|trans }}</span>
+    </div>
+    <div class="stat-strip-item">
+        <span class="stat-strip-value">{{ stat_finish_rate }}%</span>
+        <span class="stat-strip-label">{{ 'entry.list.stat_finish_rate'|trans }}</span>
+    </div>
+    <div class="stat-strip-item">
+        {% if stat_avg_review %}
+            <span class="stat-strip-value">{{ stat_avg_review }}</span>
+        {% else %}
+            <span class="stat-strip-value stat-strip-value--empty">—</span>
+        {% endif %}
+        <span class="stat-strip-label">{{ 'entry.list.stat_avg_review'|trans }}</span>
+    </div>
+    <div class="stat-strip-item">
+        {% if has_filters %}
+            <span class="stat-strip-value">{{ stat_completed }}</span>
+            <span class="stat-strip-label">{{ 'entry.list.stat_completed'|trans }}</span>
+        {% else %}
+            <span class="stat-strip-value">{{ stat_this_year }}</span>
+            <span class="stat-strip-label">{{ 'entry.list.stat_this_year'|trans({'%year%': stat_current_year}) }}</span>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Active filter chips — always visible when filters are set ────────────── #}
 {% if has_filters %}
     {# Build a status ID → name map so the status chip can show the name, not the ID #}
     {% set statusMap = {} %}
@@ -38,117 +76,114 @@
         {% set statusMap = statusMap|merge({(s.id ~ ''): s.name}) %}
     {% endfor %}
 
-    <div class="d-flex flex-wrap gap-2 mb-3">
+    <div class="filter-chip-strip">
         {% if filters.q %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'q': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.entry.col_title'|trans }}: {{ filters.q }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.author %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'author': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.author'|trans }}: {{ filters.author }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.status %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'status': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.status'|trans }}: {{ statusMap[filters.status] ?? filters.status }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.rating %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'rating': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
-                {{ 'reading.filter.rating'|trans }}: {% for j in 1..filters.rating %}⭐{% endfor %}
-                <i class="bi bi-x" aria-hidden="true"></i>
+               class="chip chip-filter">
+                {{ 'reading.filter.rating'|trans }}: {% for j in 1..filters.rating %}★{% endfor %}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.spiceExact != '' %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'spiceExact': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.spice'|trans }}:
                 {% if filters.spiceExact == '0' %}🚫
                 {% else %}{% for j in 1..filters.spiceExact %}🌶️{% endfor %}{% endif %}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.spice != '' %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'spice': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.spice'|trans }}:
-                {% if filters.spice == '0' %}
-                    🚫
-                {% else %}
-                    {% for j in 1..filters.spice %}🌶️{% endfor %}+
-                {% endif %}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                {% if filters.spice == '0' %}🚫
+                {% else %}{% for j in 1..filters.spice %}🌶️{% endfor %}+{% endif %}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.starred %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'starred': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.starred'|trans }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.dateFrom %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'dateFrom': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.date_from'|trans }}: {{ filters.dateFrom }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.dateTo %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'dateTo': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.date_to'|trans }}: {{ filters.dateTo }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.wordsMin %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'wordsMin': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.words_min'|trans }}: {{ filters.wordsMin|number_format }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.wordsMax %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'wordsMax': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.words_max'|trans }}: {{ filters.wordsMax|number_format }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.type %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'type': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.type'|trans }}: {{ filters.type }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.language %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'language': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.language'|trans }}: {{ filters.language }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.mainPairing %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'mainPairing': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.main_pairing'|trans }}: {{ filters.mainPairing }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {% if filters.series %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'series': ''})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ 'reading.filter.series'|trans }}: {{ seriesName ?? filters.series }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
         {# One chip per active metadata[] filter — X button removes only that type #}
@@ -158,344 +193,484 @@
                 {% if k != metaType %}{% set newMeta = newMeta|merge({(k): v}) %}{% endif %}
             {% endfor %}
             <a href="{{ path('app_reading_entry_list', filters|merge({'metadata': newMeta})) }}"
-               class="badge text-bg-secondary text-decoration-none d-flex align-items-center gap-1">
+               class="chip chip-filter">
                 {{ metaType }}: {{ metaValue }}
-                <i class="bi bi-x" aria-hidden="true"></i>
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endfor %}
+
+        <a href="{{ path('app_reading_entry_list') }}" class="filter-chip-clear-all">
+            {{ 'entry.filter.clear_all'|trans }}
+        </a>
     </div>
 {% endif %}
 
-{# ── Collapsible filter form — closed by default ──────────────────────────── #}
-<div class="collapse" id="filterBar">
-    <form method="get" action="{{ path('app_reading_entry_list') }}" class="card card-body bg-light border-0 mb-3">
-        {# Row 1: text/select filters #}
-        <div class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label for="filter-q" class="form-label form-label-sm">{{ 'reading.entry.col_title'|trans }}</label>
-                <input type="text" id="filter-q" name="q" class="form-control form-control-sm"
-                       value="{{ filters.q }}"
-                       placeholder="{{ 'reading.filter.search_placeholder'|trans }}">
-            </div>
-            <div class="col-md-3">
-                <label for="filter-author" class="form-label form-label-sm">{{ 'reading.filter.author'|trans }}</label>
-                <input type="text" id="filter-author" name="author" class="form-control form-control-sm"
-                       value="{{ filters.author }}"
-                       placeholder="{{ 'reading.filter.author_placeholder'|trans }}">
-            </div>
-            <div class="col-md-3">
-                <label for="filter-main-pairing" class="form-label form-label-sm">{{ 'reading.filter.main_pairing'|trans }}</label>
-                <input type="text" id="filter-main-pairing" name="mainPairing" class="form-control form-control-sm"
-                       value="{{ filters.mainPairing }}">
-            </div>
-            <div class="col-md-3">
-                <label for="filter-status" class="form-label form-label-sm">{{ 'reading.filter.status'|trans }}</label>
-                <select id="filter-status" name="status" class="form-select form-select-sm">
-                    <option value="">{{ 'reading.filter.any_status'|trans }}</option>
-                    {% for status in statuses %}
-                        <option value="{{ status.id }}" {% if filters.status == (status.id ~ '') %}selected{% endif %}>
-                            {{ status.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-        {# Row 2: quantitative/range filters #}
-        <div class="row g-2 align-items-end mt-1">
-            <div class="col-md-2">
-                <label for="filter-date-from" class="form-label form-label-sm">{{ 'reading.filter.date_from'|trans }}</label>
-                <input type="date" id="filter-date-from" name="dateFrom" class="form-control form-control-sm"
-                       value="{{ filters.dateFrom }}">
-            </div>
-            <div class="col-md-2">
-                <label for="filter-date-to" class="form-label form-label-sm">{{ 'reading.filter.date_to'|trans }}</label>
-                <input type="date" id="filter-date-to" name="dateTo" class="form-control form-control-sm"
-                       value="{{ filters.dateTo }}">
-            </div>
-            <div class="col-md-2">
-                <label for="filter-words-min" class="form-label form-label-sm">{{ 'reading.filter.words_min'|trans }}</label>
-                <input type="number" id="filter-words-min" name="wordsMin" class="form-control form-control-sm"
-                       min="0" step="1000" value="{{ filters.wordsMin }}">
-            </div>
-            <div class="col-md-2">
-                <label for="filter-words-max" class="form-label form-label-sm">{{ 'reading.filter.words_max'|trans }}</label>
-                <input type="number" id="filter-words-max" name="wordsMax" class="form-control form-control-sm"
-                       min="0" step="1000" value="{{ filters.wordsMax }}">
-            </div>
-            <div class="col-md-2">
-                <label for="filter-rating" class="form-label form-label-sm">{{ 'reading.filter.rating'|trans }}</label>
-                <select id="filter-rating" name="rating" class="form-select form-select-sm">
-                    <option value="">{{ 'reading.filter.any_rating'|trans }}</option>
-                    {% for i in 1..5 %}
-                        <option value="{{ i }}" {% if filters.rating == (i ~ '') %}selected{% endif %}>
-                            {% for j in 1..i %}⭐{% endfor %}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label for="filter-spice" class="form-label form-label-sm">{{ 'reading.filter.spice'|trans }}</label>
-                <select id="filter-spice" name="spice" class="form-select form-select-sm">
-                    <option value="">{{ 'reading.filter.any_spice'|trans }}</option>
-                    <option value="0" {% if filters.spice == '0' %}selected{% endif %}>🚫 {{ 'reading.filter.no_spice'|trans }}</option>
-                    {% for i in 1..5 %}
-                        <option value="{{ i }}" {% if filters.spice == (i ~ '') %}selected{% endif %}>
-                            {% for j in 1..i %}🌶️{% endfor %}{% if i < 5 %}+{% endif %}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-        {# Row 3: categorical filters — type, language, then all metadata types (Author excluded) #}
-        <div class="row g-2 align-items-end mt-1">
-            <div class="col-md-2">
-                <label for="filter-type" class="form-label form-label-sm">{{ 'reading.filter.type'|trans }}</label>
-                <select id="filter-type" name="type" class="form-select form-select-sm">
-                    <option value="">{{ 'reading.filter.any_type'|trans }}</option>
-                    <option value="Book" {% if filters.type == 'Book' %}selected{% endif %}>{{ 'reading.filter.type_book'|trans }}</option>
-                    <option value="Fanfiction" {% if filters.type == 'Fanfiction' %}selected{% endif %}>{{ 'reading.filter.type_fanfiction'|trans }}</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label for="filter-language" class="form-label form-label-sm">{{ 'reading.filter.language'|trans }}</label>
-                <select id="filter-language" name="language" class="form-select form-select-sm">
-                    <option value="">{{ 'reading.filter.any_language'|trans }}</option>
-                    {% for language in languages %}
-                        <option value="{{ language.name }}" {% if filters.language == language.name %}selected{% endif %}>
-                            {{ language.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            {# Dropdown metadata types only (e.g. Rating, Warning, Category) #}
-            {% for metadataType in metadataTypes %}
-                {% if metadataType.name != 'Author' and metadataType.showAsDropdown and metadataDropdownValues[metadataType.name] is defined %}
-                    <div class="col-md-2">
-                        <label for="filter-meta-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
-                        <select id="filter-meta-{{ loop.index }}"
-                                name="metadata[{{ metadataType.name }}]"
-                                class="form-select form-select-sm">
-                            <option value="">{{ 'reading.filter.any'|trans }} {{ metadataType.name|lower }}</option>
-                            {% for value in metadataDropdownValues[metadataType.name] %}
-                                <option value="{{ value }}" {% if filters.metadata[metadataType.name] ?? '' == value %}selected{% endif %}>
-                                    {{ value }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                {% endif %}
-            {% endfor %}
-        </div>
-        {# Row 4: free-text metadata filters (e.g. Fandom, Character, Relationships, Tag) + Favorites + Apply #}
-        <div class="row g-2 align-items-end mt-1">
-            {% for metadataType in metadataTypes %}
-                {% if metadataType.name != 'Author' and not metadataType.showAsDropdown %}
-                    <div class="col-md-2">
-                        <label for="filter-meta-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
-                        <input type="text" id="filter-meta-{{ loop.index }}"
-                               name="metadata[{{ metadataType.name }}]"
-                               class="form-control form-control-sm"
-                               value="{{ filters.metadata[metadataType.name] ?? '' }}">
-                    </div>
-                {% endif %}
-            {% endfor %}
-            <div class="col-auto align-self-end">
-                <div class="form-check mb-1">
-                    <input class="form-check-input" type="checkbox" id="filter-starred" name="starred" value="1"
-                           {% if filters.starred == '1' %}checked{% endif %}>
-                    <label class="form-check-label" for="filter-starred">
-                        {{ 'reading.filter.starred'|trans }}
-                    </label>
-                </div>
-            </div>
-            <div class="col-md-2 ms-auto">
-                <button type="submit" class="btn btn-primary btn-sm w-100">
-                    <i class="bi bi-search" aria-hidden="true"></i>
-                    {{ 'reading.filter.apply'|trans }}
-                </button>
-            </div>
-        </div>
-    </form>
-</div>
-
+{# ── Empty state ──────────────────────────────────────────────────────────── #}
 {% if entries is empty %}
-    <div class="text-center py-5 text-muted">
+    <div class="table-empty-state">
         {% if has_filters %}
-            <p class="mb-3">{{ 'reading.entry.empty_filtered'|trans }}</p>
+            <div class="table-empty-icon">
+                <i class="bi bi-funnel" aria-hidden="true"></i>
+            </div>
+            <p class="table-empty-title">{{ 'entry.empty.no_results_heading'|trans }}</p>
+            <p class="table-empty-text">{{ 'entry.empty.no_results_text'|trans }}</p>
+            <a href="{{ path('app_reading_entry_list') }}" class="btn btn-secondary btn-sm mt-3">
+                {{ 'entry.filter.clear_all'|trans }}
+            </a>
         {% else %}
-            <p class="mb-3">{{ 'reading.entry.empty'|trans }}</p>
-            <a href="{{ path('app_work_select') }}" class="btn btn-outline-primary">
-                {{ 'reading.entry.add'|trans }}
+            <div class="table-empty-icon">
+                <i class="bi bi-book" aria-hidden="true"></i>
+            </div>
+            <p class="table-empty-title">{{ 'entry.empty.heading'|trans }}</p>
+            <p class="table-empty-text">{{ 'entry.empty.text'|trans }}</p>
+            <a href="{{ path('app_work_select') }}" class="btn btn-primary btn-sm mt-3">
+                <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                {{ 'entry.list.add'|trans }}
             </a>
         {% endif %}
     </div>
 {% else %}
-    {# Bulk actions form — wraps the table so checkboxes are inside the form #}
-    <form id="bulk-form" method="post" action="">
-        <input type="hidden" name="_token" id="bulk-token" value="{{ csrf_token('bulk-action') }}">
-        <input type="hidden" name="_query" value="{{ app.request.queryString }}">
 
-        {# Bulk action bar — shown by JS when entries are checked #}
-        <div id="bulk-action-bar" class="d-none sticky-bottom bg-white border-top py-2 px-3 shadow-sm" aria-live="polite">
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-                <span id="bulk-count" class="text-muted me-2"></span>
-                <div class="d-flex gap-2">
-                    <select id="bulk-status-select" name="status_id" class="form-select form-select-sm" style="width: auto;">
-                        <option value="">{{ 'reading.bulk.change_status'|trans }}</option>
-                        {% for status in statuses %}
-                            <option value="{{ status.id }}">{{ status.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="button" id="bulk-status-btn" class="btn btn-outline-secondary btn-sm"
-                            data-action-url="{{ path('app_reading_entry_bulk_status') }}">
-                        {{ 'reading.bulk.apply_status'|trans }}
-                    </button>
-                </div>
-                <button type="button" id="bulk-delete-btn" class="btn btn-outline-danger btn-sm"
-                        data-bs-toggle="modal" data-bs-target="#bulkDeleteModal"
-                        data-action-url="{{ path('app_reading_entry_bulk_delete') }}">
-                    <i class="bi bi-trash" aria-hidden="true"></i>
-                    {{ 'reading.bulk.delete_selected'|trans }}
-                </button>
-            </div>
+{# ── Bulk actions form — wraps the table so checkboxes are inside the form ── #}
+<form id="bulk-form" method="post" action="">
+    <input type="hidden" name="_token" id="bulk-token" value="{{ csrf_token('bulk-action') }}">
+    <input type="hidden" name="_query" value="{{ app.request.queryString }}">
+
+    {# Bulk action bar — shown by JS when entries are checked #}
+    <div id="bulk-action-bar" class="d-none bulk-action-bar" aria-live="polite">
+        <span id="bulk-count" class="bulk-selected-count"></span>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <select id="bulk-status-select" name="status_id" class="form-select form-select-sm" style="width: auto;">
+                <option value="">{{ 'reading.bulk.change_status'|trans }}</option>
+                {% for status in statuses %}
+                    <option value="{{ status.id }}">{{ status.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" id="bulk-status-btn" class="btn btn-secondary btn-sm"
+                    data-action-url="{{ path('app_reading_entry_bulk_status') }}">
+                {{ 'reading.bulk.apply_status'|trans }}
+            </button>
         </div>
+        <button type="button" id="bulk-delete-btn" class="btn btn-outline-danger btn-sm ms-auto"
+                data-bs-toggle="modal" data-bs-target="#bulkDeleteModal"
+                data-action-url="{{ path('app_reading_entry_bulk_delete') }}">
+            <i class="bi bi-trash" aria-hidden="true"></i>
+            {{ 'reading.bulk.delete_selected'|trans }}
+        </button>
+    </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle table-responsive-card">
-                <thead class="table-light">
+    {# ── Entry table ─────────────────────────────────────────────────────── #}
+    <div class="table-wrapper">
+        <table class="data-table table-responsive-card">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 1%; padding-right: 0;">
+                        <input class="form-check-input" type="checkbox" id="select-all"
+                               aria-label="{{ 'reading.bulk.select_all'|trans }}">
+                    </th>
+                    <th scope="col" class="cover-col" aria-hidden="true"></th>
+                    {# Title + Author compound sort header #}
+                    <th scope="col"{% if current_sort in ['title', 'author'] %} class="th-sort-active"{% endif %}>
+                        {% set isActive = current_sort == 'title' %}
+                        {% set nextDir = isActive and current_dir == 'asc' ? 'desc' : 'asc' %}
+                        <a href="{{ path('app_reading_entry_list', filters|merge({'sort': 'title', 'dir': nextDir, 'page': 1})) }}"
+                           class="text-decoration-none d-flex align-items-center gap-1 {{ isActive ? 'fw-semibold text-body' : 'text-muted' }}">
+                            {{ 'reading.entry.col_title'|trans }}
+                            <i class="bi bi-{{ isActive ? 'caret-' ~ (current_dir == 'asc' ? 'up' : 'down') ~ '-fill' : 'chevron-expand opacity-25' }}"
+                               style="font-size: 0.6em;" aria-hidden="true"></i>
+                        </a>
+                        {% set isActive = current_sort == 'author' %}
+                        {% set nextDir = isActive and current_dir == 'asc' ? 'desc' : 'asc' %}
+                        <a href="{{ path('app_reading_entry_list', filters|merge({'sort': 'author', 'dir': nextDir, 'page': 1})) }}"
+                           class="text-decoration-none d-flex align-items-center gap-1 {{ isActive ? 'fw-semibold text-body' : 'text-muted' }}"
+                           style="font-size: 0.8em; font-weight: normal;">
+                            {{ 'reading.filter.author'|trans }}
+                            <i class="bi bi-{{ isActive ? 'caret-' ~ (current_dir == 'asc' ? 'up' : 'down') ~ '-fill' : 'chevron-expand opacity-25' }}"
+                               style="font-size: 0.6em;" aria-hidden="true"></i>
+                        </a>
+                    </th>
+
+                    {# Fandom + Main Pairing header — not sortable #}
+                    <th scope="col" class="d-none d-lg-table-cell">
+                        <span class="text-muted">{{ 'entry.list.col_fandom'|trans }}</span>
+                        <div class="text-muted" style="font-size: 0.8em; font-weight: normal;">
+                            <i class="bi bi-heart" aria-hidden="true" style="color: #e05c7a;"></i>
+                            {{ 'reading.field.main_pairing'|trans }}
+                        </div>
+                    </th>
+
+                    <th scope="col">{{ 'reading.entry.col_words'|trans }}</th>
+
+                    {# Status sort header #}
+                    {% set isActive = current_sort == 'status' %}
+                    {% set nextDir = isActive and current_dir == 'asc' ? 'desc' : 'asc' %}
+                    <th scope="col"{% if isActive %} class="th-sort-active"{% endif %}>
+                        <a href="{{ path('app_reading_entry_list', filters|merge({'sort': 'status', 'dir': nextDir, 'page': 1})) }}"
+                           class="text-decoration-none d-flex align-items-center gap-1 {{ isActive ? 'fw-semibold text-body' : 'text-muted' }}">
+                            {{ 'reading.field.status'|trans }}
+                            <i class="bi bi-{{ isActive ? 'caret-' ~ (current_dir == 'asc' ? 'up' : 'down') ~ '-fill' : 'chevron-expand opacity-25' }}"
+                               style="font-size: 0.6em;" aria-hidden="true"></i>
+                        </a>
+                    </th>
+
+                    {# Date Finished sort header — hidden on small screens #}
+                    {% set isActive = current_sort == 'dateFinished' %}
+                    {% set nextDir = isActive and current_dir == 'desc' ? 'asc' : 'desc' %}
+                    <th scope="col" class="d-none d-lg-table-cell{% if isActive %} th-sort-active{% endif %}">
+                        <a href="{{ path('app_reading_entry_list', filters|merge({'sort': 'dateFinished', 'dir': nextDir, 'page': 1})) }}"
+                           class="text-decoration-none d-flex align-items-center gap-1 {{ isActive ? 'fw-semibold text-body' : 'text-muted' }}">
+                            {{ 'reading.entry.col_date_finished'|trans }}
+                            <i class="bi bi-{{ isActive ? 'caret-' ~ (current_dir == 'asc' ? 'up' : 'down') ~ '-fill' : 'chevron-expand opacity-25' }}"
+                               style="font-size: 0.6em;" aria-hidden="true"></i>
+                        </a>
+                    </th>
+                    <th scope="col">{{ 'reading.entry.col_review_spice'|trans }}</th>
+                    <th scope="col" class="actions-col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                    {# Determine status chip modifier class from status name (case-insensitive) #}
+                    {% set statusSlug = entry.status.name|lower|replace({' ': '-'}) %}
+                    {% set chipClass = 'chip chip--' ~ statusSlug %}
+
+                    {# Fandom: first fandom metadata on the work (if any) #}
+                    {% set fandomName = null %}
+                    {% if not entry.work.deleted %}
+                        {% for m in entry.work.metadata %}
+                            {% if fandomName is null and m.metadataType.name == 'Fandom' %}
+                                {% set fandomName = m.name %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+
                     <tr>
-                        <th scope="col" class="pe-0" style="width: 1%">
-                            <input class="form-check-input" type="checkbox" id="select-all"
-                                   aria-label="{{ 'reading.bulk.select_all'|trans }}">
-                        </th>
-                        <th scope="col">{{ 'reading.entry.col_date_finished'|trans }}</th>
-                        <th scope="col">{{ 'reading.entry.col_title'|trans }}</th>
-                        <th scope="col">{{ 'reading.entry.col_authors'|trans }}</th>
-                        <th scope="col">{{ 'reading.entry.col_words'|trans }}</th>
-                        <th scope="col">{{ 'reading.field.status'|trans }}</th>
-                        <th scope="col">{{ 'reading.entry.col_review_spice'|trans }}</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in entries %}
-                        <tr>
-                            <td class="pe-0">
-                                <input class="form-check-input entry-checkbox" type="checkbox"
-                                       name="ids[]" value="{{ entry.id }}"
-                                       aria-label="{{ entry.work.deleted ? 'reading.entry.work_deleted'|trans : entry.work.title }}">
-                            </td>
-                            <td data-label="{{ 'reading.entry.col_date_finished'|trans }}">
-                                {{ entry.dateFinished ? entry.dateFinished|date('Y-m-d') : '—' }}
-                            </td>
-                            <td data-label="{{ 'reading.entry.col_title'|trans }}">
+                        {# Checkbox — hidden on mobile (replaced by mobile card) #}
+                        <td class="pe-0 d-none d-md-table-cell">
+                            <input class="form-check-input entry-checkbox" type="checkbox"
+                                   name="ids[]" value="{{ entry.id }}"
+                                   aria-label="{{ entry.work.deleted ? 'reading.entry.work_deleted'|trans : entry.work.title }}">
+                        </td>
+
+                        {# Cover art thumbnail — hidden on mobile (shown inside mobile card) #}
+                        <td class="cover-col d-none d-md-table-cell" aria-hidden="true">
+                            {% if not entry.work.deleted %}
+                                <div class="cover cover-thumbnail {{ cover_font_class(entry.work.type.value) }}"
+                                     style="{{ cover_gradient(entry.work.id) }}">
+                                    <span class="cover-title">{{ entry.work.title }}</span>
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        {# Title + author stacked — hidden on mobile #}
+                        <td data-label="{{ 'reading.entry.col_title'|trans }}" class="d-none d-md-table-cell">
+                            <div class="entry-title-cell">
                                 {% if entry.work.deleted %}
-                                    <span class="entry-deleted-work">
+                                    <span class="entry-deleted-work entry-title">
                                         {{ 'reading.entry.work_deleted'|trans }}
                                     </span>
                                 {% else %}
-                                    <a href="{{ path('app_reading_entry_show', {id: entry.id}) }}">{{ entry.work.title }}</a>
-                                    {% if entry.work.starred %}
-                                        <i class="bi bi-star-fill text-warning ms-1" aria-label="Favorite work"></i>
-                                    {% endif %}
-                                    {% if entry.comments %}
-                                        <button type="button"
-                                                class="btn btn-link p-0 ms-1 text-muted comment-trigger"
-                                                data-bs-toggle="offcanvas"
-                                                data-bs-target="#commentOffcanvas"
-                                                data-comment-title="{{ entry.work.title|e('html_attr') }}"
-                                                data-comment-body="{{ entry.comments|e('html_attr') }}"
-                                                aria-label="View comment">
-                                            <i class="bi bi-chat-left-text" aria-hidden="true"></i>
-                                        </button>
-                                    {% endif %}
-                                {% endif %}
-                            </td>
-                            <td data-label="{{ 'reading.entry.col_authors'|trans }}">
-                                {% if not entry.work.deleted %}
-                                    {{ entry.work.authors|map(a => a.name)|join(', ')|default('—') }}
-                                {% endif %}
-                            </td>
-                            <td data-label="{{ 'reading.entry.col_words'|trans }}">
-                                {{ entry.work.words ? entry.work.words|number_format : '—' }}
-                            </td>
-                            <td data-label="{{ 'reading.field.status'|trans }}">
-                                <span class="badge {% if entry.status.countsAsRead %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {{ entry.status.name }}
-                                </span>
-                                {% if not entry.status.countsAsRead and entry.lastReadChapter %}
-                                    {% if entry.work.chapters %}
-                                        {% set pct = (entry.lastReadChapter / entry.work.chapters * 100)|round %}
-                                        {% if pct > 100 %}{% set pct = 100 %}{% endif %}
-                                        <div class="text-muted mt-1" style="font-size: 0.72rem; white-space: nowrap;">
-                                            ch. {{ entry.lastReadChapter }} / {{ entry.work.chapters }}
-                                        </div>
-                                        <div class="progress mt-1" style="height: 3px; width: 80px;">
-                                            <div class="progress-bar" role="progressbar"
-                                                 style="width: {{ pct }}%"
-                                                 aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                    {% else %}
-                                        <div class="text-muted mt-1" style="font-size: 0.72rem;">
-                                            ch. {{ entry.lastReadChapter }}
-                                        </div>
-                                    {% endif %}
-                                {% endif %}
-                            </td>
-                            <td data-label="{{ 'reading.entry.col_review_spice'|trans }}">
-                                {% if entry.reviewStars %}
-                                    <span class="stars-display" aria-label="{{ entry.reviewStars }} stars">
-                                        {% for i in range(1, entry.reviewStars) %}⭐{% endfor %}
-                                    </span>
-                                {% else %}
-                                    —
-                                {% endif %}
-                                {% if entry.starred %}
-                                    <i class="bi bi-heart-fill text-danger ms-1" aria-label="Favorite entry"></i>
-                                {% endif %}
-                                {% if entry.spiceStars is not null %}
-                                    <div>
-                                        {% if entry.spiceStars == 0 %}
-                                            🚫
-                                        {% else %}
-                                            {% for i in range(1, entry.spiceStars) %}🌶️{% endfor %}
+                                    <div class="entry-title">
+                                        <a href="{{ path('app_reading_entry_show', {id: entry.id}) }}"
+                                           class="text-decoration-none" style="color: inherit;">
+                                            {{ entry.work.title }}
+                                        </a>
+                                        {% if entry.work.starred %}
+                                            <i class="bi bi-star-fill starred-icon ms-1"
+                                               aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+                                        {% endif %}
+                                        {% if entry.starred %}
+                                            <i class="bi bi-heart-fill ms-1" style="color: #e05c7a; font-size: 0.7em;"
+                                               aria-label="{{ 'entry.list.favorite_entry'|trans }}"></i>
+                                        {% endif %}
+                                        {% if entry.comments %}
+                                            <button type="button"
+                                                    class="btn-ghost entry-comment-trigger"
+                                                    data-bs-toggle="offcanvas"
+                                                    data-bs-target="#commentOffcanvas"
+                                                    data-comment-title="{{ entry.work.title|e('html_attr') }}"
+                                                    data-comment-body="{{ entry.comments|e('html_attr') }}"
+                                                    aria-label="{{ 'entry.list.view_comment'|trans }}">
+                                                <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+                                            </button>
                                         {% endif %}
                                     </div>
+                                    <div class="entry-author">
+                                        {{ entry.work.authors|map(a => a.name)|join(', ')|default('—') }}
+                                    </div>
                                 {% endif %}
-                            </td>
-                            <td>
-                                <div class="d-flex gap-1 align-items-center">
+                            </div>
+                        </td>
+
+                        {# Fandom — first fandom only, hidden on small screens #}
+                        <td data-label="{{ 'entry.list.col_fandom'|trans }}"
+                            class="d-none d-lg-table-cell">
+                            {% if fandomName %}
+                                <span class="entry-author">{{ fandomName }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                            {% if entry.mainPairing %}
+                                <div class="entry-author mt-1" style="font-size: 0.85em;">
+                                    <i class="bi bi-heart" aria-hidden="true" style="color: #e05c7a;"></i>
+                                    {{ entry.mainPairing.name }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        {# Word count — hidden on mobile #}
+                        <td data-label="{{ 'reading.entry.col_words'|trans }}" class="words-col d-none d-md-table-cell">
+                            {{ entry.work.words ? entry.work.words|number_format : '—' }}
+                        </td>
+
+                        {# Status chip — hidden on mobile #}
+                        <td data-label="{{ 'reading.field.status'|trans }}" class="d-none d-md-table-cell">
+                            <span class="{{ chipClass }}">{{ entry.status.name }}</span>
+                            {% if not entry.status.countsAsRead and entry.lastReadChapter %}
+                                {% if entry.work.chapters %}
+                                    {% set pct = (entry.lastReadChapter / entry.work.chapters * 100)|round %}
+                                    {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                                    <div class="text-muted mt-1" style="font-size: 0.72rem; white-space: nowrap;">
+                                        ch. {{ entry.lastReadChapter }} / {{ entry.work.chapters }}
+                                    </div>
+                                    <div class="progress mt-1" style="height: 3px; width: 80px;">
+                                        <div class="progress-bar" role="progressbar"
+                                             style="width: {{ pct }}%"
+                                             aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                {% else %}
+                                    <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                                        ch. {{ entry.lastReadChapter }}
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+
+                        {# Date finished — hidden on small screens #}
+                        <td data-label="{{ 'reading.entry.col_date_finished'|trans }}"
+                            class="d-none d-lg-table-cell">
+                            {% if entry.dateFinished %}
+                                {{ entry.dateFinished|date }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+
+                        {# Review stars — hidden on mobile #}
+                        <td data-label="{{ 'reading.entry.col_review_spice'|trans }}" class="d-none d-md-table-cell">
+                            {% if entry.reviewStars %}
+                                <span class="stars-display" aria-label="{{ entry.reviewStars }} {{ 'entry.list.stars'|trans }}">
+                                    {%- for i in 1..5 -%}
+                                        {{- i <= entry.reviewStars ? '★' : '☆' -}}
+                                    {%- endfor -%}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                            {% if entry.spiceStars is not null %}
+                                <div style="font-size: 0.75em; margin-top: 2px;">
+                                    {% if entry.spiceStars == 0 %}🚫
+                                    {% else %}{% for i in range(1, entry.spiceStars) %}🌶️{% endfor %}{% endif %}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        {# Actions menu — hidden on mobile #}
+                        <td class="actions-col d-none d-md-table-cell">
+                            <div class="dropdown">
+                                <button class="btn btn-ghost btn-icon btn-sm"
+                                        type="button"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false"
+                                        aria-label="{{ 'entry.list.actions'|trans }}">
+                                    <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ path('app_reading_entry_edit', {id: entry.id}) }}">
+                                            <i class="bi bi-pencil me-2" aria-hidden="true"></i>
+                                            {{ 'action.edit'|trans }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="dropdown-item text-danger"
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                                data-entry-id="{{ entry.id }}"
+                                                data-delete-url="{{ path('app_reading_entry_delete', {id: entry.id}) }}"
+                                                data-csrf-token="{{ csrf_token('delete-entry-' ~ entry.id) }}">
+                                            <i class="bi bi-trash me-2" aria-hidden="true"></i>
+                                            {{ 'action.delete'|trans }}
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+
+                        {# ── Mobile card — only visible below md ────────────────────── #}
+                        {# The td is the tap target so both collapsed and expanded zones collapse on tap.
+                           Interactive elements inside the expanded section stop propagation. #}
+                        <td colspan="9" class="d-md-none entry-mobile-card"
+                            role="button"
+                            tabindex="0"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#mc-{{ entry.id }}"
+                            aria-expanded="false"
+                            aria-controls="mc-{{ entry.id }}">
+
+                            {# Collapsed card #}
+                            <div class="mobile-entry-card">
+
+                                {# Zone 1: thumbnail + title / author / words side by side #}
+                                <div class="me-zone1">
+                                    {% if not entry.work.deleted %}
+                                        <div class="me-cover" aria-hidden="true">
+                                            <div class="cover cover-thumbnail {{ cover_font_class(entry.work.type.value) }}"
+                                                 style="{{ cover_gradient(entry.work.id) }}">
+                                                <span class="cover-title">{{ entry.work.title }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    <div class="me-info">
+                                        <div class="me-title">
+                                            {% if entry.work.deleted %}
+                                                <span class="entry-deleted-work">{{ 'reading.entry.work_deleted'|trans }}</span>
+                                            {% else %}
+                                                {{ entry.work.title }}
+                                                {% if entry.work.starred %}
+                                                    <i class="bi bi-star-fill starred-icon ms-1"
+                                                       aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+                                                {% endif %}
+                                                {% if entry.starred %}
+                                                    <i class="bi bi-heart-fill ms-1" style="color: #e05c7a; font-size: 0.7em;"
+                                                       aria-label="{{ 'entry.list.favorite_entry'|trans }}"></i>
+                                                {% endif %}
+                                                {% if entry.comments %}
+                                                    <i class="bi bi-chat-left-text me-comment-indicator ms-1"
+                                                       aria-label="{{ 'entry.list.view_comment'|trans }}"></i>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                        {% if not entry.work.deleted %}
+                                            <div class="me-author">
+                                                {{ entry.work.authors|map(a => a.name)|join(', ')|default('—') }}
+                                            </div>
+                                            {% if entry.work.words %}
+                                                <div class="me-meta">{{ entry.work.words|number_format }} words</div>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {# Zone 2: status + optional progress + stars/spice (full width, always consistent) #}
+                                <div class="me-zone2">
+                                    <div class="me-status-row">
+                                        <span class="{{ chipClass }}">{{ entry.status.name }}</span>
+                                        {% if not entry.status.countsAsRead and entry.lastReadChapter %}
+                                            <div class="me-progress">
+                                                <span class="me-progress-text">
+                                                    ch. {{ entry.lastReadChapter }}{% if entry.work.chapters %} / {{ entry.work.chapters }}{% endif %}
+                                                </span>
+                                                {% if entry.work.chapters %}
+                                                    {% set pct = (entry.lastReadChapter / entry.work.chapters * 100)|round %}
+                                                    {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                                                    <div class="progress" style="height: 3px; width: 60px; flex-shrink: 0;">
+                                                        <div class="progress-bar" role="progressbar"
+                                                             style="width: {{ pct }}%"
+                                                             aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    {% if entry.reviewStars or entry.spiceStars is not null %}
+                                        <div class="me-review mt-1">
+                                            {% if entry.reviewStars %}
+                                                <span class="stars-display" aria-label="{{ entry.reviewStars }} {{ 'entry.list.stars'|trans }}">
+                                                    {%- for i in 1..5 -%}
+                                                        {{- i <= entry.reviewStars ? '★' : '☆' -}}
+                                                    {%- endfor -%}
+                                                </span>
+                                            {% endif %}
+                                            {% if entry.spiceStars is not null %}
+                                                <span>
+                                                    {% if entry.spiceStars == 0 %}🚫
+                                                    {% else %}{% for i in range(1, entry.spiceStars) %}🌶️{% endfor %}{% endif %}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {# Expanded section — revealed on tap #}
+                            <div class="collapse mobile-entry-expanded" id="mc-{{ entry.id }}">
+
+                                {# Action buttons — always at top for immediate access.
+                                   stopPropagation prevents the td toggle from firing when tapping a button. #}
+                                <div class="me-actions">
                                     {% if not entry.work.deleted %}
                                         <a href="{{ path('app_work_show', {id: entry.work.id}) }}"
-                                           class="btn btn-sm btn-outline-secondary">
+                                           class="me-action-btn" aria-label="{{ 'reading.entry.view_work'|trans }}"
+                                           onclick="event.stopPropagation()">
                                             <i class="bi bi-book" aria-hidden="true"></i>
-                                            {{ 'reading.entry.view_work'|trans }}
                                         </a>
                                     {% endif %}
                                     <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}"
-                                       class="btn btn-sm btn-outline-primary">
+                                       class="me-action-btn" aria-label="{{ 'action.edit'|trans }}"
+                                       onclick="event.stopPropagation()">
                                         <i class="bi bi-pencil" aria-hidden="true"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                    <button type="button"
+                                            class="me-action-btn me-action-btn--danger"
                                             data-bs-toggle="modal" data-bs-target="#deleteModal"
                                             data-entry-id="{{ entry.id }}"
                                             data-delete-url="{{ path('app_reading_entry_delete', {id: entry.id}) }}"
                                             data-csrf-token="{{ csrf_token('delete-entry-' ~ entry.id) }}"
-                                            aria-label="{{ 'reading.entry.delete'|trans }}">
-                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                            aria-label="{{ 'action.delete'|trans }}"
+                                            onclick="event.stopPropagation()">
+                                        <i class="bi bi-x-lg" aria-hidden="true"></i>
                                     </button>
                                 </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </form>
+
+                                {# Additional metadata #}
+                                {% if fandomName or entry.mainPairing or entry.dateFinished %}
+                                    <div class="me-fields">
+                                        {% if fandomName %}
+                                            <div class="me-field">
+                                                <span class="me-field-value">{{ fandomName }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if entry.mainPairing %}
+                                            <div class="me-field">
+                                                <i class="bi bi-heart" aria-hidden="true" style="color: #e05c7a;"></i>
+                                                <span class="me-field-value">{{ entry.mainPairing.name }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if entry.dateFinished %}
+                                            <div class="me-field">
+                                                <i class="bi bi-calendar3" aria-hidden="true"></i>
+                                                <span class="me-field-value">{{ entry.dateFinished|date }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                {# Comment — always last #}
+                                {% if entry.comments %}
+                                    <div class="me-comment">{{ entry.comments }}</div>
+                                {% endif %}
+                            </div>
+
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     {# Pagination #}
     {% if total_pages > 1 %}
-        <nav aria-label="Reading entries pagination">
+        <nav aria-label="{{ 'entry.list.pagination'|trans }}" class="mt-4">
             <ul class="pagination justify-content-center">
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                     <a class="page-link" href="{{ path('app_reading_entry_list', filters|merge({page: page - 1})) }}"
@@ -504,9 +679,7 @@
                     </a>
                 </li>
                 <li class="page-item disabled">
-                    <span class="page-link">
-                        {{ page }} / {{ total_pages }}
-                    </span>
+                    <span class="page-link">{{ page }} / {{ total_pages }}</span>
                 </li>
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                     <a class="page-link" href="{{ path('app_reading_entry_list', filters|merge({page: page + 1})) }}"
@@ -517,9 +690,11 @@
             </ul>
         </nav>
     {% endif %}
-{% endif %}
+</form>
 
-{# Single-entry delete confirmation modal #}
+{% endif %}{# end entries is not empty #}
+
+{# ── Single-entry delete confirmation modal ───────────────────────────────── #}
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -531,7 +706,7 @@
                 {{ 'reading.entry.delete_confirm_message'|trans }}
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     {{ 'action.cancel'|trans }}
                 </button>
                 <form id="singleDeleteForm" method="post" action="">
@@ -546,7 +721,7 @@
     </div>
 </div>
 
-{# Bulk delete confirmation modal #}
+{# ── Bulk delete confirmation modal ───────────────────────────────────────── #}
 <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -558,7 +733,7 @@
                 {{ 'reading.bulk.confirm_bulk_delete'|trans }}
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     {{ 'action.cancel'|trans }}
                 </button>
                 <button type="button" id="bulk-delete-confirm-btn" class="btn btn-danger">
@@ -570,14 +745,213 @@
     </div>
 </div>
 
-{# Comment offcanvas — shared, populated by JS from data attributes on the trigger button #}
-<div class="offcanvas offcanvas-end" tabindex="-1" id="commentOffcanvas" aria-labelledby="commentOffcanvasTitle" style="width: min(420px, 90vw)">
+{# ── Comment offcanvas — populated by JS from data attributes ─────────────── #}
+<div class="offcanvas offcanvas-end comment-offcanvas"
+     tabindex="-1"
+     id="commentOffcanvas"
+     aria-labelledby="commentOffcanvasTitle">
     <div class="offcanvas-header border-bottom">
         <h5 class="offcanvas-title text-truncate" id="commentOffcanvasTitle"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ 'action.close'|trans }}"></button>
     </div>
     <div class="offcanvas-body">
-        <p id="commentOffcanvasBody" class="mb-0" style="white-space: pre-wrap;"></p>
+        <p id="commentOffcanvasBody" class="comment-offcanvas-text mb-0"></p>
+    </div>
+</div>
+
+{# ── Filter offcanvas ─────────────────────────────────────────────────────── #}
+<div class="offcanvas offcanvas-end filter-offcanvas"
+     tabindex="-1"
+     id="filterOffcanvas"
+     aria-labelledby="filterOffcanvasTitle">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="filterOffcanvasTitle">
+            <i class="bi bi-funnel me-2" aria-hidden="true"></i>
+            {{ 'entry.filter.panel_title'|trans }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+                aria-label="{{ 'action.close'|trans }}"></button>
+    </div>
+
+    <div class="offcanvas-body">
+        <form method="get" action="{{ path('app_reading_entry_list') }}" id="filter-form">
+
+            {# Section: Text Search ─────────────────────────────────────── #}
+            <div>
+                <p class="filter-section-label">{{ 'entry.filter.section_text'|trans }}</p>
+                <div class="mb-3">
+                    <label for="filter-q" class="form-label form-label-sm">{{ 'reading.entry.col_title'|trans }}</label>
+                    <input type="text" id="filter-q" name="q" class="form-control form-control-sm"
+                           value="{{ filters.q }}"
+                           placeholder="{{ 'reading.filter.search_placeholder'|trans }}">
+                </div>
+                <div class="mb-3">
+                    <label for="filter-author" class="form-label form-label-sm">{{ 'reading.filter.author'|trans }}</label>
+                    <input type="text" id="filter-author" name="author" class="form-control form-control-sm"
+                           value="{{ filters.author }}"
+                           placeholder="{{ 'reading.filter.author_placeholder'|trans }}">
+                </div>
+                <div class="mb-3">
+                    <label for="filter-main-pairing" class="form-label form-label-sm">{{ 'reading.filter.main_pairing'|trans }}</label>
+                    <input type="text" id="filter-main-pairing" name="mainPairing" class="form-control form-control-sm"
+                           value="{{ filters.mainPairing }}">
+                </div>
+            </div>
+
+            {# Section: Date Finished ───────────────────────────────────── #}
+            <div>
+                <p class="filter-section-label">{{ 'reading.entry.col_date_finished'|trans }}</p>
+                <div class="filter-range-grid mb-3">
+                    <div>
+                        <label for="filter-date-from" class="form-label form-label-sm">{{ 'reading.filter.date_from'|trans }}</label>
+                        <input type="date" id="filter-date-from" name="dateFrom" class="form-control form-control-sm"
+                               value="{{ filters.dateFrom }}">
+                    </div>
+                    <div>
+                        <label for="filter-date-to" class="form-label form-label-sm">{{ 'reading.filter.date_to'|trans }}</label>
+                        <input type="date" id="filter-date-to" name="dateTo" class="form-control form-control-sm"
+                               value="{{ filters.dateTo }}">
+                    </div>
+                </div>
+            </div>
+
+            {# Section: Metrics ─────────────────────────────────────────── #}
+            <div>
+                <p class="filter-section-label">{{ 'entry.filter.section_metrics'|trans }}</p>
+                <div class="filter-range-grid mb-3">
+                    <div>
+                        <label for="filter-words-min" class="form-label form-label-sm">{{ 'reading.filter.words_min'|trans }}</label>
+                        <input type="number" id="filter-words-min" name="wordsMin" class="form-control form-control-sm"
+                               min="0" step="1000" value="{{ filters.wordsMin }}">
+                    </div>
+                    <div>
+                        <label for="filter-words-max" class="form-label form-label-sm">{{ 'reading.filter.words_max'|trans }}</label>
+                        <input type="number" id="filter-words-max" name="wordsMax" class="form-control form-control-sm"
+                               min="0" step="1000" value="{{ filters.wordsMax }}">
+                    </div>
+                </div>
+                <div class="filter-range-grid mb-3">
+                    <div>
+                        <label for="filter-rating" class="form-label form-label-sm">{{ 'reading.filter.rating'|trans }}</label>
+                        <select id="filter-rating" name="rating" class="form-select form-select-sm">
+                            <option value="">{{ 'reading.filter.any_rating'|trans }}</option>
+                            {% for i in 1..5 %}
+                                <option value="{{ i }}" {% if filters.rating == (i ~ '') %}selected{% endif %}>
+                                    {% for j in 1..i %}★{% endfor %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-spice" class="form-label form-label-sm">{{ 'reading.filter.spice'|trans }}</label>
+                        <select id="filter-spice" name="spice" class="form-select form-select-sm">
+                            <option value="">{{ 'reading.filter.any_spice'|trans }}</option>
+                            <option value="0" {% if filters.spice == '0' %}selected{% endif %}>🚫 {{ 'reading.filter.no_spice'|trans }}</option>
+                            {% for i in 1..5 %}
+                                <option value="{{ i }}" {% if filters.spice == (i ~ '') %}selected{% endif %}>
+                                    {% for j in 1..i %}🌶️{% endfor %}{% if i < 5 %}+{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="filter-starred" name="starred" value="1"
+                           {% if filters.starred == '1' %}checked{% endif %}>
+                    <label class="form-check-label" for="filter-starred">
+                        {{ 'reading.filter.starred'|trans }}
+                    </label>
+                </div>
+            </div>
+
+            {# Section: Status, Type, Dropdowns ────────────────────────── #}
+            <div>
+                <p class="filter-section-label">{{ 'entry.filter.section_classify'|trans }}</p>
+                <div class="mb-3">
+                    <label for="filter-status" class="form-label form-label-sm">{{ 'reading.filter.status'|trans }}</label>
+                    <select id="filter-status" name="status" class="form-select form-select-sm">
+                        <option value="">{{ 'reading.filter.any_status'|trans }}</option>
+                        {% for status in statuses %}
+                            <option value="{{ status.id }}" {% if filters.status == (status.id ~ '') %}selected{% endif %}>
+                                {{ status.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="filter-type" class="form-label form-label-sm">{{ 'reading.filter.type'|trans }}</label>
+                    <select id="filter-type" name="type" class="form-select form-select-sm">
+                        <option value="">{{ 'reading.filter.any_type'|trans }}</option>
+                        <option value="Book" {% if filters.type == 'Book' %}selected{% endif %}>{{ 'reading.filter.type_book'|trans }}</option>
+                        <option value="Fanfiction" {% if filters.type == 'Fanfiction' %}selected{% endif %}>{{ 'reading.filter.type_fanfiction'|trans }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="filter-language" class="form-label form-label-sm">{{ 'reading.filter.language'|trans }}</label>
+                    <select id="filter-language" name="language" class="form-select form-select-sm">
+                        <option value="">{{ 'reading.filter.any_language'|trans }}</option>
+                        {% for language in languages %}
+                            <option value="{{ language.name }}" {% if filters.language == language.name %}selected{% endif %}>
+                                {{ language.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {# Dropdown metadata types (Rating, Warning, Category, etc.) #}
+                {% for metadataType in metadataTypes %}
+                    {% if metadataType.name != 'Author' and metadataType.showAsDropdown and metadataDropdownValues[metadataType.name] is defined %}
+                        <div class="mb-3">
+                            <label for="filter-meta-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
+                            <select id="filter-meta-{{ loop.index }}"
+                                    name="metadata[{{ metadataType.name }}]"
+                                    class="form-select form-select-sm">
+                                <option value="">{{ 'reading.filter.any'|trans }} {{ metadataType.name|lower }}</option>
+                                {% for value in metadataDropdownValues[metadataType.name] %}
+                                    <option value="{{ value }}" {% if filters.metadata[metadataType.name] ?? '' == value %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {# Section: Free-text metadata ──────────────────────────────── #}
+            {% set hasFreeTextMeta = false %}
+            {% for metadataType in metadataTypes %}
+                {% if metadataType.name != 'Author' and not metadataType.showAsDropdown %}
+                    {% set hasFreeTextMeta = true %}
+                {% endif %}
+            {% endfor %}
+            {% if hasFreeTextMeta %}
+                <div>
+                    <p class="filter-section-label">{{ 'entry.filter.section_metadata'|trans }}</p>
+                    {% for metadataType in metadataTypes %}
+                        {% if metadataType.name != 'Author' and not metadataType.showAsDropdown %}
+                            <div class="mb-3">
+                                <label for="filter-meta-ft-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
+                                <input type="text" id="filter-meta-ft-{{ loop.index }}"
+                                       name="metadata[{{ metadataType.name }}]"
+                                       class="form-control form-control-sm"
+                                       value="{{ filters.metadata[metadataType.name] ?? '' }}">
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+        </form>
+    </div>
+
+    <div class="offcanvas-footer">
+        <button type="submit" form="filter-form" class="btn btn-primary">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            {{ 'reading.filter.apply'|trans }}
+        </button>
+        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-secondary">
+            {{ 'entry.filter.clear_all'|trans }}
+        </a>
     </div>
 </div>
 

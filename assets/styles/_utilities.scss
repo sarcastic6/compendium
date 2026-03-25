@@ -1,0 +1,138 @@
+// =============================================================================
+// _utilities.scss
+// Small helper classes.
+// =============================================================================
+
+// -------------------------------------------------------------------------
+// Display
+// -------------------------------------------------------------------------
+
+.hidden { display: none !important; }
+.invisible { visibility: hidden; }
+
+// -------------------------------------------------------------------------
+// Truncation
+// -------------------------------------------------------------------------
+
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+// -------------------------------------------------------------------------
+// Number display
+// -------------------------------------------------------------------------
+
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+}
+
+// -------------------------------------------------------------------------
+// Flex helpers
+// -------------------------------------------------------------------------
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+
+.mb-5 { margin-bottom: var(--space-5) !important; }
+.mb-6 { margin-bottom: var(--space-6) !important; }
+
+// -------------------------------------------------------------------------
+// Spacing helpers (supplement Bootstrap)
+// -------------------------------------------------------------------------
+
+.mt-auto { margin-top: auto; }
+.mb-auto { margin-bottom: auto; }
+.ml-auto { margin-left: auto; }
+.mr-auto { margin-right: auto; }
+
+// -------------------------------------------------------------------------
+// Color surface fills
+// -------------------------------------------------------------------------
+
+.surface          { background: var(--color-surface); }
+.surface-tint     { background: var(--color-surface-tint); }
+.surface-tertiary { background: var(--color-tertiary); }
+
+// -------------------------------------------------------------------------
+// Border helpers
+// -------------------------------------------------------------------------
+
+.border-top    { border-top: 1px solid var(--color-border) !important; }
+.border-bottom { border-bottom: 1px solid var(--color-border) !important; }
+
+// -------------------------------------------------------------------------
+// Spice / pepper display (preserved from existing code)
+// -------------------------------------------------------------------------
+
+.spice-display {
+    white-space: nowrap;
+    font-size: var(--text-sm);
+}
+
+// -------------------------------------------------------------------------
+// Metadata section add-button alignment (preserved from existing code)
+// -------------------------------------------------------------------------
+
+.metadata-section-add-btn {
+    min-width: 9.5rem;
+    justify-content: center;
+}
+
+// -------------------------------------------------------------------------
+// Collection item (dynamic form fields)
+// -------------------------------------------------------------------------
+
+.collection-item {
+    position: relative;
+}
+
+// -------------------------------------------------------------------------
+// Generic empty state
+// -------------------------------------------------------------------------
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-8) var(--space-4);
+    gap: var(--space-3);
+}
+
+.empty-state-text {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+// -------------------------------------------------------------------------
+// Screen-reader only
+// -------------------------------------------------------------------------
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

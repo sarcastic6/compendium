@@ -1,0 +1,35 @@
+// =============================================================================
+// app.scss — Entry point
+// Import order matters: variables first, then resets, then components.
+// =============================================================================
+
+// 1. Design tokens (must be first — everything else depends on these)
+@use 'variables';
+
+// 2. Resets (on top of Bootstrap's reboot)
+@use 'reset';
+
+// 3. Typography
+@use 'typography';
+
+// 4. Layout (app shell, page header, mobile topbar, flash container)
+@use 'layout';
+
+// 5. Sidebar
+@use 'sidebar';
+
+// 6. Components
+@use 'cards';
+@use 'table';
+@use 'chips';
+@use 'buttons';
+@use 'forms';
+@use 'cover';
+@use 'offcanvas';
+@use 'charts';
+@use 'auth';
+@use 'rankings';
+@use 'work';
+
+// 7. Utilities (last — can override everything above)
+@use 'utilities';

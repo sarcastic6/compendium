@@ -1,0 +1,425 @@
+// =============================================================================
+// _table.scss
+// Reading entry table, column headers, row styles.
+// =============================================================================
+
+@use 'variables' as *;
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+
+    thead {
+        background: var(--color-surface-tint);
+        border-bottom: 1px solid var(--color-border);
+
+        th {
+            padding: var(--space-3) var(--space-4);
+            font-size: var(--text-xs);
+            font-weight: var(--weight-semibold);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--color-text-muted);
+            white-space: nowrap;
+            text-align: left;
+        }
+    }
+
+    tbody {
+        tr {
+            border-bottom: 1px solid var(--color-border);
+            transition: background var(--transition-fast);
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            &:hover {
+                background: var(--color-surface-tint);
+            }
+        }
+
+        td {
+            padding: var(--space-3) var(--space-4);
+            color: var(--color-text-body);
+            vertical-align: middle;
+        }
+    }
+}
+
+// Active sort column highlight
+.th-sort-active {
+    background: var(--color-surface-tint);
+    color: var(--color-primary) !important;
+
+    a {
+        color: var(--color-primary) !important;
+    }
+}
+
+// Sortable column header
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+
+    &:hover {
+        color: var(--color-text-body);
+    }
+
+    .sort-icon {
+        margin-left: var(--space-1);
+        opacity: 0.4;
+        font-size: 0.65rem;
+    }
+
+    &.sorted-asc .sort-icon,
+    &.sorted-desc .sort-icon {
+        opacity: 1;
+        color: var(--color-primary);
+    }
+}
+
+// Title + author stacked cell
+.entry-title-cell {
+    .entry-title {
+        font-weight: var(--weight-semibold);
+        color: var(--color-text-body);
+        line-height: var(--leading-snug);
+        margin-bottom: 2px;
+    }
+
+    .entry-author {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+    }
+
+    .entry-date-finished {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        margin-top: 6px;
+
+        .entry-date-none {
+            color: var(--color-text-faint);
+        }
+    }
+
+    .entry-comment-trigger {
+        // display: inline prevents the button from inflating the line height of the
+        // title div. A single icon needs no flex context.
+        display: inline;
+        padding: 0;
+        border: none;
+        background: none;
+        font-size: var(--text-xs);
+        color: var(--color-text-faint);
+        cursor: pointer;
+        margin-left: var(--space-2);
+        vertical-align: middle;
+        transition: color var(--transition-fast);
+
+        &:hover {
+            color: var(--color-primary-light);
+        }
+    }
+}
+
+// Deleted work display
+.entry-deleted-work {
+    color: var(--color-text-faint);
+    font-style: italic;
+}
+
+// Words column
+.words-col {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+}
+
+// Actions column (⋮ menu)
+.actions-col {
+    width: 44px;
+    text-align: center;
+}
+
+// Star / favorite display
+.starred-icon {
+    color: #f4c430;
+}
+
+// Stars display (review)
+.stars-display {
+    color: #f4c430;
+    letter-spacing: 1px;
+    font-size: var(--text-sm);
+}
+
+// Cover thumbnail cell — fixed-width column for the typographic cover art
+.cover-col {
+    width: 56px; // 44px cover + padding
+    padding-right: 0 !important;
+    vertical-align: middle;
+}
+
+// Table wrapper (adds scroll on small screens)
+.table-wrapper {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-xs);
+    overflow-x: auto;
+}
+
+// Empty state inside table
+.table-empty-state {
+    text-align: center;
+    padding: var(--space-16) var(--space-8);
+    color: var(--color-text-muted);
+
+    .table-empty-icon {
+        font-size: 3rem;
+        margin-bottom: var(--space-4);
+        opacity: 0.4;
+    }
+
+    .table-empty-title {
+        font-size: var(--text-lg);
+        font-weight: var(--weight-semibold);
+        color: var(--color-text-body);
+        margin-bottom: var(--space-2);
+    }
+
+    .table-empty-text {
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+    }
+}
+
+// Bulk action bar (appears when rows are selected)
+.bulk-action-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-5);
+    background: var(--color-tertiary);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    flex-wrap: wrap;
+
+    .bulk-selected-count {
+        font-weight: var(--weight-semibold);
+        color: var(--color-primary);
+        flex: 1;
+    }
+}
+
+// Responsive card layout on mobile
+@media (max-width: #{$breakpoint-md - 1px}) {
+    .table-responsive-card thead {
+        display: none;
+    }
+
+    .table-responsive-card tr {
+        display: block;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        margin-bottom: var(--space-3);
+        padding: var(--space-4);
+        background: var(--color-surface);
+    }
+
+    // Cover art and checkbox have no data-label and don't fit the label/value
+    // card row model — hide them in card mode.
+    .table-responsive-card .cover-col,
+    .table-responsive-card td:has(.entry-checkbox) {
+        display: none;
+    }
+
+    // Dedicated mobile card cell — overrides the generic label/value td styles
+    .table-responsive-card td.entry-mobile-card {
+        display: block !important;
+        padding: 0;
+        border: none;
+
+        &::before {
+            display: none;
+        }
+    }
+
+    .table-responsive-card td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: none;
+        padding: var(--space-2) 0;
+        gap: var(--space-2);
+    }
+
+    .table-responsive-card td::before {
+        content: attr(data-label);
+        font-size: var(--text-xs);
+        font-weight: var(--weight-semibold);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-text-muted);
+        flex-shrink: 0;
+    }
+}
+
+// =============================================================================
+// Mobile entry card (replaces the label/value rows below md)
+// =============================================================================
+
+// The td is the tap target — cursor and select suppressed at that level
+@media (max-width: #{$breakpoint-md - 1px}) {
+    .table-responsive-card td.entry-mobile-card {
+        cursor: pointer;
+        user-select: none;
+    }
+}
+
+.mobile-entry-card {
+    // layout only — interactivity lives on the parent td
+}
+
+// Zone 1: thumbnail + info side by side
+.me-zone1 {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    margin-bottom: var(--space-3);
+}
+
+.me-cover {
+    flex-shrink: 0;
+}
+
+.me-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.me-title {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-primary);
+    line-height: var(--leading-snug);
+    margin-bottom: var(--space-1);
+}
+
+.me-comment-indicator {
+    font-size: 0.75em;
+    color: var(--color-text-muted);
+}
+
+.me-author {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+}
+
+.me-meta {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+// Zone 2: status chip + progress or review (full width)
+.me-status-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.me-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.me-progress-text {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.me-review {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+// Expanded section
+.mobile-entry-expanded {
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+}
+
+.me-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.me-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-body);
+    font-size: var(--text-base);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+
+    &:hover {
+        background: var(--color-surface-tint);
+        color: var(--color-text-body);
+        text-decoration: none;
+    }
+
+    &--danger {
+        color: #dc3545;
+        border-color: #dc3545;
+
+        &:hover {
+            background: rgba(220, 53, 69, 0.08);
+        }
+    }
+}
+
+.me-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+}
+
+.me-field {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+.me-review--expanded {
+    margin-bottom: var(--space-3);
+}
+
+.me-comment {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    line-height: var(--leading-relaxed);
+    white-space: pre-wrap;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-2);
+    margin-top: var(--space-2);
+}

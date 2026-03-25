@@ -1,0 +1,157 @@
+// =============================================================================
+// _variables.scss
+// CSS custom properties (design tokens) + SCSS variables
+// =============================================================================
+
+:root {
+    // -------------------------------------------------------------------------
+    // Color Palette
+    // -------------------------------------------------------------------------
+    --color-primary:        #1B3022;
+    --color-primary-hover:  #2d5040;
+    --color-primary-light:  #3a6b52;
+
+    --color-secondary:      #8BA888;
+    --color-secondary-bg:   #d4e4d3;
+
+    --color-tertiary:       #D1E8E2;
+    --color-tertiary-dark:  #a8cfc5;
+
+    --color-neutral:        #FDFCF7;
+    --color-surface:        #ffffff;
+    --color-surface-tint:   #f3f7f5;
+
+    --color-text-body:      #2a2e2b;
+    --color-text-muted:     #6b7570;
+    --color-text-faint:     #9eaaa5;
+
+    --color-border:         #dde8e4;
+
+    // Semantic danger/warning (kept close to neutral palette, not harsh red)
+    --color-danger:         #c0392b;
+    --color-danger-bg:      #fdf0ee;
+    --color-warning:        #a0631a;
+    --color-warning-bg:     #fdf5e8;
+    --color-success:        var(--color-primary);
+    --color-success-bg:     var(--color-secondary-bg);
+
+    // -------------------------------------------------------------------------
+    // Typography
+    // -------------------------------------------------------------------------
+    --font-ui:    'Manrope', system-ui, -apple-system, sans-serif;
+    --font-cover: 'Lora', Georgia, 'Times New Roman', serif;
+
+    // Type scale (rem)
+    --text-xs:   0.6875rem; // 11px
+    --text-sm:   0.8125rem; // 13px
+    --text-base: 1rem;      // 16px
+    --text-md:   1.0625rem; // 17px
+    --text-lg:   1.125rem;  // 18px
+    --text-xl:   1.25rem;   // 20px
+    --text-2xl:  1.5rem;    // 24px
+    --text-3xl:  2rem;      // 32px
+    --text-4xl:  2.5rem;    // 40px
+
+    // Line heights
+    --leading-tight:  1.25;
+    --leading-snug:   1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+
+    // Font weights
+    --weight-normal:    400;
+    --weight-medium:    500;
+    --weight-semibold:  600;
+    --weight-bold:      700;
+    --weight-extrabold: 800;
+
+    // -------------------------------------------------------------------------
+    // Spacing
+    // -------------------------------------------------------------------------
+    --space-1:  0.25rem;
+    --space-2:  0.5rem;
+    --space-3:  0.75rem;
+    --space-4:  1rem;
+    --space-5:  1.25rem;
+    --space-6:  1.5rem;
+    --space-8:  2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+
+    // -------------------------------------------------------------------------
+    // Border radius
+    // -------------------------------------------------------------------------
+    --radius-sm:   4px;
+    --radius-md:   8px;
+    --radius-lg:   12px;
+    --radius-xl:   16px;
+    --radius-2xl:  24px;
+    --radius-full: 9999px;
+
+    // -------------------------------------------------------------------------
+    // Shadows
+    // -------------------------------------------------------------------------
+    --shadow-xs: 0 1px 2px rgba(26, 48, 34, 0.06);
+    --shadow-sm: 0 1px 4px rgba(26, 48, 34, 0.08);
+    --shadow-md: 0 4px 12px rgba(26, 48, 34, 0.08);
+    --shadow-lg: 0 8px 32px rgba(26, 48, 34, 0.10);
+
+    // -------------------------------------------------------------------------
+    // Layout
+    // -------------------------------------------------------------------------
+    --sidebar-width:      220px;
+    --content-max-width:  1280px;
+    --page-padding-x:     var(--space-6);
+    --page-padding-y:     var(--space-8);
+
+    // -------------------------------------------------------------------------
+    // Transitions
+    // -------------------------------------------------------------------------
+    --transition-fast:   120ms ease;
+    --transition-base:   200ms ease;
+    --transition-slow:   350ms ease;
+
+    // -------------------------------------------------------------------------
+    // Z-index scale
+    // -------------------------------------------------------------------------
+    --z-sidebar:   100;
+    --z-overlay:   200;
+    --z-offcanvas: 300;
+    --z-toast:     400;
+    --z-tooltip:   500;
+
+    // -------------------------------------------------------------------------
+    // Bootstrap CSS variable overrides
+    // Override Bootstrap's CSS vars so its own components pick up our palette.
+    // -------------------------------------------------------------------------
+    --bs-body-font-family:    var(--font-ui);
+    --bs-body-color:          var(--color-text-body);
+    --bs-body-bg:             var(--color-neutral);
+    --bs-secondary-color:     var(--color-text-muted);
+    --bs-border-color:        var(--color-border);
+    --bs-border-radius:       var(--radius-md);
+    --bs-border-radius-sm:    var(--radius-sm);
+    --bs-border-radius-lg:    var(--radius-lg);
+    --bs-border-radius-xl:    var(--radius-xl);
+    --bs-link-color:          var(--color-primary-light);
+    --bs-link-hover-color:    var(--color-primary);
+    --bs-focus-ring-color:    rgba(59, 107, 82, 0.25);
+}
+
+// -------------------------------------------------------------------------
+// SCSS variables (for use inside SCSS only — not exported as CSS vars)
+// -------------------------------------------------------------------------
+$sidebar-width:         220px;
+$breakpoint-md:         768px;
+$breakpoint-lg:         992px;
+$breakpoint-xl:         1200px;
+
+// =============================================================================
+// Dark mode overrides (stub — not yet implemented)
+// Override CSS custom properties here when dark mode support is added.
+// Toggle via: <html data-theme="dark"> or prefers-color-scheme media query.
+// =============================================================================
+[data-theme="dark"] {
+    // TODO: define dark mode tokens
+}

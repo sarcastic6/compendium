@@ -81,7 +81,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
      * @param array<string, mixed> $filterParams
      * @return ReadingEntry[]
      */
-    public function findByUserFiltered(User $user, array $filterParams, int $page = 1, int $limit = 25): array
+    public function findByUserFiltered(User $user, array $filterParams, int $page = 1, int $limit = 25, string $sort = 'dateFinished', string $dir = 'desc'): array
     {
         $offset = ($page - 1) * $limit;
         $em = $this->getEntityManager();
@@ -98,11 +98,41 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 ->addSelect('w')
                 ->innerJoin('re.status', 's')
                 ->addSelect('s')
+                // NOTE: Do NOT join w.metadata here — collection joins multiply SQL rows and
+                // cause setMaxResults() to limit rows rather than entities, producing fewer
+                // results than the requested page size. Metadata is lazy-loaded per work
+                // instead, which is acceptable for this app's data volume.
                 ->where('re.user = :user')
                 ->setParameter('user', $user)
-                ->orderBy('re.createdAt', 'DESC')
                 ->setFirstResult($offset)
                 ->setMaxResults($limit);
+
+            $dirUpper = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
+
+            if ($sort === 'title') {
+                $qb->orderBy('LOWER(w.title)', $dirUpper);
+            } elseif ($sort === 'status') {
+                $qb->orderBy('s.name', $dirUpper);
+            } elseif ($sort === 'author') {
+                // Correlated subquery to get the first author name (alphabetically) for each
+                // work without joining w.metadata — a direct join multiplies rows and breaks
+                // setMaxResults() pagination (see note above).
+                $qb->addSelect(
+                    '(SELECT MIN(LOWER(sortA.name))
+                      FROM App\Entity\Work sortW
+                      JOIN sortW.metadata sortA
+                      JOIN sortA.metadataType sortAType
+                      WHERE sortW = w AND sortAType.name = :sortAuthorType)
+                     AS HIDDEN authorSort'
+                )
+                ->setParameter('sortAuthorType', 'Author')
+                ->orderBy('authorSort', $dirUpper);
+            } else {
+                // dateFinished — always push NULLs to the bottom regardless of direction.
+                $qb->addSelect('CASE WHEN re.dateFinished IS NULL THEN 1 ELSE 0 END AS HIDDEN dateNullOrder')
+                    ->orderBy('dateNullOrder', 'ASC')
+                    ->addOrderBy('re.dateFinished', $dirUpper);
+            }
 
             $this->applyFilters($qb, $filterParams);
 
@@ -762,6 +792,96 @@ class ReadingEntryRepository extends ServiceEntityRepository
 
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
+
+    // -------------------------------------------------------------------------
+    // Filter-scoped stat methods (used by the reading-list stat strip)
+    // These mirror their unfiltered counterparts but call applyFilters() instead
+    // of applyYearFilter(), so they respect the active filter set.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Total word count for entries with hasBeenStarted = true, scoped to the
+     * active filter set. Used by the stat strip when filters are applied.
+     *
+     * @param array<string, mixed> $filterParams
+     */
+    public function getTotalWordsSumFiltered(User $user, array $filterParams): int
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            $qb = $this->createQueryBuilder('re')
+                ->select('SUM(COALESCE(w.words, 0))')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('started', true);
+
+            $this->applyFilters($qb, $filterParams);
+
+            return (int) ($qb->getQuery()->getSingleScalarResult() ?? 0);
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
+     * Average review stars for entries that have a rating, scoped to the active
+     * filter set. Returns null when no rated entries match the filters.
+     *
+     * @param array<string, mixed> $filterParams
+     */
+    public function getAverageRatingFiltered(User $user, array $filterParams): ?float
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('AVG(re.reviewStars)')
+            ->innerJoin('re.work', 'w')
+            ->where('re.user = :user')
+            ->andWhere('re.reviewStars IS NOT NULL')
+            ->setParameter('user', $user);
+
+        $this->applyFilters($qb, $filterParams);
+
+        $result = $qb->getQuery()->getSingleScalarResult();
+
+        return $result !== null ? round((float) $result, 1) : null;
+    }
+
+    /**
+     * Count of entries where status.countsAsRead = true, scoped to the active
+     * filter set. Used by the stat strip's 4th box when filters are active.
+     *
+     * DISTINCT re.id guards against duplicate rows that can arise when
+     * applyFilters() adds multiple JOIN paths (e.g. author + fandom both joined).
+     *
+     * @param array<string, mixed> $filterParams
+     */
+    public function countFinishedFiltered(User $user, array $filterParams): int
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('COUNT(DISTINCT re.id)')
+            ->innerJoin('re.work', 'w')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true);
+
+        $this->applyFilters($qb, $filterParams);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    // -------------------------------------------------------------------------
 
     /**
      * Count of "started" entries: entries whose status has hasBeenStarted = true

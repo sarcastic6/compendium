@@ -1,0 +1,203 @@
+// =============================================================================
+// _layout.scss
+// App shell: sidebar + main content area, page header.
+// =============================================================================
+
+@use 'variables' as *;
+
+// -------------------------------------------------------------------------
+// App Shell
+// -------------------------------------------------------------------------
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--color-neutral);
+}
+
+// Main content area (to the right of the sidebar)
+.app-main {
+    flex: 1;
+    min-width: 0; // prevent flex children from overflowing
+    display: flex;
+    flex-direction: column;
+
+    @media (min-width: $breakpoint-lg) {
+        margin-left: var(--sidebar-width);
+    }
+}
+
+.app-content {
+    flex: 1;
+    padding: var(--page-padding-y) var(--page-padding-x);
+    max-width: var(--content-max-width);
+    width: 100%;
+    margin: 0 auto;
+}
+
+// -------------------------------------------------------------------------
+// Page Header
+// -------------------------------------------------------------------------
+
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+    flex-wrap: wrap;
+
+    @media (max-width: #{$breakpoint-md - 1px}) {
+        flex-direction: column;
+    }
+}
+
+.page-header-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-shrink: 0;
+}
+
+// Page title hierarchy
+.page-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-extrabold);
+    color: var(--color-primary);
+    margin: 0 0 var(--space-1);
+    line-height: var(--leading-tight);
+}
+
+.page-subtitle {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+// Filter count badge on the filter toggle button
+.filter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: var(--weight-bold);
+    min-width: 16px;
+    height: 16px;
+    border-radius: var(--radius-full);
+    padding: 0 4px;
+    line-height: 1;
+}
+
+// -------------------------------------------------------------------------
+// Mobile top bar (visible only on mobile, triggers sidebar offcanvas)
+// -------------------------------------------------------------------------
+
+.mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-primary);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-overlay);
+
+    @media (min-width: $breakpoint-lg) {
+        display: none;
+    }
+}
+
+.mobile-topbar-brand {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    color: #fff;
+    flex: 1;
+}
+
+.mobile-topbar-toggle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: var(--text-xl);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+// -------------------------------------------------------------------------
+// Flash / toast messages (full-width strip above content)
+// -------------------------------------------------------------------------
+
+.flash-container {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-toast);
+}
+
+.flash {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    border-bottom: 1px solid transparent;
+
+    .flash-body {
+        flex: 1;
+    }
+
+    .flash-dismiss {
+        margin-left: auto;
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        opacity: 0.6;
+        font-size: var(--text-lg);
+        line-height: 1;
+        padding: 0;
+        color: inherit;
+        transition: opacity var(--transition-fast);
+
+        &:hover { opacity: 1; }
+    }
+}
+
+.flash-success {
+    background: #d4edda;
+    color: #1a5c2e;
+    border-bottom-color: #b3d9bf;
+}
+
+.flash-error {
+    background: #fde8e8;
+    color: #9b2020;
+    border-bottom-color: #f5c6c6;
+}
+
+.flash-warning {
+    background: #fff3cd;
+    color: #856404;
+    border-bottom-color: #ffe08a;
+}
+
+.flash-info {
+    background: var(--color-tertiary);
+    color: var(--color-primary);
+    border-bottom-color: var(--color-tertiary-dark);
+}

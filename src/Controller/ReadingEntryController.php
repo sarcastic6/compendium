@@ -103,8 +103,19 @@ class ReadingEntryController extends AbstractController
         $activeFilterCount = count(array_filter($stringParams, static fn (string $v): bool => $v !== ''))
             + count($metadataFilters);
 
+        $allowedSorts = ['title', 'author', 'status', 'dateFinished'];
+        $allowedDirs  = ['asc', 'desc'];
+        $sort = $request->query->get('sort', 'dateFinished');
+        $dir  = $request->query->get('dir', 'desc');
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'dateFinished';
+        }
+        if (!in_array($dir, $allowedDirs, true)) {
+            $dir = 'desc';
+        }
+
         $total = $this->readingEntryRepository->countByUserFiltered($user, $filterParams);
-        $entries = $this->readingEntryRepository->findByUserFiltered($user, $filterParams, $page, $limit);
+        $entries = $this->readingEntryRepository->findByUserFiltered($user, $filterParams, $page, $limit, $sort, $dir);
         $totalPages = (int) ceil($total / $limit);
 
         $allStatuses = $this->statusRepository->findAll();
@@ -119,12 +130,39 @@ class ReadingEntryController extends AbstractController
             $seriesName = $series?->getName();
         }
 
+        // Summary stat strip — scoped to the active filter set when filters are applied,
+        // or all-time when unfiltered. The 4th box shows "Completed" count when filtered
+        // (since "This Year" is meaningless against an arbitrary filter) and "This Year"
+        // count when unfiltered (library-wide context).
+        // Finish rate denominator is always the entry count being shown ($total when filtered,
+        // totalEntriesAllTime when unfiltered) — consistent with the all-time calculation.
+        $currentYear = (int) date('Y');
+        if ($hasFilters) {
+            $statTotalWords = $this->readingEntryRepository->getTotalWordsSumFiltered($user, $filterParams);
+            $statCompleted  = $this->readingEntryRepository->countFinishedFiltered($user, $filterParams);
+            $statAvgReview  = $this->readingEntryRepository->getAverageRatingFiltered($user, $filterParams);
+            $statFinishRate = $total > 0 ? (int) round($statCompleted / $total * 100) : 0;
+            $statThisYear   = null;
+        } else {
+            $totalEntriesAllTime = $this->readingEntryRepository->countByUser($user);
+            $finishedAllTime     = $this->readingEntryRepository->countFinished($user);
+            $statTotalWords      = $this->readingEntryRepository->getTotalWordsSumForUser($user);
+            $statAvgReview       = $this->readingEntryRepository->getAverageRating($user);
+            $statFinishRate      = $totalEntriesAllTime > 0
+                ? (int) round($finishedAllTime / $totalEntriesAllTime * 100)
+                : 0;
+            $statCompleted  = null;
+            $statThisYear   = $this->readingEntryRepository->countByUser($user, $currentYear);
+        }
+
         return $this->render('reading_entry/list.html.twig', [
             'entries' => $entries,
             'page' => $page,
             'total_pages' => $totalPages,
             'total' => $total,
             'filters' => $filterParams,
+            'current_sort' => $sort,
+            'current_dir'  => $dir,
             'has_filters' => $hasFilters,
             'active_filter_count' => $activeFilterCount,
             'statuses' => $allStatuses,
@@ -132,6 +170,13 @@ class ReadingEntryController extends AbstractController
             'languages' => $allLanguages,
             'metadataDropdownValues' => $metadataDropdownValues,
             'seriesName' => $seriesName,
+            // Summary stat strip
+            'stat_total_words'  => $statTotalWords,
+            'stat_finish_rate'  => $statFinishRate,
+            'stat_avg_review'   => $statAvgReview,
+            'stat_completed'    => $statCompleted,
+            'stat_this_year'    => $statThisYear,
+            'stat_current_year' => $currentYear,
         ]);
     }
 

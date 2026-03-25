@@ -1,6 +1,9 @@
 twig:
     file_name_pattern: '*.twig'
     form_themes: ['bootstrap_5_layout.html.twig']
+    date:
+        format: 'M j, Y'      # e.g. "Mar 24, 2026"
+        interval_format: '%d days'
 
 when@test:
     twig:

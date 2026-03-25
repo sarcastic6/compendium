@@ -3,19 +3,28 @@
 {% block title %}{{ 'admin.statuses.new_heading'|trans }}{% endblock %}
 
 {% block body %}
-<div class="row">
-    <div class="col-md-6">
-        <h1 class="h3 mb-4">{{ 'admin.statuses.new_heading'|trans }}</h1>
+<div class="page-header">
+    <div class="page-header-text">
+        <a href="{{ path('app_admin_status_list') }}" class="back-link">← {{ 'admin.statuses.heading'|trans }}</a>
+        <h1 class="page-title">{{ 'admin.statuses.new_heading'|trans }}</h1>
+    </div>
+</div>
 
-        {{ form_start(form) }}
-            {{ form_row(form.name) }}
-            {{ form_row(form.hasBeenStarted) }}
-            {{ form_row(form.countsAsRead) }}
-            <div class="d-flex gap-2 mt-3">
-                <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
-                <a href="{{ path('app_admin_status_list') }}" class="btn btn-outline-secondary">{{ 'action.cancel'|trans }}</a>
+<div class="row">
+    <div class="col-md-6 col-lg-5">
+        <div class="chart-card">
+            <div class="chart-card-body">
+                {{ form_start(form) }}
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.hasBeenStarted) }}
+                    {{ form_row(form.countsAsRead) }}
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
+                        <a href="{{ path('app_admin_status_list') }}" class="btn btn-ghost">{{ 'action.cancel'|trans }}</a>
+                    </div>
+                {{ form_end(form) }}
             </div>
-        {{ form_end(form) }}
+        </div>
     </div>
 </div>
 {% endblock %}

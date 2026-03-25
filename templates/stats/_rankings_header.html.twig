@@ -1,50 +1,38 @@
 {#
     Shared header partial for all rankings pages.
-    Renders the page heading, year filter, back button, and ranking type nav.
 
     Expected variables (passed from the including template's scope):
-    - type:               current ranking type label (e.g. 'Status', 'Fandom', 'Author')
-    - year:               currently selected year (int|null)
-    - availableYears:     int[] of years with data
-    - rankingRoute:       route name for this rankings page (used by year filter form)
-    - rankingRouteParams: extra route params for rankingRoute (e.g. {type: 'Fandom'})
-    - sortColumn:         currently active sort column (preserved across year changes)
-    - sortDir:            currently active sort direction (preserved across year changes)
-    - rankingTypes:       string[] of metadata type names with data (for dynamic nav buttons)
+    - type, year, availableYears, rankingRoute, rankingRouteParams,
+      sortColumn, sortDir, rankingTypes
 #}
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <h1 class="h3 mb-0">{{ 'stats.rankings.heading'|trans({'%type%': type}) }}</h1>
-
-    <div class="d-flex align-items-center gap-2">
-        {# Year filter — hidden inputs preserve sort/dir across year changes #}
-        <form method="get" action="{{ path(rankingRoute, rankingRouteParams) }}" class="d-flex align-items-center gap-2">
-            <input type="hidden" name="sort" value="{{ sortColumn }}">
-            <input type="hidden" name="dir" value="{{ sortDir }}">
-            <label for="year-filter" class="form-label mb-0 text-nowrap small">
-                <i class="bi bi-funnel"></i>
-            </label>
-            <select id="year-filter" name="year" class="form-select form-select-sm" style="width: auto"
-                    onchange="this.form.submit()" aria-label="{{ 'stats.filter.all_time'|trans }}">
-                <option value="">{{ 'stats.filter.all_time'|trans }}</option>
-                {% for y in availableYears %}
-                    <option value="{{ y }}"{% if y == year %} selected{% endif %}>
-                        {{- 'stats.filter.finished_in'|trans({'%year%': y}) -}}
-                    </option>
-                {% endfor %}
-            </select>
-        </form>
-
-        <a href="{{ path('app_stats_dashboard', {'year': year}) }}"
-           class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left"></i>
+<div class="page-header">
+    <div class="page-header-text">
+        <a href="{{ path('app_stats_dashboard', {'year': year}) }}" class="back-link">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
             {{ 'stats.rankings.back_to_dashboard'|trans }}
         </a>
+        <h1 class="page-title mt-2">{{ 'stats.rankings.heading'|trans({'%type%': type}) }}</h1>
+    </div>
+    <div class="page-header-actions">
+        {# Year filter pills — preserve sort/dir across year changes #}
+        <div class="year-filter-pills" style="margin-bottom: 0;">
+            <a href="{{ path(rankingRoute, rankingRouteParams|merge({'year': null, 'sort': sortColumn, 'dir': sortDir})) }}"
+               class="year-pill{% if year is null %} active{% endif %}">
+                {{ 'stats.filter.all_time'|trans }}
+            </a>
+            {% for y in availableYears %}
+                <a href="{{ path(rankingRoute, rankingRouteParams|merge({'year': y, 'sort': sortColumn, 'dir': sortDir})) }}"
+                   class="year-pill{% if y == year %} active{% endif %}">
+                    {{ y }}
+                </a>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
-{# ── Ranking type navigation ─────────────────────────────────────────────── #}
-<div class="d-flex flex-wrap gap-2 mb-4">
+{# Ranking type navigation #}
+<div class="year-filter-pills mb-5">
     {% set fixedTypes = [
         {'label': 'stats.rankings.type_status'|trans,       'route': 'app_stats_rankings_status',       'params': {}, 'key': 'Status'},
         {'label': 'stats.rankings.type_language'|trans,     'route': 'app_stats_rankings_language',     'params': {}, 'key': 'Language'},
@@ -54,15 +42,14 @@
     ] %}
     {% for item in fixedTypes %}
         <a href="{{ path(item.route, {'year': year}) }}"
-           class="btn btn-sm {{ type == item.key ? 'btn-primary' : 'btn-outline-secondary' }}">
+           class="year-pill{% if type == item.key %} active{% endif %}">
             {{ item.label }}
         </a>
     {% endfor %}
     {% for typeName in rankingTypes %}
-        {# Author has a dedicated page — skip it here to avoid a duplicate button #}
         {% if typeName != 'Author' %}
             <a href="{{ path('app_stats_rankings', {'type': typeName, 'year': year}) }}"
-               class="btn btn-sm {{ type == typeName ? 'btn-primary' : 'btn-outline-secondary' }}">
+               class="year-pill{% if type == typeName %} active{% endif %}">
                 {{ typeName }}
             </a>
         {% endif %}

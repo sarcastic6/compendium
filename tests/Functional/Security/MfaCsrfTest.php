@@ -26,7 +26,7 @@ class MfaCsrfTest extends AbstractFunctionalTest
 
         $this->assertResponseRedirects('/mfa');
         $this->client->followRedirect();
-        $this->assertSelectorExists('.alert-danger');
+        $this->assertSelectorExists('.flash-error');
     }
 
     public function test_totp_disable_with_missing_csrf_does_not_change_db(): void
@@ -64,7 +64,7 @@ class MfaCsrfTest extends AbstractFunctionalTest
 
         $this->assertResponseRedirects('/mfa');
         $this->client->followRedirect();
-        $this->assertSelectorExists('.alert-danger');
+        $this->assertSelectorExists('.flash-error');
     }
 
     public function test_email_enable_with_missing_csrf_does_not_change_db(): void
@@ -95,7 +95,7 @@ class MfaCsrfTest extends AbstractFunctionalTest
 
         $this->assertResponseRedirects('/mfa');
         $this->client->followRedirect();
-        $this->assertSelectorExists('.alert-danger');
+        $this->assertSelectorExists('.flash-error');
     }
 
     public function test_email_disable_with_missing_csrf_does_not_change_db(): void
@@ -129,6 +129,6 @@ class MfaCsrfTest extends AbstractFunctionalTest
 
         $this->assertResponseRedirects('/mfa');
         $this->client->followRedirect();
-        $this->assertSelectorExists('.alert-danger');
+        $this->assertSelectorExists('.flash-error');
     }
 }

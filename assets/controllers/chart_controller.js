@@ -42,15 +42,22 @@ export default class extends Controller {
     async connect() {
         const { Chart } = await import('chart.js/auto');
 
+        // 12-step earthy palette — spans the full colour wheel at low-to-moderate
+        // saturation so charts look varied while staying on-brand with the
+        // forest-green / teal / amber aesthetic of the rest of the UI.
         const defaultColors = [
-            'rgba(13,110,253,0.75)',
-            'rgba(25,135,84,0.75)',
-            'rgba(255,193,7,0.85)',
-            'rgba(220,53,69,0.75)',
-            'rgba(13,202,240,0.75)',
-            'rgba(111,66,193,0.75)',
-            'rgba(253,126,20,0.75)',
-            'rgba(32,201,151,0.75)',
+            'rgba(59,  107, 82,  0.85)', // forest green   (brand primary-light)
+            'rgba(88,  168, 158, 0.85)', // teal
+            'rgba(194, 155, 80,  0.85)', // golden amber
+            'rgba(185, 118, 98,  0.85)', // terracotta
+            'rgba(139, 168, 136, 0.85)', // sage            (brand secondary)
+            'rgba(100, 130, 175, 0.85)', // dusty blue
+            'rgba(106, 155, 90,  0.85)', // leaf green
+            'rgba(148, 118, 158, 0.85)', // dusty mauve
+            'rgba(160, 205, 198, 0.85)', // light mint      (near tertiary)
+            'rgba(158, 135, 100, 0.85)', // warm khaki
+            'rgba(115, 148, 165, 0.85)', // slate teal-blue
+            'rgba(27,  48,  34,  0.85)', // deep forest     (brand primary)
         ];
 
         const isSegmented = ['doughnut', 'pie'].includes(this.typeValue);

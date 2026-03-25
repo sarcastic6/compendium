@@ -3,56 +3,80 @@
 {% block title %}{{ 'reading.entry.add'|trans }}{% endblock %}
 
 {% block body %}
-<h1 class="h3 mb-1">{{ 'reading.entry.add'|trans }}</h1>
 
-{# Read-only work context #}
-<div class="card mb-4 bg-light border-0">
-    <div class="card-body py-2">
-        <strong>{{ work.title }}</strong>
+<div class="page-header">
+    <div class="page-header-text">
+        <a href="{{ path('app_reading_entry_list') }}" class="back-link">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            {{ 'nav.library'|trans }}
+        </a>
+    </div>
+</div>
+
+{# Work summary card #}
+<div class="entry-work-card mb-4">
+    <div class="cover cover-md {{ cover_font_class(work.type.value) }}"
+         style="{{ cover_gradient(work.id) }}"
+         aria-hidden="true">
+        <span class="cover-title">{{ work.title }}</span>
+    </div>
+    <div class="entry-work-card-info">
+        <h1 class="entry-work-card-title">{{ work.title }}</h1>
         {% if work.authors is not empty %}
-            <span class="text-muted ms-2">
-                by {{ work.authors|map(a => a.name)|join(', ') }}
-            </span>
+            <p class="entry-work-card-authors">{{ work.authors|map(a => a.name)|join(', ') }}</p>
         {% endif %}
-        <span class="badge bg-secondary ms-2">{{ work.type.value }}</span>
+        <div class="d-flex align-items-center gap-2 mt-auto">
+            <span class="chip chip-tag">{{ work.type.value }}</span>
+            <a href="{{ path('app_work_show', {id: work.id}) }}" class="entry-work-card-link">
+                {{ 'work.preview.view_details'|trans }}
+                <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+            </a>
+        </div>
     </div>
 </div>
 
 {{ form_start(form, {'attr': {'novalidate': true}}) }}
 
-<div class="row g-3">
-    <div class="col-12">
-        {{ form_row(form.status) }}
-    </div>
-    <div class="col-md-6">
-        {{ form_row(form.dateStarted) }}
-    </div>
-    <div class="col-md-6">
-        {{ form_row(form.dateFinished) }}
-    </div>
-    <div class="col-md-4">
-        {{ form_row(form.lastReadChapter) }}
-    </div>
-    <div class="col-md-4">
-        {{ form_row(form.reviewStars) }}
-    </div>
-    <div class="col-md-4">
-        {{ form_row(form.spiceStars) }}
-    </div>
-    <div class="col-12">
-        {{ form_row(form.mainPairing) }}
-    </div>
-    <div class="col-12">
-        {{ form_row(form.comments) }}
-    </div>
-    <div class="col-12">
-        {{ form_row(form.starred) }}
+<div class="entry-form-section">
+    <div class="row g-3">
+        <div class="col-12">
+            {{ form_row(form.status) }}
+        </div>
+        <div class="col-md-6">
+            {{ form_row(form.dateStarted) }}
+        </div>
+        <div class="col-md-6">
+            {{ form_row(form.dateFinished) }}
+        </div>
     </div>
 </div>
 
-<div class="d-flex gap-2 mt-3">
+<div class="entry-form-section">
+    <div class="row g-3">
+        <div class="col-md-4">
+            {{ form_row(form.lastReadChapter) }}
+        </div>
+        <div class="col-md-4">
+            {{ form_row(form.reviewStars) }}
+        </div>
+        <div class="col-md-4">
+            {{ form_row(form.spiceStars) }}
+        </div>
+        <div class="col-12">
+            {{ form_row(form.mainPairing) }}
+        </div>
+        <div class="col-12">
+            {{ form_row(form.comments) }}
+        </div>
+        <div class="col-12">
+            {{ form_row(form.starred) }}
+        </div>
+    </div>
+</div>
+
+<div class="d-flex gap-2 mt-4">
     <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
-    <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary">{{ 'action.cancel'|trans }}</a>
+    <a href="{{ path('app_reading_entry_list') }}" class="btn btn-ghost">{{ 'action.cancel'|trans }}</a>
 </div>
 
 {{ form_end(form) }}
