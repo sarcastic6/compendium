@@ -199,11 +199,62 @@
                             <i class="bi bi-bar-chart-line sidebar-nav-icon" aria-hidden="true"></i>
                             {{ 'nav.analytics'|trans }}
                         </a>
-                        <a href="{{ path('app_stats_rankings_author') }}"
-                           class="sidebar-nav-item{% if onRankingsPage %} active{% endif %}">
-                            <i class="bi bi-trophy sidebar-nav-icon" aria-hidden="true"></i>
-                            {{ 'nav.rankings'|trans }}
-                        </a>
+                        <button type="button"
+                                class="sidebar-nav-item sidebar-nav-group-toggle w-100 text-start{% if onRankingsPage %} active{% endif %}"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#rankings-subnav-mobile"
+                                aria-expanded="{{ onRankingsPage ? 'true' : 'false' }}"
+                                aria-controls="rankings-subnav-mobile">
+                            <span class="d-flex align-items-center gap-2 flex-grow-1">
+                                <i class="bi bi-trophy sidebar-nav-icon" aria-hidden="true"></i>
+                                {{ 'nav.rankings'|trans }}
+                            </span>
+                            <i class="bi bi-chevron-down sidebar-nav-group-caret" aria-hidden="true"></i>
+                        </button>
+                        <div class="collapse{% if onRankingsPage %} show{% endif %}" id="rankings-subnav-mobile">
+                            <div class="sidebar-nav-sub">
+                                <a href="{{ path('app_stats_rankings_author') }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings_author' %} active{% endif %}">
+                                    {{ 'nav.rankings_authors'|trans }}
+                                </a>
+                                <a href="{{ path('app_stats_rankings', {type: 'Fandom'}) }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Fandom' %} active{% endif %}">
+                                    {{ 'nav.rankings_fandoms'|trans }}
+                                </a>
+                                <a href="{{ path('app_stats_rankings', {type: 'Character'}) }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Character' %} active{% endif %}">
+                                    {{ 'nav.rankings_characters'|trans }}
+                                </a>
+                                <a href="{{ path('app_stats_rankings', {type: 'Relationships'}) }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Relationships' %} active{% endif %}">
+                                    {{ 'nav.rankings_relationships'|trans }}
+                                </a>
+                                <a href="{{ path('app_stats_rankings', {type: 'Tag'}) }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Tag' %} active{% endif %}">
+                                    {{ 'nav.rankings_tags'|trans }}
+                                </a>
+                                <a href="{{ path('app_stats_rankings', {type: 'Rating'}) }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Rating' %} active{% endif %}">
+                                    {{ 'nav.rankings_ratings'|trans }}
+                                </a>
+                                <a href="{{ path('app_stats_rankings', {type: 'Warning'}) }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Warning' %} active{% endif %}">
+                                    {{ 'nav.rankings_warnings'|trans }}
+                                </a>
+                                <a href="{{ path('app_stats_rankings', {type: 'Category'}) }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Category' %} active{% endif %}">
+                                    {{ 'nav.rankings_categories'|trans }}
+                                </a>
+                                <a href="{{ path('app_stats_rankings_series') }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings_series' %} active{% endif %}">
+                                    {{ 'nav.rankings_series'|trans }}
+                                </a>
+                                <a href="{{ path('app_stats_rankings_main_pairing') }}"
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings_main_pairing' %} active{% endif %}">
+                                    {{ 'nav.rankings_main_pairings'|trans }}
+                                </a>
+                            </div>
+                        </div>
                         {% if is_granted('ROLE_ADMIN') %}
                             <a href="{{ path('app_admin_index') }}"
                                class="sidebar-nav-item{% if currentRoute starts with 'app_admin' %} active{% endif %}">
