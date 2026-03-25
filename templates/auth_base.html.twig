@@ -35,6 +35,10 @@
 
             {% block body %}{% endblock %}
 
+            <div style="text-align: center; margin-top: var(--space-6); font-size: var(--text-xs); color: var(--color-text-faint);">
+                <a href="{{ path('app_privacy') }}" style="color: inherit;">{{ 'nav.privacy'|trans }}</a>
+            </div>
+
         </div>
 
     </body>

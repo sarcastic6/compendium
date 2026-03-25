@@ -42,6 +42,7 @@ nav:
     login: 'Log in'
     register: 'Register'
     brand_sub: 'Reading Archive'
+    privacy: 'Privacy Policy'
     library: 'My Library'
     analytics: 'Analytics'
     rankings: 'Rankings'

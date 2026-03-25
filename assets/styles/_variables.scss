@@ -146,3 +146,12 @@ $sidebar-width:         220px;
 $breakpoint-md:         768px;
 $breakpoint-lg:         992px;
 $breakpoint-xl:         1200px;
+
+// =============================================================================
+// Dark mode overrides (stub — not yet implemented)
+// Override CSS custom properties here when dark mode support is added.
+// Toggle via: <html data-theme="dark"> or prefers-color-scheme media query.
+// =============================================================================
+[data-theme="dark"] {
+    // TODO: define dark mode tokens
+}

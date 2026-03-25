@@ -1,0 +1,46 @@
+{% extends 'auth_base.html.twig' %}
+
+{% block title %}Privacy Policy{% endblock %}
+
+{% block body %}
+<div class="auth-card" style="max-width: 640px;">
+    <h1 style="font-size: var(--text-2xl); font-weight: var(--weight-extrabold); color: var(--color-primary); margin-bottom: var(--space-6);">
+        Privacy Policy
+    </h1>
+
+    <div style="font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-6);">
+        Last updated: 2026
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-5); font-size: var(--text-sm); color: var(--color-text-body); line-height: var(--leading-relaxed);">
+
+        <section>
+            <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--color-primary); margin-bottom: var(--space-2);">What we collect</h2>
+            <p>Compendium stores the data you enter: your account information (name, email address, and hashed password) and your reading log (works, reading entries, ratings, and comments).</p>
+        </section>
+
+        <section>
+            <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--color-primary); margin-bottom: var(--space-2);">How we use it</h2>
+            <p>Your data is used solely to provide the Compendium service. We do not sell, share, or use your data for advertising or analytics.</p>
+        </section>
+
+        <section>
+            <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--color-primary); margin-bottom: var(--space-2);">Data storage</h2>
+            <p>All data is stored on the server running this application. No data is sent to third parties except for the fonts loaded from Google Fonts on page load.</p>
+        </section>
+
+        <section>
+            <h2 style="font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--color-primary); margin-bottom: var(--space-2);">Your rights</h2>
+            <p>You can delete your reading entries at any time. To request full account deletion, contact the site administrator.</p>
+        </section>
+
+    </div>
+
+    <div style="margin-top: var(--space-8);">
+        <a href="{{ path('app_login') }}" class="btn btn-ghost btn-sm">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            Back to login
+        </a>
+    </div>
+</div>
+{% endblock %}
