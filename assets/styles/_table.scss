@@ -236,6 +236,17 @@
         display: none;
     }
 
+    // Dedicated mobile card cell — overrides the generic label/value td styles
+    .table-responsive-card td.entry-mobile-card {
+        display: block !important;
+        padding: 0;
+        border: none;
+
+        &::before {
+            display: none;
+        }
+    }
+
     .table-responsive-card td {
         display: flex;
         justify-content: space-between;
@@ -254,4 +265,161 @@
         color: var(--color-text-muted);
         flex-shrink: 0;
     }
+}
+
+// =============================================================================
+// Mobile entry card (replaces the label/value rows below md)
+// =============================================================================
+
+// The td is the tap target — cursor and select suppressed at that level
+@media (max-width: #{$breakpoint-md - 1px}) {
+    .table-responsive-card td.entry-mobile-card {
+        cursor: pointer;
+        user-select: none;
+    }
+}
+
+.mobile-entry-card {
+    // layout only — interactivity lives on the parent td
+}
+
+// Zone 1: thumbnail + info side by side
+.me-zone1 {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    margin-bottom: var(--space-3);
+}
+
+.me-cover {
+    flex-shrink: 0;
+}
+
+.me-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.me-title {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-primary);
+    line-height: var(--leading-snug);
+    margin-bottom: var(--space-1);
+}
+
+.me-comment-indicator {
+    font-size: 0.75em;
+    color: var(--color-text-muted);
+}
+
+.me-author {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+}
+
+.me-meta {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+// Zone 2: status chip + progress or review (full width)
+.me-status-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.me-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.me-progress-text {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.me-review {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+// Expanded section
+.mobile-entry-expanded {
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+}
+
+.me-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.me-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-body);
+    font-size: var(--text-base);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+
+    &:hover {
+        background: var(--color-surface-tint);
+        color: var(--color-text-body);
+        text-decoration: none;
+    }
+
+    &--danger {
+        color: #dc3545;
+        border-color: #dc3545;
+
+        &:hover {
+            background: rgba(220, 53, 69, 0.08);
+        }
+    }
+}
+
+.me-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+}
+
+.me-field {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+.me-review--expanded {
+    margin-bottom: var(--space-3);
+}
+
+.me-comment {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    line-height: var(--leading-relaxed);
+    white-space: pre-wrap;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-2);
+    margin-top: var(--space-2);
 }

@@ -345,15 +345,15 @@
                     {% endif %}
 
                     <tr>
-                        {# Checkbox #}
-                        <td class="pe-0">
+                        {# Checkbox — hidden on mobile (replaced by mobile card) #}
+                        <td class="pe-0 d-none d-md-table-cell">
                             <input class="form-check-input entry-checkbox" type="checkbox"
                                    name="ids[]" value="{{ entry.id }}"
                                    aria-label="{{ entry.work.deleted ? 'reading.entry.work_deleted'|trans : entry.work.title }}">
                         </td>
 
-                        {# Cover art thumbnail #}
-                        <td class="cover-col" aria-hidden="true">
+                        {# Cover art thumbnail — hidden on mobile (shown inside mobile card) #}
+                        <td class="cover-col d-none d-md-table-cell" aria-hidden="true">
                             {% if not entry.work.deleted %}
                                 <div class="cover cover-thumbnail {{ cover_font_class(entry.work.type.value) }}"
                                      style="{{ cover_gradient(entry.work.id) }}">
@@ -362,8 +362,8 @@
                             {% endif %}
                         </td>
 
-                        {# Title + author stacked #}
-                        <td data-label="{{ 'reading.entry.col_title'|trans }}">
+                        {# Title + author stacked — hidden on mobile #}
+                        <td data-label="{{ 'reading.entry.col_title'|trans }}" class="d-none d-md-table-cell">
                             <div class="entry-title-cell">
                                 {% if entry.work.deleted %}
                                     <span class="entry-deleted-work entry-title">
@@ -418,13 +418,13 @@
                             {% endif %}
                         </td>
 
-                        {# Word count #}
-                        <td data-label="{{ 'reading.entry.col_words'|trans }}" class="words-col">
+                        {# Word count — hidden on mobile #}
+                        <td data-label="{{ 'reading.entry.col_words'|trans }}" class="words-col d-none d-md-table-cell">
                             {{ entry.work.words ? entry.work.words|number_format : '—' }}
                         </td>
 
-                        {# Status chip #}
-                        <td data-label="{{ 'reading.field.status'|trans }}">
+                        {# Status chip — hidden on mobile #}
+                        <td data-label="{{ 'reading.field.status'|trans }}" class="d-none d-md-table-cell">
                             <span class="{{ chipClass }}">{{ entry.status.name }}</span>
                             {% if not entry.status.countsAsRead and entry.lastReadChapter %}
                                 {% if entry.work.chapters %}
@@ -456,8 +456,8 @@
                             {% endif %}
                         </td>
 
-                        {# Review stars #}
-                        <td data-label="{{ 'reading.entry.col_review_spice'|trans }}">
+                        {# Review stars — hidden on mobile #}
+                        <td data-label="{{ 'reading.entry.col_review_spice'|trans }}" class="d-none d-md-table-cell">
                             {% if entry.reviewStars %}
                                 <span class="stars-display" aria-label="{{ entry.reviewStars }} {{ 'entry.list.stars'|trans }}">
                                     {%- for i in 1..5 -%}
@@ -475,8 +475,8 @@
                             {% endif %}
                         </td>
 
-                        {# Actions menu #}
-                        <td class="actions-col">
+                        {# Actions menu — hidden on mobile #}
+                        <td class="actions-col d-none d-md-table-cell">
                             <div class="dropdown">
                                 <button class="btn btn-ghost btn-icon btn-sm"
                                         type="button"
@@ -513,6 +513,163 @@
                                     </li>
                                 </ul>
                             </div>
+                        </td>
+
+                        {# ── Mobile card — only visible below md ────────────────────── #}
+                        {# The td is the tap target so both collapsed and expanded zones collapse on tap.
+                           Interactive elements inside the expanded section stop propagation. #}
+                        <td colspan="9" class="d-md-none entry-mobile-card"
+                            role="button"
+                            tabindex="0"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#mc-{{ entry.id }}"
+                            aria-expanded="false"
+                            aria-controls="mc-{{ entry.id }}">
+
+                            {# Collapsed card #}
+                            <div class="mobile-entry-card">
+
+                                {# Zone 1: thumbnail + title / author / words side by side #}
+                                <div class="me-zone1">
+                                    {% if not entry.work.deleted %}
+                                        <div class="me-cover" aria-hidden="true">
+                                            <div class="cover cover-thumbnail {{ cover_font_class(entry.work.type.value) }}"
+                                                 style="{{ cover_gradient(entry.work.id) }}">
+                                                <span class="cover-title">{{ entry.work.title }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    <div class="me-info">
+                                        <div class="me-title">
+                                            {% if entry.work.deleted %}
+                                                <span class="entry-deleted-work">{{ 'reading.entry.work_deleted'|trans }}</span>
+                                            {% else %}
+                                                {{ entry.work.title }}
+                                                {% if entry.work.starred %}
+                                                    <i class="bi bi-star-fill starred-icon ms-1"
+                                                       aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+                                                {% endif %}
+                                                {% if entry.starred %}
+                                                    <i class="bi bi-heart-fill ms-1" style="color: #e05c7a; font-size: 0.7em;"
+                                                       aria-label="{{ 'entry.list.favorite_entry'|trans }}"></i>
+                                                {% endif %}
+                                                {% if entry.comments %}
+                                                    <i class="bi bi-chat-left-text me-comment-indicator ms-1"
+                                                       aria-label="{{ 'entry.list.view_comment'|trans }}"></i>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                        {% if not entry.work.deleted %}
+                                            <div class="me-author">
+                                                {{ entry.work.authors|map(a => a.name)|join(', ')|default('—') }}
+                                            </div>
+                                            {% if entry.work.words %}
+                                                <div class="me-meta">{{ entry.work.words|number_format }} words</div>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {# Zone 2: status + optional progress + stars/spice (full width, always consistent) #}
+                                <div class="me-zone2">
+                                    <div class="me-status-row">
+                                        <span class="{{ chipClass }}">{{ entry.status.name }}</span>
+                                        {% if not entry.status.countsAsRead and entry.lastReadChapter %}
+                                            <div class="me-progress">
+                                                <span class="me-progress-text">
+                                                    ch. {{ entry.lastReadChapter }}{% if entry.work.chapters %} / {{ entry.work.chapters }}{% endif %}
+                                                </span>
+                                                {% if entry.work.chapters %}
+                                                    {% set pct = (entry.lastReadChapter / entry.work.chapters * 100)|round %}
+                                                    {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                                                    <div class="progress" style="height: 3px; width: 60px; flex-shrink: 0;">
+                                                        <div class="progress-bar" role="progressbar"
+                                                             style="width: {{ pct }}%"
+                                                             aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    {% if entry.reviewStars or entry.spiceStars is not null %}
+                                        <div class="me-review mt-1">
+                                            {% if entry.reviewStars %}
+                                                <span class="stars-display" aria-label="{{ entry.reviewStars }} {{ 'entry.list.stars'|trans }}">
+                                                    {%- for i in 1..5 -%}
+                                                        {{- i <= entry.reviewStars ? '★' : '☆' -}}
+                                                    {%- endfor -%}
+                                                </span>
+                                            {% endif %}
+                                            {% if entry.spiceStars is not null %}
+                                                <span>
+                                                    {% if entry.spiceStars == 0 %}🚫
+                                                    {% else %}{% for i in range(1, entry.spiceStars) %}🌶️{% endfor %}{% endif %}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {# Expanded section — revealed on tap #}
+                            <div class="collapse mobile-entry-expanded" id="mc-{{ entry.id }}">
+
+                                {# Action buttons — always at top for immediate access.
+                                   stopPropagation prevents the td toggle from firing when tapping a button. #}
+                                <div class="me-actions">
+                                    {% if not entry.work.deleted %}
+                                        <a href="{{ path('app_work_show', {id: entry.work.id}) }}"
+                                           class="me-action-btn" aria-label="{{ 'reading.entry.view_work'|trans }}"
+                                           onclick="event.stopPropagation()">
+                                            <i class="bi bi-book" aria-hidden="true"></i>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}"
+                                       class="me-action-btn" aria-label="{{ 'action.edit'|trans }}"
+                                       onclick="event.stopPropagation()">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="me-action-btn me-action-btn--danger"
+                                            data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                            data-entry-id="{{ entry.id }}"
+                                            data-delete-url="{{ path('app_reading_entry_delete', {id: entry.id}) }}"
+                                            data-csrf-token="{{ csrf_token('delete-entry-' ~ entry.id) }}"
+                                            aria-label="{{ 'action.delete'|trans }}"
+                                            onclick="event.stopPropagation()">
+                                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+
+                                {# Additional metadata #}
+                                {% if fandomName or entry.mainPairing or entry.dateFinished %}
+                                    <div class="me-fields">
+                                        {% if fandomName %}
+                                            <div class="me-field">
+                                                <span class="me-field-value">{{ fandomName }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if entry.mainPairing %}
+                                            <div class="me-field">
+                                                <i class="bi bi-heart" aria-hidden="true" style="color: #e05c7a;"></i>
+                                                <span class="me-field-value">{{ entry.mainPairing.name }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if entry.dateFinished %}
+                                            <div class="me-field">
+                                                <i class="bi bi-calendar3" aria-hidden="true"></i>
+                                                <span class="me-field-value">{{ entry.dateFinished|date }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                {# Comment — always last #}
+                                {% if entry.comments %}
+                                    <div class="me-comment">{{ entry.comments }}</div>
+                                {% endif %}
+                            </div>
+
                         </td>
                     </tr>
                 {% endfor %}
