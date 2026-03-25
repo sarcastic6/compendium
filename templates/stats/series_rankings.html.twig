@@ -88,7 +88,7 @@
                             {% if item.avgReview is not null %}
                                 {% set reviewHue = item.avgReview <= 2.5 ? ((item.avgReview - 1) / 1.5 * 60)|round : (60 + (item.avgReview - 2.5) / 2.5 * 60)|round %}
                                 <td class="text-end">
-                                    <span class="avg-review-display" style="color: hsl({{ reviewHue }}, 55%, 38%)">{{ item.avgReview }}</span>
+                                    <span class="avg-review-display" style="background: hsl({{ reviewHue }}, 55%, 88%); color: hsl({{ reviewHue }}, 55%, 30%)">{{ item.avgReview }}</span>
                                 </td>
                             {% else %}
                                 <td class="text-end" style="color: var(--color-text-faint)">—</td>
