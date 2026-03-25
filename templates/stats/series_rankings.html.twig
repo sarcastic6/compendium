@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% from 'stats/_rankings_macros.html.twig' import sortHeader %}
+{% from 'stats/_rankings_macros.html.twig' import sortHeader, staticHeader %}
 
 {% block title %}{{ 'stats.rankings.heading'|trans({'%type%': type}) }}{% endblock %}
 
@@ -26,7 +26,7 @@
                 <thead>
                     <tr>
                         {{ sortHeader('name',       'stats.rankings.col_name'|trans,                 'start', '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
-                        <th>{{ 'stats.rankings.col_series_status'|trans }}</th>
+                        {{ staticHeader('stats.rankings.col_series_status'|trans, 'start', '') }}
                         {{ sortHeader('count',      'stats.rankings.col_count'|trans,                'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
                         {{ sortHeader('works_read', 'stats.rankings.col_series_works'|trans,         'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
                         {{ sortHeader('words_read', 'stats.rankings.col_series_words'|trans,         'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}

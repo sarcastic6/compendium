@@ -10,6 +10,18 @@
     - col, label, align, extraClass, sortColumn, sortDir,
       rankingRoute, rankingRouteParams, year
 #}
+{#
+    staticHeader — non-sortable column header that matches the height of sortHeader.
+#}
+{% macro staticHeader(label, align, extraClass) %}
+    <th class="text-{{ align }}{{ extraClass ? ' ' ~ extraClass : '' }}">
+        <div class="d-flex flex-column align-items-{{ align == 'end' ? 'end' : 'start' }} gap-1 text-muted">
+            <span>{{ label }}</span>
+            <i class="bi bi-chevron-expand opacity-0" style="font-size: 0.6em;" aria-hidden="true"></i>
+        </div>
+    </th>
+{% endmacro %}
+
 {% macro sortHeader(col, label, align, extraClass, sortColumn, sortDir, rankingRoute, rankingRouteParams, year) %}
     {% set isActive = (sortColumn == col) %}
     {% set nextDir = (isActive and sortDir == 'desc') ? 'asc' : 'desc' %}
