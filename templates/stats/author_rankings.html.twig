@@ -7,92 +7,93 @@
 {% block body %}
 {% include 'stats/_rankings_header.html.twig' %}
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        {% if rankings is empty %}
-            <p class="text-muted m-3">{{ 'stats.rankings.empty'|trans }}</p>
-        {% else %}
-            {# Year-scoped date params for fandom drill-down links #}
-            {% set yearParams = year ? {'dateFrom': year ~ '-01-01', 'dateTo': year ~ '-12-31'} : {} %}
-
-            <div class="table-responsive">
-                <table class="table table-striped table-hover mb-0 align-top">
-                    <thead>
+<div class="chart-card">
+    {% if rankings is empty %}
+        <div class="chart-card-body">
+            <p class="empty-state-text">{{ 'stats.rankings.empty'|trans }}</p>
+        </div>
+    {% else %}
+        {% set yearParams = year ? {'dateFrom': year ~ '-01-01', 'dateTo': year ~ '-12-31'} : {} %}
+        <div class="table-responsive">
+            <table class="data-table align-top">
+                <thead>
+                    <tr>
+                        {{ sortHeader('name',          'stats.rankings.col_name'|trans,          'start', '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                        {{ sortHeader('count',         'stats.rankings.col_count'|trans,         'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                        {{ sortHeader('words',         'stats.rankings.col_words'|trans,         'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                        <th>{{ 'stats.rankings.col_fandoms'|trans }}</th>
+                        {{ sortHeader('chapters',      'stats.rankings.col_chapters'|trans,      'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                        {{ sortHeader('wpc',           'stats.rankings.col_wpc'|trans,           'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                        {{ sortHeader('read',          'stats.rankings.col_read'|trans,          'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                        {{ sortHeader('read_in_words', 'stats.rankings.col_read_in_words'|trans, 'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                        {{ sortHeader('avg_review',    'stats.rankings.col_avg_review'|trans,    'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in rankings %}
                         <tr>
-                            {{ sortHeader('name',          'stats.rankings.col_name'|trans,          'start', '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
-                            {{ sortHeader('count',         'stats.rankings.col_count'|trans,         'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
-                            {{ sortHeader('words',         'stats.rankings.col_words'|trans,         'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
-                            {# Fandoms: not sortable — plain header #}
-                            <th>{{ 'stats.rankings.col_fandoms'|trans }}</th>
-                            {{ sortHeader('chapters',      'stats.rankings.col_chapters'|trans,      'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
-                            {{ sortHeader('wpc',           'stats.rankings.col_wpc'|trans,           'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
-                            {{ sortHeader('read',          'stats.rankings.col_read'|trans,          'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
-                            {{ sortHeader('read_in_words', 'stats.rankings.col_read_in_words'|trans, 'end',   '', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
-                            {{ sortHeader('avg_review',    'stats.rankings.col_avg_review'|trans,    'end',   'pe-3', sortColumn, sortDir, rankingRoute, rankingRouteParams, year) }}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in rankings %}
-                            <tr>
-                                <td>
-                                    <a href="{{ path('app_reading_entry_list', {'metadata': {'Author': item.name}}|merge(yearParams)) }}"
-                                       class="text-decoration-none">{{ item.name }}</a>
-                                    {% if item.ao3Link %}
-                                        <a href="{{ item.ao3Link }}" target="_blank" rel="noopener noreferrer"
-                                           class="ms-1 text-muted"
-                                           title="{{ 'stats.rankings.author_ao3_link'|trans }}">
-                                            <i class="bi bi-box-arrow-up-right"></i>
-                                        </a>
-                                    {% endif %}
-                                </td>
-                                <td class="text-end">{{ item.count }}</td>
-                                <td class="text-end">{{ item.totalWords|number_format(0, '.', ',') }}</td>
-                                <td>
-                                    {# Fandoms cell — inline with reordered columns #}
-                                    {% if item.fandoms is empty %}
-                                        <span class="text-muted">—</span>
-                                    {% else %}
-                                        {% for fandom in item.fandoms|slice(0, 3) %}
-                                            <div>
-                                                <a href="{{ path('app_reading_entry_list', {'metadata': {'Fandom': fandom}}|merge(yearParams)) }}"
-                                                   class="text-decoration-none small">{{ fandom }}</a>
-                                            </div>
-                                        {% endfor %}
-                                        {% if item.fandoms|length > 3 %}
-                                            <details>
-                                                <summary class="small text-muted" style="cursor: pointer">
-                                                    +{{ item.fandoms|length - 3 }} more
-                                                </summary>
-                                                {% for fandom in item.fandoms|slice(3) %}
-                                                    <div>
-                                                        <a href="{{ path('app_reading_entry_list', {'metadata': {'Fandom': fandom}}|merge(yearParams)) }}"
-                                                           class="text-decoration-none small">{{ fandom }}</a>
-                                                    </div>
-                                                {% endfor %}
-                                            </details>
+                            <td>
+                                <div class="rank-name-cell">
+                                    <div class="rank-avatar" style="{{ cover_gradient(item.name|length) }}">
+                                        {{ item.name|first|upper }}
+                                    </div>
+                                    <div class="rank-name-text">
+                                        <a href="{{ path('app_reading_entry_list', {'metadata': {'Author': item.name}}|merge(yearParams)) }}"
+                                           class="rank-name-primary text-decoration-none">{{ item.name }}</a>
+                                        {% if item.ao3Link %}
+                                            <a href="{{ item.ao3Link }}" target="_blank" rel="noopener noreferrer"
+                                               class="ms-1" style="color: var(--color-text-faint); font-size: var(--text-xs);"
+                                               title="{{ 'stats.rankings.author_ao3_link'|trans }}">
+                                                <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                                            </a>
                                         {% endif %}
-                                    {% endif %}
-                                </td>
-                                <td class="text-end">{{ item.totalChapters > 0 ? item.totalChapters|number_format(0, '.', ',') : '—' }}</td>
-                                <td class="text-end">{{ item.wordsPerChapter is not null ? item.wordsPerChapter|number_format(0, '.', ',') : '—' }}</td>
-                                <td class="text-end">{{ item.read }}</td>
-                                <td class="text-end">{{ item.readInWords > 0 ? item.readInWords|number_format(0, '.', ',') : '—' }}</td>
-                                {% if item.avgReview is not null %}
-                                    {% if item.avgReview <= 2.5 %}
-                                        {% set reviewHue = ((item.avgReview - 1) / 1.5 * 60)|round %}
-                                    {% else %}
-                                        {% set reviewHue = (60 + (item.avgReview - 2.5) / 2.5 * 60)|round %}
-                                    {% endif %}
-                                    <td class="text-end pe-3" style="background-color: hsl({{ reviewHue }}, 70%, 85%)">{{ item.avgReview }}</td>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end tabular-nums">{{ item.count }}</td>
+                            <td class="text-end tabular-nums">{{ item.totalWords|number_format(0, '.', ',') }}</td>
+                            <td>
+                                {% if item.fandoms is empty %}
+                                    <span style="color: var(--color-text-faint)">—</span>
                                 {% else %}
-                                    <td class="text-end pe-3">—</td>
+                                    {% for fandom in item.fandoms|slice(0, 3) %}
+                                        <div>
+                                            <a href="{{ path('app_reading_entry_list', {'metadata': {'Fandom': fandom}}|merge(yearParams)) }}"
+                                               class="text-decoration-none" style="font-size: var(--text-xs); color: var(--color-primary-light);">{{ fandom }}</a>
+                                        </div>
+                                    {% endfor %}
+                                    {% if item.fandoms|length > 3 %}
+                                        <details>
+                                            <summary style="font-size: var(--text-xs); color: var(--color-text-muted); cursor: pointer;">
+                                                +{{ item.fandoms|length - 3 }} more
+                                            </summary>
+                                            {% for fandom in item.fandoms|slice(3) %}
+                                                <div>
+                                                    <a href="{{ path('app_reading_entry_list', {'metadata': {'Fandom': fandom}}|merge(yearParams)) }}"
+                                                       class="text-decoration-none" style="font-size: var(--text-xs); color: var(--color-primary-light);">{{ fandom }}</a>
+                                                </div>
+                                            {% endfor %}
+                                        </details>
+                                    {% endif %}
                                 {% endif %}
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endif %}
-    </div>
+                            </td>
+                            <td class="text-end tabular-nums">{{ item.totalChapters > 0 ? item.totalChapters|number_format(0, '.', ',') : '—' }}</td>
+                            <td class="text-end tabular-nums">{{ item.wordsPerChapter is not null ? item.wordsPerChapter|number_format(0, '.', ',') : '—' }}</td>
+                            <td class="text-end tabular-nums">{{ item.read }}</td>
+                            <td class="text-end tabular-nums">{{ item.readInWords > 0 ? item.readInWords|number_format(0, '.', ',') : '—' }}</td>
+                            {% if item.avgReview is not null %}
+                                {% set reviewHue = item.avgReview <= 2.5 ? ((item.avgReview - 1) / 1.5 * 60)|round : (60 + (item.avgReview - 2.5) / 2.5 * 60)|round %}
+                                <td class="text-end">
+                                    <span class="avg-review-display" style="color: hsl({{ reviewHue }}, 55%, 38%)">{{ item.avgReview }}</span>
+                                </td>
+                            {% else %}
+                                <td class="text-end" style="color: var(--color-text-faint)">—</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

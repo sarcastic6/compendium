@@ -48,6 +48,16 @@
     }
 }
 
+// Active sort column highlight
+.th-sort-active {
+    background: var(--color-surface-tint);
+    color: var(--color-primary) !important;
+
+    a {
+        color: var(--color-primary) !important;
+    }
+}
+
 // Sortable column header
 .sortable-header {
     cursor: pointer;
