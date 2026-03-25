@@ -12,7 +12,7 @@
 
 <div class="row g-4">
     <div class="col-md-4">
-        <div class="chart-card">
+        <div class="chart-card h-100">
             <div class="chart-card-body" style="display: flex; flex-direction: column; gap: var(--space-3);">
                 <div style="font-size: 1.5rem; color: var(--color-primary-light);">
                     <i class="bi bi-bookmark-check" aria-hidden="true"></i>
@@ -25,14 +25,14 @@
                         {{ 'admin.statuses.description'|trans }}
                     </div>
                 </div>
-                <a href="{{ path('app_admin_status_list') }}" class="btn btn-primary btn-sm" style="align-self: flex-start;">
+                <a href="{{ path('app_admin_status_list') }}" class="btn btn-primary btn-sm" style="align-self: flex-start; margin-top: auto;">
                     {{ 'admin.statuses.manage'|trans }}
                 </a>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="chart-card">
+        <div class="chart-card h-100">
             <div class="chart-card-body" style="display: flex; flex-direction: column; gap: var(--space-3);">
                 <div style="font-size: 1.5rem; color: var(--color-primary-light);">
                     <i class="bi bi-tags" aria-hidden="true"></i>
@@ -45,7 +45,7 @@
                         {{ 'admin.metadata_types.description'|trans }}
                     </div>
                 </div>
-                <a href="{{ path('app_admin_metadata_type_list') }}" class="btn btn-primary btn-sm" style="align-self: flex-start;">
+                <a href="{{ path('app_admin_metadata_type_list') }}" class="btn btn-primary btn-sm" style="align-self: flex-start; margin-top: auto;">
                     {{ 'admin.metadata_types.manage'|trans }}
                 </a>
             </div>
