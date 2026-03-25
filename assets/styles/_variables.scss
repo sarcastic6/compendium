@@ -137,6 +137,17 @@
     --bs-link-color:          var(--color-primary-light);
     --bs-link-hover-color:    var(--color-primary);
     --bs-focus-ring-color:    rgba(59, 107, 82, 0.25);
+
+    // Dropdown (autocomplete): use white surface so it stands out from the cream page background.
+    // Bootstrap 5.3 inherits --bs-body-bg for dropdown-bg, which would give us the cream page colour.
+    --bs-dropdown-bg:                 var(--color-surface);
+    --bs-dropdown-border-color:       var(--color-border);
+    --bs-dropdown-box-shadow:         var(--shadow-md);
+    --bs-dropdown-link-color:         var(--color-text-body);
+    --bs-dropdown-link-hover-bg:      var(--color-surface-tint);
+    --bs-dropdown-link-hover-color:   var(--color-text-body);
+    --bs-dropdown-link-active-bg:     var(--color-secondary-bg);
+    --bs-dropdown-link-active-color:  var(--color-text-body);
 }
 
 // -------------------------------------------------------------------------

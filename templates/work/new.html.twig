@@ -60,7 +60,7 @@
 <hr>
 
 {# Authors — multi-value autocomplete #}
-<div class="mb-4"
+<div class="mb-4 position-relative"
      data-controller="autocomplete"
      data-autocomplete-url-value="{{ path('api_metadata_search', {'typeId': authorTypeId}) }}"
      data-autocomplete-allow-new-value="true"
@@ -137,7 +137,7 @@
 {% else %}
 
     {# Autocomplete section for high-cardinality types (Fandom, Relationships, Character, Tag, …) #}
-    <div class="mb-4"
+    <div class="mb-4 position-relative"
          data-controller="autocomplete"
          data-autocomplete-url-value="{{ path('api_metadata_search', {'typeId': metadataType.id}) }}"
          data-autocomplete-allow-new-value="true"
