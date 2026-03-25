@@ -15,6 +15,7 @@ use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInte
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -29,6 +30,7 @@ class MfaSetupController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly TotpAuthenticatorInterface $totpAuthenticator,
         private readonly TotpSecretEncryptionService $encryptionService,
+        private readonly UserPasswordHasherInterface $passwordHasher,
     ) {
     }
 
@@ -138,6 +140,14 @@ class MfaSetupController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
+        // Require current password before disabling a security feature.
+        $currentPassword = (string) $request->request->get('current_password', '');
+        if (!$this->passwordHasher->isPasswordValid($user, $currentPassword)) {
+            $this->addFlash('error', 'profile.current_password.invalid');
+
+            return $this->redirectToRoute('app_mfa_setup');
+        }
+
         $methods = $user->getMfaMethods() !== null
             ? array_filter(explode(',', $user->getMfaMethods()), static fn (string $m) => $m !== 'totp')
             : [];
@@ -193,6 +203,14 @@ class MfaSetupController extends AbstractController
 
         /** @var User $user */
         $user = $this->getUser();
+
+        // Require current password before disabling a security feature.
+        $currentPassword = (string) $request->request->get('current_password', '');
+        if (!$this->passwordHasher->isPasswordValid($user, $currentPassword)) {
+            $this->addFlash('error', 'profile.current_password.invalid');
+
+            return $this->redirectToRoute('app_mfa_setup');
+        }
 
         $methods = $user->getMfaMethods() !== null
             ? array_filter(explode(',', $user->getMfaMethods()), static fn (string $m) => $m !== 'email')

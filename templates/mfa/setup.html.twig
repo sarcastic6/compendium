@@ -15,6 +15,11 @@
                     <p class="text-success"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> {{ 'mfa.status.enabled'|trans }}</p>
                     <form method="post" action="{{ path('app_mfa_totp_disable') }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('mfa_totp_disable') }}">
+                        <div class="mb-3">
+                            <label for="totp_current_password" class="form-label">{{ 'profile.field.current_password'|trans }}</label>
+                            <input type="password" class="form-control" id="totp_current_password"
+                                   name="current_password" required autocomplete="current-password">
+                        </div>
                         <button type="submit" class="btn btn-outline-danger">
                             {{ 'mfa.totp.disable'|trans }}
                         </button>
@@ -38,6 +43,11 @@
                     <p class="text-success"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> {{ 'mfa.status.enabled'|trans }}</p>
                     <form method="post" action="{{ path('app_mfa_email_disable') }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('mfa_email_disable') }}">
+                        <div class="mb-3">
+                            <label for="email_current_password" class="form-label">{{ 'profile.field.current_password'|trans }}</label>
+                            <input type="password" class="form-control" id="email_current_password"
+                                   name="current_password" required autocomplete="current-password">
+                        </div>
                         <button type="submit" class="btn btn-outline-danger">
                             {{ 'mfa.email.disable'|trans }}
                         </button>
