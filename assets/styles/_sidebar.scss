@@ -50,6 +50,12 @@
     }
 }
 
+.sidebar-new-entry {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
 .sidebar-brand-sub {
     font-size: var(--text-xs);
     font-weight: var(--weight-medium);
@@ -221,6 +227,14 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
+
+    // When the user block lives inside the footer, strip its own padding/border
+    // (the footer already provides the outer padding and top border).
+    .sidebar-user {
+        padding: 0 0 var(--space-2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        border-top: none;
+    }
 }
 
 .sidebar-footer-link {
