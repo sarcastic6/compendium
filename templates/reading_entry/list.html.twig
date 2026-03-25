@@ -486,15 +486,6 @@
                                     <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    {% if not entry.work.deleted %}
-                                        <li>
-                                            <a class="dropdown-item" href="{{ path('app_work_show', {id: entry.work.id}) }}">
-                                                <i class="bi bi-book me-2" aria-hidden="true"></i>
-                                                {{ 'reading.entry.view_work'|trans }}
-                                            </a>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                    {% endif %}
                                     <li>
                                         <a class="dropdown-item" href="{{ path('app_reading_entry_edit', {id: entry.id}) }}">
                                             <i class="bi bi-pencil me-2" aria-hidden="true"></i>

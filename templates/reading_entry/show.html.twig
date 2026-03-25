@@ -1,5 +1,15 @@
 {% extends 'base.html.twig' %}
 
+{% macro metadataChip(item, sourceType, chipClass) %}
+    {% set link = item.getLinkForSource(sourceType) %}
+    {% if link %}
+        <a href="{{ link }}" target="_blank" rel="noopener noreferrer"
+           class="chip {{ chipClass }} text-decoration-none">{{ item.name }}</a>
+    {% else %}
+        <span class="chip {{ chipClass }}">{{ item.name }}</span>
+    {% endif %}
+{% endmacro %}
+
 {% block title %}
     {% if entry.work.deleted %}
         {{ 'reading.entry.title'|trans }}
@@ -19,11 +29,14 @@
         </a>
     </div>
     <div class="page-header-actions">
-        {% if not entry.work.deleted %}
-            <a href="{{ path('app_work_show', {id: entry.work.id}) }}" class="btn btn-ghost btn-sm">
-                <i class="bi bi-book" aria-hidden="true"></i>
-                {{ 'reading.entry.view_work'|trans }}
-            </a>
+        {% if not entry.work.deleted and entry.work.link and entry.work.sourceType.value != 'Manual' %}
+            <form method="post" action="{{ path('app_work_refresh', {id: entry.work.id}) }}" class="d-inline">
+                <input type="hidden" name="_token" value="{{ csrf_token('refresh_work_' ~ entry.work.id) }}">
+                <button type="submit" class="btn btn-ghost btn-sm">
+                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                    {{ 'work.refresh.button'|trans({'%source%': entry.work.sourceType.value}) }}
+                </button>
+            </form>
         {% endif %}
         <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}" class="btn btn-secondary btn-sm">
             <i class="bi bi-pencil" aria-hidden="true"></i>
@@ -39,11 +52,11 @@
 
 <div class="row g-4 g-lg-5">
 
-    {# ── Left column: cover art + status + actions ── #}
+    {# ── Left column: cover + work badges + reading-specific data ── #}
     <div class="col-12 col-md-4 col-lg-3">
         <div class="work-cover-col">
 
-            {# Typographic cover #}
+            {# Large typographic cover #}
             {% if entry.work.deleted %}
                 <div class="cover cover-lg" style="background: var(--color-surface-tint); opacity: 0.5;" aria-hidden="true">
                     <span class="cover-title" style="color: var(--color-text-faint);">{{ 'reading.entry.work_deleted'|trans }}</span>
@@ -56,110 +69,234 @@
                 </div>
             {% endif %}
 
-            {# Status chip #}
-            {% set statusSlug = entry.status.name|lower|replace({' ': '-'}) %}
-            <div class="mt-3">
-                <span class="chip chip--{{ statusSlug }}">{{ entry.status.name }}</span>
-            </div>
-
-            {# Starred indicator #}
-            {% if entry.starred %}
-                <div class="mt-2" style="color: #f4b942; font-size: var(--text-sm);">
-                    <i class="bi bi-heart-fill" aria-label="{{ 'reading.field.starred'|trans }}"></i>
-                    {{ 'reading.field.starred'|trans }}
+            {# Type + source badges #}
+            {% if not entry.work.deleted %}
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <span class="chip chip-tag">{{ entry.work.type.value }}</span>
+                    {% if entry.work.link %}
+                        <a href="{{ entry.work.link }}" target="_blank" rel="noopener noreferrer"
+                           class="chip chip-tag text-decoration-none">
+                            {{ entry.work.sourceType.value }}
+                            <i class="bi bi-box-arrow-up-right" style="font-size: 0.65em;" aria-hidden="true"></i>
+                        </a>
+                    {% else %}
+                        <span class="chip chip-tag">{{ entry.work.sourceType.value }}</span>
+                    {% endif %}
                 </div>
+
+                {# Series info #}
+                {% if entry.work.series %}
+                    <div class="work-series-info">
+                        {% set seriesLink = entry.work.series.getLinkForSource(entry.work.sourceType) %}
+                        <i class="bi bi-collection me-1" aria-hidden="true"></i>
+                        {% if seriesLink %}
+                            <a href="{{ seriesLink }}" target="_blank" rel="noopener noreferrer">{{ entry.work.series.name }}</a>
+                        {% else %}
+                            {{ entry.work.series.name }}
+                        {% endif %}
+                        {% if entry.work.placeInSeries %}
+                            &nbsp;#{{ entry.work.placeInSeries }}
+                        {% endif %}
+                    </div>
+                {% endif %}
             {% endif %}
+
+            {# ── Reading-specific data ── #}
+            <div class="mt-4">
+
+                {# Status chip #}
+                {% set statusSlug = entry.status.name|lower|replace({' ': '-'}) %}
+                <div>
+                    <span class="chip chip--{{ statusSlug }}">{{ entry.status.name }}</span>
+                    {% if entry.starred %}
+                        <span class="ms-2" style="color: #f4b942; font-size: var(--text-sm);">
+                            <i class="bi bi-heart-fill" aria-label="{{ 'reading.field.starred'|trans }}"></i>
+                        </span>
+                    {% endif %}
+                </div>
+
+                {# Dates + last chapter #}
+                <div class="work-detail-stats mt-3">
+                    {% if entry.dateStarted %}
+                        <div class="work-stat-box">
+                            <span class="work-stat-value">{{ entry.dateStarted|date }}</span>
+                            <span class="work-stat-label">{{ 'reading.field.date_started'|trans }}</span>
+                        </div>
+                    {% endif %}
+                    {% if entry.dateFinished %}
+                        <div class="work-stat-box">
+                            <span class="work-stat-value">{{ entry.dateFinished|date }}</span>
+                            <span class="work-stat-label">{{ 'reading.field.date_finished'|trans }}</span>
+                        </div>
+                    {% endif %}
+                    {% if entry.lastReadChapter %}
+                        <div class="work-stat-box">
+                            <span class="work-stat-value">{{ entry.lastReadChapter }}</span>
+                            <span class="work-stat-label">{{ 'reading.field.last_chapter'|trans }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {# Review + spice #}
+                {% if entry.reviewStars or entry.spiceStars is not null %}
+                    <div class="d-flex flex-wrap gap-3 mt-3" style="font-size: var(--text-sm); color: var(--color-text-muted);">
+                        {% if entry.reviewStars %}
+                            <div>
+                                <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); display: block; margin-bottom: 2px;">
+                                    {{ 'reading.field.review_stars'|trans }}
+                                </span>
+                                <span aria-label="{{ entry.reviewStars }} {{ 'reading.field.review_stars'|trans }}">
+                                    {% for i in range(1, entry.reviewStars) %}⭐{% endfor %}
+                                </span>
+                            </div>
+                        {% endif %}
+                        {% if entry.spiceStars is not null %}
+                            <div>
+                                <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); display: block; margin-bottom: 2px;">
+                                    {{ 'reading.field.spice_stars'|trans }}
+                                </span>
+                                {% if entry.spiceStars == 0 %}
+                                    <span aria-label="No spice">🚫</span>
+                                {% else %}
+                                    <span aria-label="{{ entry.spiceStars }} out of 5">
+                                        {% for i in range(1, entry.spiceStars) %}🌶️{% endfor %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {# Main pairing #}
+                {% if entry.mainPairing %}
+                    <div class="mt-3">
+                        <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); color: var(--color-text-muted); display: block; margin-bottom: var(--space-1);">
+                            {{ 'reading.field.main_pairing'|trans }}
+                        </span>
+                        <span class="chip chip-tag chip-tag--full">{{ entry.mainPairing.name }}</span>
+                    </div>
+                {% endif %}
+
+            </div>
 
         </div>
     </div>
 
-    {# ── Right column: entry details ── #}
+    {# ── Right column: work details + comments + summary ── #}
     <div class="col-12 col-md-8 col-lg-9">
 
-        {# Work title + authors #}
+        {# Title + last updated date #}
         {% if entry.work.deleted %}
             <h1 class="work-detail-title" style="color: var(--color-text-faint);">
                 {{ 'reading.entry.work_deleted'|trans }}
             </h1>
         {% else %}
-            <h1 class="work-detail-title">
-                <a href="{{ path('app_work_show', {id: entry.work.id}) }}"
-                   class="text-decoration-none" style="color: inherit;">{{ entry.work.title }}</a>
-                {% if entry.work.starred %}
-                    <i class="bi bi-star-fill ms-1"
-                       style="color: #f4b942; font-size: 0.6em; vertical-align: middle;"
-                       aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+            <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+                <h1 class="work-detail-title">
+                    {{ entry.work.title }}
+                    {% if entry.work.starred %}
+                        <i class="bi bi-star-fill ms-1"
+                           style="color: #f4b942; font-size: 0.6em; vertical-align: middle;"
+                           aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+                    {% endif %}
+                </h1>
+                {% if entry.work.lastUpdatedDate %}
+                    <span class="work-detail-updated">
+                        {{ 'work.show.field.last_updated_date'|trans }}: {{ entry.work.lastUpdatedDate|date }}
+                    </span>
                 {% endif %}
-            </h1>
+            </div>
+
+            {# Authors #}
             {% if entry.work.authors is not empty %}
-                <p class="work-detail-authors mt-1 mb-0">
+                <p class="work-detail-authors mb-0">
                     {% for author in entry.work.authors %}
-                        {{ author.name }}{% if not loop.last %}, {% endif %}
+                        {% set authorLink = author.getLinkForSource(entry.work.sourceType) %}
+                        {% if authorLink %}
+                            <a href="{{ authorLink }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
+                        {% else %}
+                            {{ author.name }}
+                        {% endif %}
+                        {%- if not loop.last %}, {% endif %}
                     {% endfor %}
                 </p>
             {% endif %}
         {% endif %}
 
-        {# Stat boxes: dates + last chapter #}
-        <div class="work-detail-stats">
-            {% if entry.dateStarted %}
-                <div class="work-stat-box">
-                    <span class="work-stat-value">{{ entry.dateStarted|date }}</span>
-                    <span class="work-stat-label">{{ 'reading.field.date_started'|trans }}</span>
-                </div>
-            {% endif %}
-            {% if entry.dateFinished %}
-                <div class="work-stat-box">
-                    <span class="work-stat-value">{{ entry.dateFinished|date }}</span>
-                    <span class="work-stat-label">{{ 'reading.field.date_finished'|trans }}</span>
-                </div>
-            {% endif %}
-            {% if entry.lastReadChapter %}
-                <div class="work-stat-box">
-                    <span class="work-stat-value">{{ entry.lastReadChapter }}</span>
-                    <span class="work-stat-label">{{ 'reading.field.last_chapter'|trans }}</span>
-                </div>
-            {% endif %}
-        </div>
-
-        {# Review + spice #}
-        {% if entry.reviewStars or entry.spiceStars is not null %}
-            <div class="d-flex flex-wrap gap-3 mt-4" style="font-size: var(--text-sm); color: var(--color-text-muted);">
-                {% if entry.reviewStars %}
-                    <div>
-                        <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); margin-right: var(--space-2);">
-                            {{ 'reading.field.review_stars'|trans }}
-                        </span>
-                        <span aria-label="{{ entry.reviewStars }} {{ 'reading.field.review_stars'|trans }}">
-                            {% for i in range(1, entry.reviewStars) %}⭐{% endfor %}
-                        </span>
+        {# Work stat boxes: words / chapters / published / language #}
+        {% if entry.work.words or entry.work.chapters or entry.work.publishedDate or entry.work.language %}
+            <div class="work-detail-stats">
+                {% if entry.work.words %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value">{{ entry.work.words|number_format }}</span>
+                        <span class="work-stat-label">{{ 'work.field.words'|trans }}</span>
                     </div>
                 {% endif %}
-                {% if entry.spiceStars is not null %}
-                    <div>
-                        <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); margin-right: var(--space-2);">
-                            {{ 'reading.field.spice_stars'|trans }}
-                        </span>
-                        {% if entry.spiceStars == 0 %}
-                            <span aria-label="No spice">🚫</span>
-                        {% else %}
-                            <span aria-label="{{ entry.spiceStars }} out of 5">
-                                {% for i in range(1, entry.spiceStars) %}🌶️{% endfor %}
-                            </span>
-                        {% endif %}
+                {% if entry.work.chapters %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value">{{ entry.work.chapters }}</span>
+                        <span class="work-stat-label">{{ 'work.field.chapters'|trans }}</span>
+                    </div>
+                {% endif %}
+                {% if entry.work.publishedDate %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value" title="{{ entry.work.publishedDate|date }}">{{ entry.work.publishedDate|date('Y') }}</span>
+                        <span class="work-stat-label">{{ 'work.show.field.published_date'|trans }}</span>
+                    </div>
+                {% endif %}
+                {% if entry.work.language %}
+                    <div class="work-stat-box">
+                        <span class="work-stat-value">{{ entry.work.language.name }}</span>
+                        <span class="work-stat-label">{{ 'work.field.language'|trans }}</span>
                     </div>
                 {% endif %}
             </div>
         {% endif %}
 
-        {# Main pairing #}
-        {% if entry.mainPairing %}
-            <div class="mt-3">
-                <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); color: var(--color-text-muted); display: block; margin-bottom: var(--space-1);">
-                    {{ 'reading.field.main_pairing'|trans }}
-                </span>
-                <span class="chip chip-tag chip-tag--full">{{ entry.mainPairing.name }}</span>
-            </div>
+        {# Metadata chips, grouped by type #}
+        {% if not entry.work.deleted %}
+            {% set metadataTypeOrder = ['Warning', 'Rating', 'Category', 'Fandom', 'Relationships', 'Character', 'Tag'] %}
+            {% set grouped = {} %}
+            {% for item in entry.work.metadata %}
+                {% set key = item.metadataType.name %}
+                {% if key != 'Author' %}
+                    {% if key not in grouped|keys %}
+                        {% set grouped = grouped|merge({(key): []}) %}
+                    {% endif %}
+                    {% set grouped = grouped|merge({(key): grouped[key]|merge([item])}) %}
+                {% endif %}
+            {% endfor %}
+
+            {% if grouped is not empty %}
+                <div class="work-detail-metadata mt-4">
+                    {% for typeName in metadataTypeOrder %}
+                        {% if typeName in grouped|keys %}
+                            {% set chipClass = typeName == 'Rating' ? 'chip-tag-rating' : (typeName == 'Warning' ? 'chip-tag-warning' : 'chip-tag') %}
+                            <div class="work-meta-group">
+                                <span class="work-meta-label">{{ typeName }}</span>
+                                <div class="work-meta-chips">
+                                    {% for item in grouped[typeName] %}
+                                        {{ _self.metadataChip(item, entry.work.sourceType, chipClass) }}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    {# Any types not in the preferred order #}
+                    {% for typeName, items in grouped %}
+                        {% if typeName not in metadataTypeOrder %}
+                            <div class="work-meta-group">
+                                <span class="work-meta-label">{{ typeName }}</span>
+                                <div class="work-meta-chips">
+                                    {% for item in items %}
+                                        {{ _self.metadataChip(item, entry.work.sourceType, 'chip-tag') }}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
         {% endif %}
 
         {# Comments #}
@@ -171,6 +308,16 @@
                 <div class="chart-card">
                     <div class="chart-card-body" style="white-space: pre-wrap; font-size: var(--text-sm); color: var(--color-text-body);">{{ entry.comments }}</div>
                 </div>
+            </div>
+        {% endif %}
+
+        {# Summary #}
+        {% if not entry.work.deleted and entry.work.summary %}
+            <div class="mt-4">
+                <span style="text-transform: uppercase; letter-spacing: 0.05em; font-size: var(--text-xs); color: var(--color-text-muted); display: block; margin-bottom: var(--space-2);">
+                    {{ 'work.field.summary'|trans }}
+                </span>
+                <div class="work-detail-summary">{{ entry.work.summary }}</div>
             </div>
         {% endif %}
 
