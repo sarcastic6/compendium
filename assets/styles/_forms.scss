@@ -132,6 +132,24 @@
 }
 
 // -------------------------------------------------------------------------
+// Autocomplete dropdown
+// Bootstrap 5.3 scopes --bs-dropdown-* onto .dropdown-menu itself, so
+// :root overrides are shadowed. We must re-declare at the same level,
+// after Bootstrap loads, to get our surface colour and shadow.
+// -------------------------------------------------------------------------
+
+.dropdown-menu {
+    --bs-dropdown-bg:               var(--color-surface);
+    --bs-dropdown-border-color:     var(--color-border);
+    --bs-dropdown-box-shadow:       var(--shadow-md);
+    --bs-dropdown-link-color:       var(--color-text-body);
+    --bs-dropdown-link-hover-bg:    var(--color-surface-tint);
+    --bs-dropdown-link-hover-color: var(--color-text-body);
+    --bs-dropdown-link-active-bg:   var(--color-secondary-bg);
+    --bs-dropdown-link-active-color: var(--color-text-body);
+}
+
+// -------------------------------------------------------------------------
 // Help text / error text
 // -------------------------------------------------------------------------
 
