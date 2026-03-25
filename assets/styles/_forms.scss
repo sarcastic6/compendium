@@ -77,9 +77,14 @@
     font-size: var(--text-sm);
     color: var(--color-text-body);
     background-color: var(--color-surface);
+    // Restore native appearance so OS popup renders option highlights full-width.
+    // Bootstrap sets appearance: none + a custom SVG arrow, which causes the
+    // native dropdown popup to highlight options at content-width only (macOS/Chrome).
+    appearance: auto;
+    background-image: none;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
     min-height: 36px;
     width: 100%;
     cursor: pointer;
