@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'profile.change_email'|trans }}{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="chart-card">
+            <div class="chart-card-body">
+                <a href="{{ path('app_profile') }}" class="back-link mb-4 d-block">← {{ 'profile.heading'|trans }}</a>
+                <h1 class="page-title mb-4">{{ 'profile.change_email'|trans }}</h1>
+                <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-4);">
+                    {{ 'profile.current_email'|trans }}: <strong>{{ app.user.email }}</strong>
+                </p>
+                {{ form_start(form, {'attr': {'novalidate': true}}) }}
+                    {{ form_row(form.currentPassword) }}
+                    {{ form_row(form.newEmail) }}
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
+                        <a href="{{ path('app_profile') }}" class="btn btn-ghost">{{ 'action.cancel'|trans }}</a>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

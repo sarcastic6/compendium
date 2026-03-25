@@ -6,19 +6,32 @@
 <h1 class="h3 mb-4">{{ 'profile.heading'|trans }}</h1>
 
 <div class="row g-4">
-    <div class="col-md-6">
+    {# ── Left column: Display Name, then Change Email ── #}
+    <div class="col-md-6 d-flex flex-column gap-4">
         <div class="card">
             <div class="card-body">
-                <h2 class="h5 card-title">Profile Details</h2>
+                <h2 class="h5 card-title">{{ 'profile.display_name'|trans }}</h2>
                 {{ form_start(profileForm) }}
                     {{ form_row(profileForm.name) }}
-                    {{ form_row(profileForm.email) }}
                     <button type="submit" class="btn btn-primary mt-2">{{ 'action.save'|trans }}</button>
                 {{ form_end(profileForm) }}
             </div>
         </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5 card-title">{{ 'profile.change_email'|trans }}</h2>
+                <p class="text-muted mb-3" style="font-size: var(--text-sm);">
+                    {{ 'profile.current_email'|trans }}: <strong>{{ app.user.email }}</strong>
+                </p>
+                <a href="{{ path('app_profile_change_email') }}" class="btn btn-outline-secondary">
+                    {{ 'profile.change_email'|trans }}
+                </a>
+            </div>
+        </div>
     </div>
 
+    {# ── Right column: Change Password, then 2FA ── #}
     <div class="col-md-6 d-flex flex-column gap-4">
         <div class="card">
             <div class="card-body">

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Form\ChangeEmailFormType;
 use App\Form\ChangePasswordFormType;
 use App\Form\ProfileFormType;
+use App\Repository\UserRepository;
 use App\Service\PasswordValidationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,6 +25,7 @@ class ProfileController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly UserRepository $userRepository,
     ) {
     }
 
@@ -32,23 +35,10 @@ class ProfileController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $originalEmail = $user->getEmail();
-
         $profileForm = $this->createForm(ProfileFormType::class, $user);
         $profileForm->handleRequest($request);
 
         if ($profileForm->isSubmitted() && $profileForm->isValid()) {
-            // Re-authentication is required only when changing the email address, since
-            // a stolen session could otherwise silently lock out the legitimate account holder.
-            if ($user->getEmail() !== $originalEmail) {
-                $currentPassword = (string) $profileForm->get('currentPassword')->getData();
-                if ($currentPassword === '' || !$this->passwordHasher->isPasswordValid($user, $currentPassword)) {
-                    $this->addFlash('error', 'profile.current_password.invalid');
-
-                    return $this->render('profile/index.html.twig', ['profileForm' => $profileForm]);
-                }
-            }
-
             $this->entityManager->flush();
             $this->addFlash('success', 'profile.saved');
 
@@ -57,6 +47,46 @@ class ProfileController extends AbstractController
 
         return $this->render('profile/index.html.twig', [
             'profileForm' => $profileForm,
+        ]);
+    }
+
+    #[Route('/change-email', name: 'app_profile_change_email', methods: ['GET', 'POST'])]
+    public function changeEmail(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $form = $this->createForm(ChangeEmailFormType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Re-authentication required — changing email could lock out the account holder.
+            $currentPassword = (string) $form->get('currentPassword')->getData();
+            if (!$this->passwordHasher->isPasswordValid($user, $currentPassword)) {
+                $this->addFlash('error', 'profile.current_password.invalid');
+
+                return $this->render('profile/change_email.html.twig', ['form' => $form]);
+            }
+
+            $newEmail = (string) $form->get('newEmail')->getData();
+
+            // Reject if the address is already taken by another account.
+            $existing = $this->userRepository->findOneBy(['email' => $newEmail]);
+            if ($existing !== null && $existing->getId() !== $user->getId()) {
+                $this->addFlash('error', 'profile.email.already_in_use');
+
+                return $this->render('profile/change_email.html.twig', ['form' => $form]);
+            }
+
+            $user->setEmail($newEmail);
+            $this->entityManager->flush();
+            $this->addFlash('success', 'profile.email_changed');
+
+            return $this->redirectToRoute('app_profile');
+        }
+
+        return $this->render('profile/change_email.html.twig', [
+            'form' => $form,
         ]);
     }
 
