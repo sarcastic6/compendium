@@ -196,7 +196,7 @@
                 <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">
                     {{ 'action.cancel'|trans }}
                 </button>
-                <form method="post" action="{{ path('app_reading_entry_delete', {id: entry.id}) }}">
+                <form id="deleteForm" method="post" action="{{ path('app_reading_entry_delete', {id: entry.id}) }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete-entry-' ~ entry.id) }}">
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-trash" aria-hidden="true"></i>
