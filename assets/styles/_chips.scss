@@ -111,6 +111,13 @@
     text-overflow: ellipsis;
 }
 
+.chip-tag--full {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+}
+
 .chip-tag-rating {
     background: #f0e6d3;
     color: #7a4a18;
