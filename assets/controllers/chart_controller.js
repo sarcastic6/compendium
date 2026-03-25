@@ -42,15 +42,22 @@ export default class extends Controller {
     async connect() {
         const { Chart } = await import('chart.js/auto');
 
+        // 12-step earthy palette — spans the full colour wheel at low-to-moderate
+        // saturation so charts look varied while staying on-brand with the
+        // forest-green / teal / amber aesthetic of the rest of the UI.
         const defaultColors = [
-            'rgba(59,107,82,0.80)',    // primary-light green
-            'rgba(139,168,136,0.85)',  // secondary sage
-            'rgba(168,207,197,0.85)',  // tertiary teal
-            'rgba(90,138,116,0.80)',   // mid forest green
-            'rgba(196,164,113,0.80)',  // warm amber
-            'rgba(27,48,34,0.85)',     // deep forest
-            'rgba(106,153,85,0.80)',   // leaf green
-            'rgba(158,170,165,0.80)',  // cool grey-green
+            'rgba(59,  107, 82,  0.85)', // forest green   (brand primary-light)
+            'rgba(88,  168, 158, 0.85)', // teal
+            'rgba(194, 155, 80,  0.85)', // golden amber
+            'rgba(185, 118, 98,  0.85)', // terracotta
+            'rgba(139, 168, 136, 0.85)', // sage            (brand secondary)
+            'rgba(100, 130, 175, 0.85)', // dusty blue
+            'rgba(106, 155, 90,  0.85)', // leaf green
+            'rgba(148, 118, 158, 0.85)', // dusty mauve
+            'rgba(160, 205, 198, 0.85)', // light mint      (near tertiary)
+            'rgba(158, 135, 100, 0.85)', // warm khaki
+            'rgba(115, 148, 165, 0.85)', // slate teal-blue
+            'rgba(27,  48,  34,  0.85)', // deep forest     (brand primary)
         ];
 
         const isSegmented = ['doughnut', 'pie'].includes(this.typeValue);
