@@ -46,6 +46,10 @@
     gap: var(--space-4);
     margin-bottom: var(--space-8);
     flex-wrap: wrap;
+
+    @media (max-width: #{$breakpoint-md - 1px}) {
+        flex-direction: column;
+    }
 }
 
 .page-header-text {
