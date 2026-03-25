@@ -30,7 +30,7 @@ class SeriesRepository extends ServiceEntityRepository
             ->select('s.id', 's.name')
             ->where('LOWER(s.name) LIKE LOWER(:term)')
             ->setParameter('term', '%' . $term . '%')
-            ->orderBy('s.name', 'ASC')
+            ->orderBy('LOWER(s.name)', 'ASC')
             ->setMaxResults(15)
             ->getQuery()
             ->getArrayResult();

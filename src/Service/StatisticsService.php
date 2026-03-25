@@ -444,7 +444,7 @@ class StatisticsService
                 return -1;
             }
 
-            $cmp = is_string($valA) ? strcmp($valA, $valB) : ($valA <=> $valB);
+            $cmp = is_string($valA) ? strcasecmp($valA, $valB) : ($valA <=> $valB);
 
             return $sortDir === 'asc' ? $cmp : -$cmp;
         });
@@ -513,7 +513,7 @@ class StatisticsService
                 return -1;
             }
 
-            $cmp = is_string($valA) ? strcmp($valA, $valB) : ($valA <=> $valB);
+            $cmp = is_string($valA) ? strcasecmp($valA, $valB) : ($valA <=> $valB);
 
             return $sortDir === 'asc' ? $cmp : -$cmp;
         });
@@ -592,7 +592,7 @@ class StatisticsService
             }
 
             $cmp = is_string($valA)
-                ? strcmp($valA, $valB)
+                ? strcasecmp($valA, $valB)
                 : ($valA <=> $valB);
 
             return $sortDir === 'asc' ? $cmp : -$cmp;

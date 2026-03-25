@@ -61,7 +61,7 @@ class MetadataRepository extends ServiceEntityRepository
             ->andWhere('m.metadataType = :type')
             ->setParameter('term', '%' . $term . '%')
             ->setParameter('type', $type)
-            ->orderBy('m.name', 'ASC')
+            ->orderBy('LOWER(m.name)', 'ASC')
             ->setMaxResults(15)
             ->getQuery()
             ->getArrayResult();
@@ -85,7 +85,7 @@ class MetadataRepository extends ServiceEntityRepository
             ->select('m.id', 'm.name', 'IDENTITY(m.metadataType) AS typeId')
             ->where('m.metadataType IN (:types)')
             ->setParameter('types', $types)
-            ->orderBy('m.name', 'ASC')
+            ->orderBy('LOWER(m.name)', 'ASC')
             ->getQuery()
             ->getArrayResult();
 
