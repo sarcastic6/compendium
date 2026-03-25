@@ -100,7 +100,7 @@
             </h1>
             {% if work.lastUpdatedDate %}
                 <span class="work-detail-updated">
-                    {{ 'work.show.field.last_updated_date'|trans }}: {{ work.lastUpdatedDate|date('d M Y') }}
+                    {{ 'work.show.field.last_updated_date'|trans }}: {{ work.lastUpdatedDate|date }}
                 </span>
             {% endif %}
         </div>

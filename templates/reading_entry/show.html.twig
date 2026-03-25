@@ -104,13 +104,13 @@
         <div class="work-detail-stats">
             {% if entry.dateStarted %}
                 <div class="work-stat-box">
-                    <span class="work-stat-value">{{ entry.dateStarted|date('d M Y') }}</span>
+                    <span class="work-stat-value">{{ entry.dateStarted|date }}</span>
                     <span class="work-stat-label">{{ 'reading.field.date_started'|trans }}</span>
                 </div>
             {% endif %}
             {% if entry.dateFinished %}
                 <div class="work-stat-box">
-                    <span class="work-stat-value">{{ entry.dateFinished|date('d M Y') }}</span>
+                    <span class="work-stat-value">{{ entry.dateFinished|date }}</span>
                     <span class="work-stat-label">{{ 'reading.field.date_finished'|trans }}</span>
                 </div>
             {% endif %}

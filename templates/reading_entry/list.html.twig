@@ -345,7 +345,7 @@
                                     <div class="entry-date-finished">
                                         {% if entry.dateFinished %}
                                             <i class="bi bi-calendar3" aria-hidden="true"></i>
-                                            {{ entry.dateFinished|date('d M Y') }}
+                                            {{ entry.dateFinished|date }}
                                         {% else %}
                                             <span class="entry-date-none">—</span>
                                         {% endif %}
