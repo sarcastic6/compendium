@@ -101,9 +101,19 @@
 .rank-name-primary {
     font-weight: var(--weight-medium);
     color: var(--color-text-body);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+// Rankings table: allow headers and names to wrap so the table never overflows
+// its container. Without this, white-space:nowrap on th forces minimum column
+// widths that exceed the available content area.
+.rankings-table {
+    thead th {
+        white-space: normal;
+    }
+
+    .rank-name-primary {
+        display: block; // needed for text-overflow if name fits on one line
+    }
 }
 
 .rank-name-sub {

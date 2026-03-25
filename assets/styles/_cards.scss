@@ -145,6 +145,13 @@
     box-shadow: var(--shadow-xs);
     display: flex;
     flex-direction: column;
+
+    // When a table-responsive element is a direct flex child, flex's min-width:auto
+    // would let the table's wide content expand the card beyond the page. Force
+    // min-width:0 so overflow-x:auto on table-responsive can do its job.
+    > .table-responsive {
+        min-width: 0;
+    }
 }
 
 .chart-card-header {
