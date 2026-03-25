@@ -1,31 +1,32 @@
-{% extends 'base.html.twig' %}
+{% extends 'auth_base.html.twig' %}
 
 {% block title %}{{ 'reset_password.request.heading'|trans }}{% endblock %}
 
 {% block body %}
-<div class="row justify-content-center">
-    <div class="col-md-5 col-lg-4">
-        <div class="card shadow-sm mt-4">
-            <div class="card-body p-4">
-                <h1 class="h4 card-title mb-4">{{ 'reset_password.request.heading'|trans }}</h1>
+<div class="auth-card">
 
-                <p class="text-muted mb-4">{{ 'reset_password.request.instructions'|trans }}</p>
-
-                {{ form_start(requestForm, {'attr': {'novalidate': true}}) }}
-                    {{ form_row(requestForm.email) }}
-                    <div class="d-grid mt-3">
-                        <button type="submit" class="btn btn-primary">
-                            {{ 'reset_password.request.submit'|trans }}
-                        </button>
-                    </div>
-                {{ form_end(requestForm) }}
-
-                <hr>
-                <p class="text-center mb-0">
-                    <a href="{{ path('app_login') }}">{{ 'nav.login'|trans }}</a>
-                </p>
-            </div>
-        </div>
+    <div class="auth-header">
+        <div class="auth-app-name">Compendium</div>
+        <div class="auth-app-sub">{{ 'reset_password.request.heading'|trans }}</div>
     </div>
+
+    <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin: 0; text-align: center;">
+        {{ 'reset_password.request.instructions'|trans }}
+    </p>
+
+    {{ form_start(requestForm, {'attr': {'class': 'auth-form', 'novalidate': true}}) }}
+
+        {{ form_row(requestForm.email) }}
+
+        <button type="submit" class="btn btn-primary auth-submit-btn">
+            {{ 'reset_password.request.submit'|trans }} →
+        </button>
+
+    {{ form_end(requestForm) }}
+
+    <div class="auth-footer">
+        <a href="{{ path('app_login') }}">← {{ 'nav.login'|trans }}</a>
+    </div>
+
 </div>
 {% endblock %}

@@ -1,19 +1,26 @@
-{% extends 'base.html.twig' %}
+{% extends 'auth_base.html.twig' %}
 
 {% block title %}{{ 'reset_password.check_email.heading'|trans }}{% endblock %}
 
 {% block body %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm mt-4">
-            <div class="card-body p-4 text-center">
-                <h1 class="h4 card-title mb-4">{{ 'reset_password.check_email.heading'|trans }}</h1>
-                <p>{{ 'reset_password.check_email.instructions'|trans({'%expiry%': resetToken.expirationMessageKey|trans(resetToken.expirationMessageData, 'ResetPasswordBundle')}) }}</p>
-                <a href="{{ path('app_login') }}" class="btn btn-outline-secondary mt-2">
-                    {{ 'nav.login'|trans }}
-                </a>
-            </div>
+<div class="auth-card">
+
+    <div class="auth-header">
+        <div style="font-size: 2.5rem; margin-bottom: var(--space-3);">
+            <i class="bi bi-envelope-check" aria-hidden="true" style="color: var(--color-primary-light);"></i>
+        </div>
+        <div class="auth-app-name" style="font-size: var(--text-xl);">
+            {{ 'reset_password.check_email.heading'|trans }}
         </div>
     </div>
+
+    <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin: 0; text-align: center; line-height: var(--leading-relaxed);">
+        {{ 'reset_password.check_email.instructions'|trans({'%expiry%': resetToken.expirationMessageKey|trans(resetToken.expirationMessageData, 'ResetPasswordBundle')}) }}
+    </p>
+
+    <div class="auth-footer">
+        <a href="{{ path('app_login') }}">← {{ 'nav.login'|trans }}</a>
+    </div>
+
 </div>
 {% endblock %}

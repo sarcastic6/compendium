@@ -1,35 +1,36 @@
-{% extends 'base.html.twig' %}
+{% extends 'auth_base.html.twig' %}
 
 {% block title %}{{ 'auth.register.heading'|trans }}{% endblock %}
 
 {% block body %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm mt-4">
-            <div class="card-body p-4">
-                <h1 class="h4 card-title mb-4">{{ 'auth.register.heading'|trans }}</h1>
+<div class="auth-card">
 
-                {{ form_start(form, {'attr': {'novalidate': true}}) }}
-
-                    {{ form_row(form.name) }}
-                    {{ form_row(form.email) }}
-                    {{ form_row(form.plainPassword) }}
-
-                    <div class="d-grid mt-3">
-                        <button type="submit" class="btn btn-primary">
-                            {{ 'nav.register'|trans }}
-                        </button>
-                    </div>
-
-                {{ form_end(form) }}
-
-                <hr>
-                <p class="text-center mb-0">
-                    {{ 'auth.register.already_account'|trans }}
-                    <a href="{{ path('app_login') }}">{{ 'nav.login'|trans }}</a>
-                </p>
-            </div>
-        </div>
+    <div class="auth-header">
+        <div class="auth-app-name">Compendium</div>
+        <div class="auth-app-sub">{{ 'nav.brand_sub'|trans }}</div>
     </div>
+
+    {{ form_start(form, {'attr': {'class': 'auth-form', 'novalidate': true}}) }}
+
+        {{ form_row(form.name) }}
+        {{ form_row(form.email) }}
+        {{ form_row(form.plainPassword) }}
+
+        <button type="submit" class="btn btn-primary auth-submit-btn">
+            {{ 'nav.register'|trans }} →
+        </button>
+
+    {{ form_end(form) }}
+
+    <div class="auth-footer">
+        {{ 'auth.register.already_account'|trans }}
+        <a href="{{ path('app_login') }}">{{ 'nav.login'|trans }}</a>
+    </div>
+
+</div>
+
+<div class="auth-quote">
+    <i class="bi bi-book" aria-hidden="true"></i><br>
+    "A reader lives a thousand lives before he dies."
 </div>
 {% endblock %}
