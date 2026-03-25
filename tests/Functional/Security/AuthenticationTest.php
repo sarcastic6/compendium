@@ -25,7 +25,7 @@ class AuthenticationTest extends AbstractFunctionalTest
         $this->client->followRedirect();
 
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorExists('.alert-danger');
+        $this->assertSelectorExists('.flash-error');
     }
 
     public function test_login_with_unknown_email_shows_error(): void
@@ -34,7 +34,7 @@ class AuthenticationTest extends AbstractFunctionalTest
         $this->client->followRedirect();
 
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorExists('.alert-danger');
+        $this->assertSelectorExists('.flash-error');
     }
 
     public function test_disabled_user_cannot_log_in(): void
@@ -45,7 +45,7 @@ class AuthenticationTest extends AbstractFunctionalTest
         $this->client->followRedirect();
 
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorExists('.alert-danger');
+        $this->assertSelectorExists('.flash-error');
     }
 
     public function test_logout_redirects_to_login(): void
