@@ -269,20 +269,61 @@
                                aria-label="{{ 'reading.bulk.select_all'|trans }}">
                     </th>
                     <th scope="col" class="cover-col" aria-hidden="true"></th>
-                    <th scope="col">
-                        {{ 'reading.entry.col_title'|trans }}
-                        <div class="text-muted" style="font-size: 0.8em; font-weight: normal;">{{ 'reading.filter.author'|trans }}</div>
+                    {# Title + Author compound sort header #}
+                    <th scope="col"{% if current_sort in ['title', 'author'] %} class="th-sort-active"{% endif %}>
+                        {% set isActive = current_sort == 'title' %}
+                        {% set nextDir = isActive and current_dir == 'asc' ? 'desc' : 'asc' %}
+                        <a href="{{ path('app_reading_entry_list', filters|merge({'sort': 'title', 'dir': nextDir, 'page': 1})) }}"
+                           class="text-decoration-none d-flex align-items-center gap-1 {{ isActive ? 'fw-semibold text-body' : 'text-muted' }}">
+                            {{ 'reading.entry.col_title'|trans }}
+                            <i class="bi bi-{{ isActive ? 'caret-' ~ (current_dir == 'asc' ? 'up' : 'down') ~ '-fill' : 'chevron-expand opacity-25' }}"
+                               style="font-size: 0.6em;" aria-hidden="true"></i>
+                        </a>
+                        {% set isActive = current_sort == 'author' %}
+                        {% set nextDir = isActive and current_dir == 'asc' ? 'desc' : 'asc' %}
+                        <a href="{{ path('app_reading_entry_list', filters|merge({'sort': 'author', 'dir': nextDir, 'page': 1})) }}"
+                           class="text-decoration-none d-flex align-items-center gap-1 {{ isActive ? 'fw-semibold text-body' : 'text-muted' }}"
+                           style="font-size: 0.8em; font-weight: normal;">
+                            {{ 'reading.filter.author'|trans }}
+                            <i class="bi bi-{{ isActive ? 'caret-' ~ (current_dir == 'asc' ? 'up' : 'down') ~ '-fill' : 'chevron-expand opacity-25' }}"
+                               style="font-size: 0.6em;" aria-hidden="true"></i>
+                        </a>
                     </th>
+
+                    {# Fandom + Main Pairing header — not sortable #}
                     <th scope="col" class="d-none d-lg-table-cell">
-                        {{ 'entry.list.col_fandom'|trans }}
+                        <span class="text-muted">{{ 'entry.list.col_fandom'|trans }}</span>
                         <div class="text-muted" style="font-size: 0.8em; font-weight: normal;">
                             <i class="bi bi-heart" aria-hidden="true" style="color: #e05c7a;"></i>
                             {{ 'reading.field.main_pairing'|trans }}
                         </div>
                     </th>
+
                     <th scope="col">{{ 'reading.entry.col_words'|trans }}</th>
-                    <th scope="col">{{ 'reading.field.status'|trans }}</th>
-                    <th scope="col" class="d-none d-lg-table-cell">{{ 'reading.entry.col_date_finished'|trans }}</th>
+
+                    {# Status sort header #}
+                    {% set isActive = current_sort == 'status' %}
+                    {% set nextDir = isActive and current_dir == 'asc' ? 'desc' : 'asc' %}
+                    <th scope="col"{% if isActive %} class="th-sort-active"{% endif %}>
+                        <a href="{{ path('app_reading_entry_list', filters|merge({'sort': 'status', 'dir': nextDir, 'page': 1})) }}"
+                           class="text-decoration-none d-flex align-items-center gap-1 {{ isActive ? 'fw-semibold text-body' : 'text-muted' }}">
+                            {{ 'reading.field.status'|trans }}
+                            <i class="bi bi-{{ isActive ? 'caret-' ~ (current_dir == 'asc' ? 'up' : 'down') ~ '-fill' : 'chevron-expand opacity-25' }}"
+                               style="font-size: 0.6em;" aria-hidden="true"></i>
+                        </a>
+                    </th>
+
+                    {# Date Finished sort header — hidden on small screens #}
+                    {% set isActive = current_sort == 'dateFinished' %}
+                    {% set nextDir = isActive and current_dir == 'desc' ? 'asc' : 'desc' %}
+                    <th scope="col" class="d-none d-lg-table-cell{% if isActive %} th-sort-active{% endif %}">
+                        <a href="{{ path('app_reading_entry_list', filters|merge({'sort': 'dateFinished', 'dir': nextDir, 'page': 1})) }}"
+                           class="text-decoration-none d-flex align-items-center gap-1 {{ isActive ? 'fw-semibold text-body' : 'text-muted' }}">
+                            {{ 'reading.entry.col_date_finished'|trans }}
+                            <i class="bi bi-{{ isActive ? 'caret-' ~ (current_dir == 'asc' ? 'up' : 'down') ~ '-fill' : 'chevron-expand opacity-25' }}"
+                               style="font-size: 0.6em;" aria-hidden="true"></i>
+                        </a>
+                    </th>
                     <th scope="col">{{ 'reading.entry.col_review_spice'|trans }}</th>
                     <th scope="col" class="actions-col"></th>
                 </tr>

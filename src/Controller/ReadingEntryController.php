@@ -103,8 +103,19 @@ class ReadingEntryController extends AbstractController
         $activeFilterCount = count(array_filter($stringParams, static fn (string $v): bool => $v !== ''))
             + count($metadataFilters);
 
+        $allowedSorts = ['title', 'author', 'status', 'dateFinished'];
+        $allowedDirs  = ['asc', 'desc'];
+        $sort = $request->query->get('sort', 'dateFinished');
+        $dir  = $request->query->get('dir', 'desc');
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'dateFinished';
+        }
+        if (!in_array($dir, $allowedDirs, true)) {
+            $dir = 'desc';
+        }
+
         $total = $this->readingEntryRepository->countByUserFiltered($user, $filterParams);
-        $entries = $this->readingEntryRepository->findByUserFiltered($user, $filterParams, $page, $limit);
+        $entries = $this->readingEntryRepository->findByUserFiltered($user, $filterParams, $page, $limit, $sort, $dir);
         $totalPages = (int) ceil($total / $limit);
 
         $allStatuses = $this->statusRepository->findAll();
@@ -150,6 +161,8 @@ class ReadingEntryController extends AbstractController
             'total_pages' => $totalPages,
             'total' => $total,
             'filters' => $filterParams,
+            'current_sort' => $sort,
+            'current_dir'  => $dir,
             'has_filters' => $hasFilters,
             'active_filter_count' => $activeFilterCount,
             'statuses' => $allStatuses,

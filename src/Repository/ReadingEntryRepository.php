@@ -81,7 +81,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
      * @param array<string, mixed> $filterParams
      * @return ReadingEntry[]
      */
-    public function findByUserFiltered(User $user, array $filterParams, int $page = 1, int $limit = 25): array
+    public function findByUserFiltered(User $user, array $filterParams, int $page = 1, int $limit = 25, string $sort = 'dateFinished', string $dir = 'desc'): array
     {
         $offset = ($page - 1) * $limit;
         $em = $this->getEntityManager();
@@ -104,9 +104,35 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 // instead, which is acceptable for this app's data volume.
                 ->where('re.user = :user')
                 ->setParameter('user', $user)
-                ->orderBy('re.createdAt', 'DESC')
                 ->setFirstResult($offset)
                 ->setMaxResults($limit);
+
+            $dirUpper = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
+
+            if ($sort === 'title') {
+                $qb->orderBy('LOWER(w.title)', $dirUpper);
+            } elseif ($sort === 'status') {
+                $qb->orderBy('s.name', $dirUpper);
+            } elseif ($sort === 'author') {
+                // Correlated subquery to get the first author name (alphabetically) for each
+                // work without joining w.metadata — a direct join multiplies rows and breaks
+                // setMaxResults() pagination (see note above).
+                $qb->addSelect(
+                    '(SELECT MIN(LOWER(sortA.name))
+                      FROM App\Entity\Work sortW
+                      JOIN sortW.metadata sortA
+                      JOIN sortA.metadataType sortAType
+                      WHERE sortW = w AND sortAType.name = :sortAuthorType)
+                     AS HIDDEN authorSort'
+                )
+                ->setParameter('sortAuthorType', 'Author')
+                ->orderBy('authorSort', $dirUpper);
+            } else {
+                // dateFinished — always push NULLs to the bottom regardless of direction.
+                $qb->addSelect('CASE WHEN re.dateFinished IS NULL THEN 1 ELSE 0 END AS HIDDEN dateNullOrder')
+                    ->orderBy('dateNullOrder', 'ASC')
+                    ->addOrderBy('re.dateFinished', $dirUpper);
+            }
 
             $this->applyFilters($qb, $filterParams);
 
