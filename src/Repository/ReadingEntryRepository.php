@@ -767,6 +767,96 @@ class ReadingEntryRepository extends ServiceEntityRepository
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    // -------------------------------------------------------------------------
+    // Filter-scoped stat methods (used by the reading-list stat strip)
+    // These mirror their unfiltered counterparts but call applyFilters() instead
+    // of applyYearFilter(), so they respect the active filter set.
+    // -------------------------------------------------------------------------
+
+    /**
+     * Total word count for entries with hasBeenStarted = true, scoped to the
+     * active filter set. Used by the stat strip when filters are applied.
+     *
+     * @param array<string, mixed> $filterParams
+     */
+    public function getTotalWordsSumFiltered(User $user, array $filterParams): int
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            $qb = $this->createQueryBuilder('re')
+                ->select('SUM(COALESCE(w.words, 0))')
+                ->innerJoin('re.work', 'w')
+                ->innerJoin('re.status', 's')
+                ->where('re.user = :user')
+                ->andWhere('s.hasBeenStarted = :started')
+                ->setParameter('user', $user)
+                ->setParameter('started', true);
+
+            $this->applyFilters($qb, $filterParams);
+
+            return (int) ($qb->getQuery()->getSingleScalarResult() ?? 0);
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
+     * Average review stars for entries that have a rating, scoped to the active
+     * filter set. Returns null when no rated entries match the filters.
+     *
+     * @param array<string, mixed> $filterParams
+     */
+    public function getAverageRatingFiltered(User $user, array $filterParams): ?float
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('AVG(re.reviewStars)')
+            ->innerJoin('re.work', 'w')
+            ->where('re.user = :user')
+            ->andWhere('re.reviewStars IS NOT NULL')
+            ->setParameter('user', $user);
+
+        $this->applyFilters($qb, $filterParams);
+
+        $result = $qb->getQuery()->getSingleScalarResult();
+
+        return $result !== null ? round((float) $result, 1) : null;
+    }
+
+    /**
+     * Count of entries where status.countsAsRead = true, scoped to the active
+     * filter set. Used by the stat strip's 4th box when filters are active.
+     *
+     * DISTINCT re.id guards against duplicate rows that can arise when
+     * applyFilters() adds multiple JOIN paths (e.g. author + fandom both joined).
+     *
+     * @param array<string, mixed> $filterParams
+     */
+    public function countFinishedFiltered(User $user, array $filterParams): int
+    {
+        $qb = $this->createQueryBuilder('re')
+            ->select('COUNT(DISTINCT re.id)')
+            ->innerJoin('re.work', 'w')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true);
+
+        $this->applyFilters($qb, $filterParams);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    // -------------------------------------------------------------------------
+
     /**
      * Count of "started" entries: entries whose status has hasBeenStarted = true
      * (Reading, On Hold, Completed, DNF — anything except TBR).

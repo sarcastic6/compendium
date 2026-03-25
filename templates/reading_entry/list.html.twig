@@ -58,8 +58,13 @@
         <span class="stat-strip-label">{{ 'entry.list.stat_avg_review'|trans }}</span>
     </div>
     <div class="stat-strip-item">
-        <span class="stat-strip-value">{{ stat_this_year }}</span>
-        <span class="stat-strip-label">{{ 'entry.list.stat_this_year'|trans({'%year%': stat_current_year}) }}</span>
+        {% if has_filters %}
+            <span class="stat-strip-value">{{ stat_completed }}</span>
+            <span class="stat-strip-label">{{ 'entry.list.stat_completed'|trans }}</span>
+        {% else %}
+            <span class="stat-strip-value">{{ stat_this_year }}</span>
+            <span class="stat-strip-label">{{ 'entry.list.stat_this_year'|trans({'%year%': stat_current_year}) }}</span>
+        {% endif %}
     </div>
 </div>
 

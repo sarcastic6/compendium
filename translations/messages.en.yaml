@@ -10,6 +10,7 @@ entry:
         stat_finish_rate: 'Finish Rate'
         stat_avg_review: 'Avg Review'
         stat_this_year: 'In %year%'
+        stat_completed: 'Completed'
         favorite_work: 'Favorite work'
         favorite_entry: 'Favorite entry'
         view_comment: 'View comment'
