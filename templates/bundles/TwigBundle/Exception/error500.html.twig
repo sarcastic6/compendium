@@ -1,9 +1,15 @@
 {% extends 'base.html.twig' %}
 {% block title %}500 – Server Error{% endblock %}
 {% block body %}
-<div class="text-center py-5">
-    <h1 class="display-4">500</h1>
-    <p class="lead">An internal server error occurred. Please try again later.</p>
-    <a href="{{ path('app_home') }}" class="btn btn-primary">Go Home</a>
+<div class="empty-state" style="min-height: 60vh; justify-content: center;">
+    <i class="bi bi-exclamation-triangle" style="font-size: 3.5rem; color: var(--color-text-faint);" aria-hidden="true"></i>
+    <div>
+        <div style="font-size: var(--text-4xl); font-weight: var(--weight-extrabold); color: var(--color-primary); text-align: center; margin-bottom: var(--space-2);">500</div>
+        <div style="font-size: var(--text-lg); font-weight: var(--weight-semibold); color: var(--color-text-body); text-align: center; margin-bottom: var(--space-2);">Something went wrong</div>
+        <p class="empty-state-text">An unexpected error occurred. Please try again later.</p>
+    </div>
+    <a href="{{ path('app_home') }}" class="btn btn-primary">
+        <i class="bi bi-house" aria-hidden="true"></i> Go Home
+    </a>
 </div>
 {% endblock %}

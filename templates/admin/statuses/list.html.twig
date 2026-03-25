@@ -3,49 +3,63 @@
 {% block title %}{{ 'admin.statuses.heading'|trans }}{% endblock %}
 
 {% block body %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">{{ 'admin.statuses.heading'|trans }}</h1>
-    <a href="{{ path('app_admin_status_new') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg" aria-hidden="true"></i>
-        {{ 'action.add'|trans }}
-    </a>
+<div class="page-header">
+    <div class="page-header-text">
+        <a href="{{ path('app_admin_index') }}" class="back-link">← {{ 'nav.admin'|trans }}</a>
+        <h1 class="page-title">{{ 'admin.statuses.heading'|trans }}</h1>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ path('app_admin_status_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+            {{ 'action.add'|trans }}
+        </a>
+    </div>
 </div>
 
 {% if statuses is empty %}
-    <p class="text-muted">{{ 'admin.statuses.empty'|trans }}</p>
+    <div class="empty-state">
+        <i class="bi bi-bookmark-x" style="font-size: 2.5rem; color: var(--color-text-faint);" aria-hidden="true"></i>
+        <p class="empty-state-text">{{ 'admin.statuses.empty'|trans }}</p>
+    </div>
 {% else %}
-    <div class="table-responsive">
-        <table class="table table-hover">
+    <div class="table-wrapper">
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th scope="col">{{ 'admin.statuses.field.name'|trans }}</th>
-                    <th scope="col">{{ 'admin.statuses.field.has_been_started'|trans }}</th>
-                    <th scope="col">{{ 'admin.statuses.field.counts_as_read'|trans }}</th>
-                    <th scope="col"></th>
+                    <th>{{ 'admin.statuses.field.name'|trans }}</th>
+                    <th>{{ 'admin.statuses.field.has_been_started'|trans }}</th>
+                    <th>{{ 'admin.statuses.field.counts_as_read'|trans }}</th>
+                    <th class="actions-col"></th>
                 </tr>
             </thead>
             <tbody>
                 {% for status in statuses %}
                     <tr>
-                        <td>{{ status.name }}</td>
+                        <td style="font-weight: var(--weight-medium); color: var(--color-text-body);">
+                            {{ status.name }}
+                        </td>
                         <td>
                             {% if status.hasBeenStarted %}
-                                <span class="badge bg-success">{{ 'action.yes'|trans }}</span>
+                                <span class="chip chip-tag" style="background: var(--color-tertiary); color: var(--color-primary);">
+                                    <i class="bi bi-check-lg" aria-hidden="true"></i> {{ 'action.yes'|trans }}
+                                </span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ 'action.no'|trans }}</span>
+                                <span style="color: var(--color-text-faint); font-size: var(--text-sm);">{{ 'action.no'|trans }}</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if status.countsAsRead %}
-                                <span class="badge bg-success">{{ 'action.yes'|trans }}</span>
+                                <span class="chip chip-tag" style="background: var(--color-tertiary); color: var(--color-primary);">
+                                    <i class="bi bi-check-lg" aria-hidden="true"></i> {{ 'action.yes'|trans }}
+                                </span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ 'action.no'|trans }}</span>
+                                <span style="color: var(--color-text-faint); font-size: var(--text-sm);">{{ 'action.no'|trans }}</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="actions-col">
                             <a href="{{ path('app_admin_status_edit', {id: status.id}) }}"
-                               class="btn btn-sm btn-outline-secondary">
-                                {{ 'action.edit'|trans }}
+                               class="btn btn-sm btn-ghost">
+                                <i class="bi bi-pencil" aria-hidden="true"></i>
                             </a>
                         </td>
                     </tr>
@@ -54,8 +68,4 @@
         </table>
     </div>
 {% endif %}
-
-<a href="{{ path('app_admin_index') }}" class="btn btn-outline-secondary mt-3">
-    &larr; {{ 'nav.admin'|trans }}
-</a>
 {% endblock %}

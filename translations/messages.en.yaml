@@ -227,9 +227,11 @@ work:
 
 admin:
     heading: 'Admin Panel'
+    subheading: 'Configure application settings'
     statuses:
         heading: 'Statuses'
         manage: 'Manage Statuses'
+        description: 'Define reading statuses and how they affect statistics'
         new_heading: 'New Status'
         edit_heading: 'Edit Status'
         empty: 'No statuses created yet.'
@@ -240,6 +242,7 @@ admin:
     metadata_types:
         heading: 'Metadata Types'
         manage: 'Manage Metadata Types'
+        description: 'Configure tag categories, dropdowns, and multi-value rules'
         new_heading: 'New Metadata Type'
         edit_heading: 'Edit Metadata Type'
         empty: 'No metadata types created yet.'

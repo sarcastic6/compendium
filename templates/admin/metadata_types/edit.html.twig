@@ -3,19 +3,28 @@
 {% block title %}{{ 'admin.metadata_types.edit_heading'|trans }}{% endblock %}
 
 {% block body %}
-<div class="row">
-    <div class="col-md-6">
-        <h1 class="h3 mb-4">{{ 'admin.metadata_types.edit_heading'|trans }}: {{ metadata_type.name }}</h1>
+<div class="page-header">
+    <div class="page-header-text">
+        <a href="{{ path('app_admin_metadata_type_list') }}" class="back-link">← {{ 'admin.metadata_types.heading'|trans }}</a>
+        <h1 class="page-title">{{ metadata_type.name }}</h1>
+    </div>
+</div>
 
-        {{ form_start(form) }}
-            {{ form_row(form.name) }}
-            {{ form_row(form.multipleAllowed) }}
-            {{ form_row(form.showAsDropdown) }}
-            <div class="d-flex gap-2 mt-3">
-                <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
-                <a href="{{ path('app_admin_metadata_type_list') }}" class="btn btn-outline-secondary">{{ 'action.cancel'|trans }}</a>
+<div class="row">
+    <div class="col-md-6 col-lg-5">
+        <div class="chart-card">
+            <div class="chart-card-body">
+                {{ form_start(form) }}
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.multipleAllowed) }}
+                    {{ form_row(form.showAsDropdown) }}
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
+                        <a href="{{ path('app_admin_metadata_type_list') }}" class="btn btn-ghost">{{ 'action.cancel'|trans }}</a>
+                    </div>
+                {{ form_end(form) }}
             </div>
-        {{ form_end(form) }}
+        </div>
     </div>
 </div>
 {% endblock %}

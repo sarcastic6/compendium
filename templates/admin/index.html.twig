@@ -3,24 +3,49 @@
 {% block title %}{{ 'admin.heading'|trans }}{% endblock %}
 
 {% block body %}
-<h1 class="h3 mb-4">{{ 'admin.heading'|trans }}</h1>
+<div class="page-header">
+    <div class="page-header-text">
+        <h1 class="page-title">{{ 'admin.heading'|trans }}</h1>
+        <p class="page-subtitle">{{ 'admin.subheading'|trans }}</p>
+    </div>
+</div>
 
-<div class="row g-3">
+<div class="row g-4">
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h2 class="h5 card-title">{{ 'admin.statuses.heading'|trans }}</h2>
-                <a href="{{ path('app_admin_status_list') }}" class="btn btn-outline-primary btn-sm">
+        <div class="chart-card">
+            <div class="chart-card-body" style="display: flex; flex-direction: column; gap: var(--space-3);">
+                <div style="font-size: 1.5rem; color: var(--color-primary-light);">
+                    <i class="bi bi-bookmark-check" aria-hidden="true"></i>
+                </div>
+                <div>
+                    <div style="font-weight: var(--weight-semibold); color: var(--color-text-body); margin-bottom: var(--space-1);">
+                        {{ 'admin.statuses.heading'|trans }}
+                    </div>
+                    <div style="font-size: var(--text-sm); color: var(--color-text-muted);">
+                        {{ 'admin.statuses.description'|trans }}
+                    </div>
+                </div>
+                <a href="{{ path('app_admin_status_list') }}" class="btn btn-primary btn-sm" style="align-self: flex-start;">
                     {{ 'admin.statuses.manage'|trans }}
                 </a>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h2 class="h5 card-title">{{ 'admin.metadata_types.heading'|trans }}</h2>
-                <a href="{{ path('app_admin_metadata_type_list') }}" class="btn btn-outline-primary btn-sm">
+        <div class="chart-card">
+            <div class="chart-card-body" style="display: flex; flex-direction: column; gap: var(--space-3);">
+                <div style="font-size: 1.5rem; color: var(--color-primary-light);">
+                    <i class="bi bi-tags" aria-hidden="true"></i>
+                </div>
+                <div>
+                    <div style="font-weight: var(--weight-semibold); color: var(--color-text-body); margin-bottom: var(--space-1);">
+                        {{ 'admin.metadata_types.heading'|trans }}
+                    </div>
+                    <div style="font-size: var(--text-sm); color: var(--color-text-muted);">
+                        {{ 'admin.metadata_types.description'|trans }}
+                    </div>
+                </div>
+                <a href="{{ path('app_admin_metadata_type_list') }}" class="btn btn-primary btn-sm" style="align-self: flex-start;">
                     {{ 'admin.metadata_types.manage'|trans }}
                 </a>
             </div>

@@ -3,49 +3,63 @@
 {% block title %}{{ 'admin.metadata_types.heading'|trans }}{% endblock %}
 
 {% block body %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">{{ 'admin.metadata_types.heading'|trans }}</h1>
-    <a href="{{ path('app_admin_metadata_type_new') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg" aria-hidden="true"></i>
-        {{ 'action.add'|trans }}
-    </a>
+<div class="page-header">
+    <div class="page-header-text">
+        <a href="{{ path('app_admin_index') }}" class="back-link">← {{ 'nav.admin'|trans }}</a>
+        <h1 class="page-title">{{ 'admin.metadata_types.heading'|trans }}</h1>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ path('app_admin_metadata_type_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+            {{ 'action.add'|trans }}
+        </a>
+    </div>
 </div>
 
 {% if metadata_types is empty %}
-    <p class="text-muted">{{ 'admin.metadata_types.empty'|trans }}</p>
+    <div class="empty-state">
+        <i class="bi bi-tags" style="font-size: 2.5rem; color: var(--color-text-faint);" aria-hidden="true"></i>
+        <p class="empty-state-text">{{ 'admin.metadata_types.empty'|trans }}</p>
+    </div>
 {% else %}
-    <div class="table-responsive">
-        <table class="table table-hover">
+    <div class="table-wrapper">
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th scope="col">{{ 'admin.metadata_types.field.name'|trans }}</th>
-                    <th scope="col">{{ 'admin.metadata_types.field.multiple_allowed'|trans }}</th>
-                    <th scope="col">{{ 'admin.metadata_types.field.show_as_dropdown'|trans }}</th>
-                    <th scope="col"></th>
+                    <th>{{ 'admin.metadata_types.field.name'|trans }}</th>
+                    <th>{{ 'admin.metadata_types.field.multiple_allowed'|trans }}</th>
+                    <th>{{ 'admin.metadata_types.field.show_as_dropdown'|trans }}</th>
+                    <th class="actions-col"></th>
                 </tr>
             </thead>
             <tbody>
                 {% for type in metadata_types %}
                     <tr>
-                        <td>{{ type.name }}</td>
+                        <td style="font-weight: var(--weight-medium); color: var(--color-text-body);">
+                            {{ type.name }}
+                        </td>
                         <td>
                             {% if type.multipleAllowed %}
-                                <span class="badge bg-success">{{ 'action.yes'|trans }}</span>
+                                <span class="chip chip-tag" style="background: var(--color-tertiary); color: var(--color-primary);">
+                                    <i class="bi bi-check-lg" aria-hidden="true"></i> {{ 'action.yes'|trans }}
+                                </span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ 'action.no'|trans }}</span>
+                                <span style="color: var(--color-text-faint); font-size: var(--text-sm);">{{ 'action.no'|trans }}</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if type.showAsDropdown %}
-                                <span class="badge bg-success">{{ 'action.yes'|trans }}</span>
+                                <span class="chip chip-tag" style="background: var(--color-tertiary); color: var(--color-primary);">
+                                    <i class="bi bi-check-lg" aria-hidden="true"></i> {{ 'action.yes'|trans }}
+                                </span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ 'action.no'|trans }}</span>
+                                <span style="color: var(--color-text-faint); font-size: var(--text-sm);">{{ 'action.no'|trans }}</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="actions-col">
                             <a href="{{ path('app_admin_metadata_type_edit', {id: type.id}) }}"
-                               class="btn btn-sm btn-outline-secondary">
-                                {{ 'action.edit'|trans }}
+                               class="btn btn-sm btn-ghost">
+                                <i class="bi bi-pencil" aria-hidden="true"></i>
                             </a>
                         </td>
                     </tr>
@@ -54,8 +68,4 @@
         </table>
     </div>
 {% endif %}
-
-<a href="{{ path('app_admin_index') }}" class="btn btn-outline-secondary mt-3">
-    &larr; {{ 'nav.admin'|trans }}
-</a>
 {% endblock %}
