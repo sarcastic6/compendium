@@ -7,12 +7,14 @@
 {% block body %}
 {% include 'stats/_rankings_header.html.twig' %}
 
+{% if type not in ['Status', 'Language'] %}
 {% include 'stats/_rankings_spotlight.html.twig' with {
     rankings:   rankings,
     wordsField: 'totalWords',
     wordsLabel: 'stats.rankings.spotlight_most_words'|trans,
     showReview: showAvgReview is defined and showAvgReview
 } only %}
+{% endif %}
 
 <div class="chart-card">
     {% if rankings is empty %}
