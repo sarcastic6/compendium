@@ -180,7 +180,7 @@
 
                 {% if is_granted('ROLE_USER') %}
                     <div class="px-3 pb-3 border-bottom mb-2">
-                        <a href="{{ path('app_work_select') }}" class="btn btn-primary btn-sm w-100 justify-content-center" data-bs-dismiss="offcanvas">
+                        <a href="{{ path('app_work_select') }}" class="btn btn-primary btn-sm w-100 justify-content-center">
                             <i class="bi bi-plus-lg" aria-hidden="true"></i>
                             {{ 'nav.new_entry'|trans }}
                         </a>
@@ -190,27 +190,23 @@
                 <nav aria-label="{{ 'nav.main'|trans }}">
                     {% if is_granted('ROLE_USER') %}
                         <a href="{{ path('app_reading_entry_list') }}"
-                           class="sidebar-nav-item{% if currentRoute starts with 'app_reading_entry' or currentRoute starts with 'app_work' %} active{% endif %}"
-                           data-bs-dismiss="offcanvas">
+                           class="sidebar-nav-item{% if currentRoute starts with 'app_reading_entry' or currentRoute starts with 'app_work' %} active{% endif %}">
                             <i class="bi bi-book sidebar-nav-icon" aria-hidden="true"></i>
                             {{ 'nav.library'|trans }}
                         </a>
                         <a href="{{ path('app_stats_dashboard') }}"
-                           class="sidebar-nav-item{% if currentRoute == 'app_stats_dashboard' %} active{% endif %}"
-                           data-bs-dismiss="offcanvas">
+                           class="sidebar-nav-item{% if currentRoute == 'app_stats_dashboard' %} active{% endif %}">
                             <i class="bi bi-bar-chart-line sidebar-nav-icon" aria-hidden="true"></i>
                             {{ 'nav.analytics'|trans }}
                         </a>
                         <a href="{{ path('app_stats_rankings_author') }}"
-                           class="sidebar-nav-item{% if onRankingsPage %} active{% endif %}"
-                           data-bs-dismiss="offcanvas">
+                           class="sidebar-nav-item{% if onRankingsPage %} active{% endif %}">
                             <i class="bi bi-trophy sidebar-nav-icon" aria-hidden="true"></i>
                             {{ 'nav.rankings'|trans }}
                         </a>
                         {% if is_granted('ROLE_ADMIN') %}
                             <a href="{{ path('app_admin_index') }}"
-                               class="sidebar-nav-item{% if currentRoute starts with 'app_admin' %} active{% endif %}"
-                               data-bs-dismiss="offcanvas">
+                               class="sidebar-nav-item{% if currentRoute starts with 'app_admin' %} active{% endif %}">
                                 <i class="bi bi-gear sidebar-nav-icon" aria-hidden="true"></i>
                                 {{ 'nav.admin'|trans }}
                             </a>
@@ -220,18 +216,18 @@
                                 <div class="sidebar-user-avatar" aria-hidden="true">{{ app.user.name|first|upper }}</div>
                                 <span class="sidebar-user-name">{{ app.user.name }}</span>
                             </div>
-                            <a href="{{ path('app_profile') }}" class="sidebar-footer-link" data-bs-dismiss="offcanvas">
+                            <a href="{{ path('app_profile') }}" class="sidebar-footer-link">
                                 {{ 'nav.settings'|trans }}
                             </a>
-                            <a href="{{ path('app_logout') }}" class="sidebar-footer-link" data-bs-dismiss="offcanvas">
+                            <a href="{{ path('app_logout') }}" class="sidebar-footer-link">
                                 {{ 'nav.logout'|trans }}
                             </a>
                         </div>
                     {% else %}
-                        <a href="{{ path('app_login') }}" class="sidebar-nav-item" data-bs-dismiss="offcanvas">
+                        <a href="{{ path('app_login') }}" class="sidebar-nav-item">
                             {{ 'nav.login'|trans }}
                         </a>
-                        <a href="{{ path('app_register') }}" class="sidebar-nav-item" data-bs-dismiss="offcanvas">
+                        <a href="{{ path('app_register') }}" class="sidebar-nav-item">
                             {{ 'nav.register'|trans }}
                         </a>
                     {% endif %}

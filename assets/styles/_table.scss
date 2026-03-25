@@ -229,6 +229,13 @@
         background: var(--color-surface);
     }
 
+    // Cover art and checkbox have no data-label and don't fit the label/value
+    // card row model — hide them in card mode.
+    .table-responsive-card .cover-col,
+    .table-responsive-card td:has(.entry-checkbox) {
+        display: none;
+    }
+
     .table-responsive-card td {
         display: flex;
         justify-content: space-between;
