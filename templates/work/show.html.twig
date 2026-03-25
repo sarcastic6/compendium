@@ -137,7 +137,7 @@
                 {% endif %}
                 {% if work.publishedDate %}
                     <div class="work-stat-box">
-                        <span class="work-stat-value">{{ work.publishedDate|date('Y') }}</span>
+                        <span class="work-stat-value" title="{{ work.publishedDate|date }}">{{ work.publishedDate|date('Y') }}</span>
                         <span class="work-stat-label">{{ 'work.show.field.published_date'|trans }}</span>
                     </div>
                 {% endif %}
