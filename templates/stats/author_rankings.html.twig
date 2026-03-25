@@ -7,6 +7,13 @@
 {% block body %}
 {% include 'stats/_rankings_header.html.twig' %}
 
+{% include 'stats/_rankings_spotlight.html.twig' with {
+    rankings:   rankings,
+    wordsField: 'readInWords',
+    wordsLabel: 'stats.rankings.spotlight_most_words_read'|trans,
+    showReview: true
+} only %}
+
 <div class="chart-card">
     {% if rankings is empty %}
         <div class="chart-card-body">

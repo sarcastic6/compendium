@@ -1,0 +1,91 @@
+{#
+    Spotlight cards for rankings pages — top item by reads, words, and rating.
+
+    Expected variables (passed via `with`):
+    - rankings:    the full array of ranking items (must have .count and .name)
+    - wordsField:  property name to read for the "words" card (e.g. 'totalWords', 'readInWords', 'wordsRead')
+    - wordsLabel:  translated label for the words card (e.g. "Most Words Read")
+    - showReview:  bool — whether to render the best-rated card
+#}
+
+{% if rankings is not empty %}
+
+    {# ------------------------------------------------------------------ #}
+    {# Compute spotlight items via iteration (Twig has no sort-by-key)     #}
+    {# ------------------------------------------------------------------ #}
+    {% set topByCount  = null %}
+    {% set topByWords  = null %}
+    {% set topByReview = null %}
+
+    {% for item in rankings %}
+        {# Most reads #}
+        {% if topByCount is null or item.count > topByCount.count %}
+            {% set topByCount = item %}
+        {% endif %}
+
+        {# Most words (field name varies per rankings type) #}
+        {% set itemWords    = attribute(item, wordsField) %}
+        {% set currentBest  = topByWords is not null ? attribute(topByWords, wordsField) : 0 %}
+        {% if itemWords > currentBest %}
+            {% set topByWords = item %}
+        {% endif %}
+
+        {# Best rated (only if reviews exist) #}
+        {% if showReview and item.avgReview is defined and item.avgReview is not null %}
+            {% if topByReview is null or item.avgReview > topByReview.avgReview %}
+                {% set topByReview = item %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    {# ------------------------------------------------------------------ #}
+    {# Render                                                               #}
+    {# ------------------------------------------------------------------ #}
+    <div class="row g-3 mb-5">
+
+        {# Most Read #}
+        {% if topByCount is not null %}
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card">
+                    <div class="stat-card-icon">
+                        <i class="bi bi-bookmark-fill" aria-hidden="true"></i>
+                    </div>
+                    <div class="stat-card-label">{{ 'stats.rankings.spotlight_most_read'|trans }}</div>
+                    <div class="spotlight-name" title="{{ topByCount.name }}">{{ topByCount.name }}</div>
+                    <div class="stat-card-sub">{{ topByCount.count }} {{ 'stats.rankings.spotlight_reads'|trans }}</div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# Most Words #}
+        {% if topByWords is not null %}
+            {% set topWordsValue = attribute(topByWords, wordsField) %}
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card">
+                    <div class="stat-card-icon">
+                        <i class="bi bi-file-text-fill" aria-hidden="true"></i>
+                    </div>
+                    <div class="stat-card-label">{{ wordsLabel }}</div>
+                    <div class="spotlight-name" title="{{ topByWords.name }}">{{ topByWords.name }}</div>
+                    <div class="stat-card-sub">{{ topWordsValue|number_format(0, '.', ',') }} {{ 'stats.rankings.spotlight_words'|trans }}</div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# Best Rated #}
+        {% if showReview and topByReview is not null %}
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card">
+                    <div class="stat-card-icon">
+                        <i class="bi bi-star-fill" aria-hidden="true"></i>
+                    </div>
+                    <div class="stat-card-label">{{ 'stats.rankings.spotlight_best_rated'|trans }}</div>
+                    <div class="spotlight-name" title="{{ topByReview.name }}">{{ topByReview.name }}</div>
+                    <div class="stat-card-sub">{{ topByReview.avgReview }} ★ {{ 'stats.rankings.spotlight_avg_review'|trans }}</div>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+
+{% endif %}

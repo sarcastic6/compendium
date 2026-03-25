@@ -89,6 +89,17 @@
     color: var(--color-text-faint);
 }
 
+// Name displayed inside a spotlight stat-card (rankings pages)
+.spotlight-name {
+    font-weight: var(--weight-bold);
+    color: var(--color-primary);
+    font-size: var(--text-base);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: var(--leading-snug);
+}
+
 // -------------------------------------------------------------------------
 // Stat strip (reading list summary row)
 // A horizontal row of small summary cards below the page header.

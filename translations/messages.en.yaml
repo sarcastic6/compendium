@@ -391,6 +391,13 @@ stats:
         series_ao3_link: 'View AO3 Series'
         series_complete: 'Complete'
         series_ongoing: 'Ongoing'
+        spotlight_most_read: 'Most Read'
+        spotlight_most_words: 'Most Words'
+        spotlight_most_words_read: 'Most Words Read'
+        spotlight_best_rated: 'Best Rated'
+        spotlight_reads: 'reads'
+        spotlight_words: 'words'
+        spotlight_avg_review: 'avg review'
 
 reset_password:
     request:
