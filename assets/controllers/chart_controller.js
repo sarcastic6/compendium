@@ -43,14 +43,14 @@ export default class extends Controller {
         const { Chart } = await import('chart.js/auto');
 
         const defaultColors = [
-            'rgba(13,110,253,0.75)',
-            'rgba(25,135,84,0.75)',
-            'rgba(255,193,7,0.85)',
-            'rgba(220,53,69,0.75)',
-            'rgba(13,202,240,0.75)',
-            'rgba(111,66,193,0.75)',
-            'rgba(253,126,20,0.75)',
-            'rgba(32,201,151,0.75)',
+            'rgba(59,107,82,0.80)',    // primary-light green
+            'rgba(139,168,136,0.85)',  // secondary sage
+            'rgba(168,207,197,0.85)',  // tertiary teal
+            'rgba(90,138,116,0.80)',   // mid forest green
+            'rgba(196,164,113,0.80)',  // warm amber
+            'rgba(27,48,34,0.85)',     // deep forest
+            'rgba(106,153,85,0.80)',   // leaf green
+            'rgba(158,170,165,0.80)',  // cool grey-green
         ];
 
         const isSegmented = ['doughnut', 'pie'].includes(this.typeValue);
