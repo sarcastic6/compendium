@@ -172,10 +172,6 @@
 {% endfor %}
 {% do form.metadata.setRendered %}
 
-<hr>
-
-{{ form_row(form.pinned) }}
-
 <div class="d-flex gap-2 mt-3">
     <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
     <a href="{{ path('app_reading_entry_list') }}" class="btn btn-outline-secondary">{{ 'action.cancel'|trans }}</a>

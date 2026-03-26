@@ -10,7 +10,6 @@ use App\Enum\SourceType;
 use App\Enum\WorkType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -96,10 +95,7 @@ class WorkFormType extends AbstractType
                 'choice_label' => static fn (SourceType $type) => $type->value,
                 'choice_value' => static fn (?SourceType $type) => $type?->value,
             ])
-            ->add('pinned', CheckboxType::class, [
-                'label' => 'work.field.pinned',
-                'required' => false,
-            ])
+
             ->add('authors', CollectionType::class, [
                 'label' => 'work.field.authors',
                 'entry_type' => AuthorEntryType::class,

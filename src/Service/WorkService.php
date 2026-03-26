@@ -98,8 +98,6 @@ class WorkService
         $work->setChapters($dto->chapters);
         $work->setLink($dto->link);
         $work->setSourceType($dto->sourceType);
-        $work->setPinned($dto->pinned);
-
         // Three-way series resolution:
         // 1. seriesId set   → user selected an existing series from autocomplete; load by ID.
         // 2. seriesId null + seriesName non-empty → user typed a new name; find-or-create.

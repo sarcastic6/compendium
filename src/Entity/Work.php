@@ -62,9 +62,6 @@ class Work
     #[ORM\Column(type: 'string', length: 32, enumType: SourceType::class)]
     private SourceType $sourceType = SourceType::Manual;
 
-    #[ORM\Column(options: ['default' => false])]
-    private bool $pinned = false;
-
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?DateTimeImmutable $deletedAt = null;
 
@@ -243,17 +240,6 @@ class Work
         return $this;
     }
 
-    public function isPinned(): bool
-    {
-        return $this->pinned;
-    }
-
-    public function setPinned(bool $pinned): static
-    {
-        $this->pinned = $pinned;
-
-        return $this;
-    }
 
     public function getDeletedAt(): ?DateTimeImmutable
     {

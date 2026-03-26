@@ -61,8 +61,6 @@ class WorkFormDto
 
     public SourceType $sourceType = SourceType::Manual;
 
-    public bool $pinned = false;
-
     /** @var array<int, array{name: string, link: string|null}> */
     public array $authors = [];
 

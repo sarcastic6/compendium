@@ -375,10 +375,6 @@
                                            class="text-decoration-none" style="color: inherit;">
                                             {{ entry.work.title }}
                                         </a>
-                                        {% if entry.work.pinned %}
-                                            <i class="bi bi-pin-fill pinned-icon ms-1"
-                                               aria-label="{{ 'entry.list.pinned_work'|trans }}"></i>
-                                        {% endif %}
                                         {% if entry.pinned %}
                                             <i class="bi bi-pin-angle-fill ms-1" style="color: #e05c7a; font-size: 0.7em;"
                                                aria-label="{{ 'entry.list.pinned_entry'|trans }}"></i>
@@ -536,10 +532,6 @@
                                                 <span class="entry-deleted-work">{{ 'reading.entry.work_deleted'|trans }}</span>
                                             {% else %}
                                                 {{ entry.work.title }}
-                                                {% if entry.work.pinned %}
-                                                    <i class="bi bi-pin-fill pinned-icon ms-1"
-                                                       aria-label="{{ 'entry.list.pinned_work'|trans }}"></i>
-                                                {% endif %}
                                                 {% if entry.pinned %}
                                                     <i class="bi bi-pin-angle-fill ms-1" style="color: #e05c7a; font-size: 0.7em;"
                                                        aria-label="{{ 'entry.list.pinned_entry'|trans }}"></i>
