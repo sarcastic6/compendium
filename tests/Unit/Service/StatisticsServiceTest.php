@@ -75,7 +75,7 @@ class StatisticsServiceTest extends TestCase
             'entryCount' => 5,
         ]);
         $this->repository->method('getAverageRating')->willReturn(4.2);
-        $this->repository->method('countStarred')->willReturn(2);
+        $this->repository->method('countPinned')->willReturn(2);
         $this->repository->method('countByStatus')->willReturn(['Reading' => 3, 'Completed' => 5]);
         $this->repository->method('countByWorkType')->willReturn(['Book' => 4, 'Fanfiction' => 6]);
         $this->repository->method('findAvailableYears')->willReturn([2025, 2024]);
@@ -88,7 +88,7 @@ class StatisticsServiceTest extends TestCase
             'wordCountStats',
             'finishRate',
             'averageRating',
-            'starredCount',
+            'pinnedCount',
             'byStatus',
             'byWorkType',
             'availableYears',
@@ -108,7 +108,7 @@ class StatisticsServiceTest extends TestCase
         $this->repository->method('countByUser')->willReturn(12);
         $this->repository->method('getWordCountStats')->willReturn(['totalWords' => 0, 'averageWords' => null, 'entryCount' => 0]);
         $this->repository->method('getAverageRating')->willReturn(null);
-        $this->repository->method('countStarred')->willReturn(0);
+        $this->repository->method('countPinned')->willReturn(0);
         $this->repository->method('countByStatus')->willReturn([]);
         $this->repository->method('countByWorkType')->willReturn([]);
         $this->repository->method('findAvailableYears')->willReturn([]);
@@ -128,7 +128,7 @@ class StatisticsServiceTest extends TestCase
         $this->repository->method('countByUser')->willReturn(12);
         $this->repository->method('getWordCountStats')->willReturn(['totalWords' => 0, 'averageWords' => null, 'entryCount' => 0]);
         $this->repository->method('getAverageRating')->willReturn(null);
-        $this->repository->method('countStarred')->willReturn(0);
+        $this->repository->method('countPinned')->willReturn(0);
         $this->repository->method('countByStatus')->willReturn([]);
         $this->repository->method('countByWorkType')->willReturn([]);
         $this->repository->method('findAvailableYears')->willReturn([]);
@@ -152,7 +152,7 @@ class StatisticsServiceTest extends TestCase
         $repository->expects($this->once())->method('countStarted')->with($user, $year)->willReturn(5);
         $repository->expects($this->once())->method('getWordCountStats')->with($user, $year)->willReturn(['totalWords' => 0, 'averageWords' => null, 'entryCount' => 0]);
         $repository->expects($this->once())->method('getAverageRating')->with($user, $year)->willReturn(null);
-        $repository->expects($this->once())->method('countStarred')->with($user, $year)->willReturn(0);
+        $repository->expects($this->once())->method('countPinned')->with($user, $year)->willReturn(0);
         $repository->expects($this->once())->method('countByStatus')->with($user, $year)->willReturn([]);
         $repository->expects($this->once())->method('countByWorkType')->with($user, $year)->willReturn([]);
         $repository->method('findAvailableYears')->willReturn([]);
