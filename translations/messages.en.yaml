@@ -210,6 +210,8 @@ work:
             no_link: 'This work has no source URL and cannot be refreshed.'
             unsupported_url: 'This work''s source URL is not supported for automatic refresh.'
             scrape_failed: 'Failed to fetch updated metadata. The source may be temporarily unavailable.'
+            rate_limited: 'AO3 is rate limiting requests. Please wait a moment and try again.'
+            connection_failed: 'Could not connect to AO3. Please check your connection and try again.'
     field:
         type: 'Type'
         title: 'Title'
@@ -444,6 +446,8 @@ import:
     error:
         unsupported_url: 'This URL is not supported. Currently only AO3 work URLs are supported.'
         scrape_failed: 'Could not retrieve data from the URL. Please check the URL and try again.'
+        rate_limited: 'AO3 is rate limiting requests. Please wait a moment and try again.'
+        connection_failed: 'Could not connect to AO3. Please check your connection and try again.'
         session_expired: 'The import session expired. Please try again.'
     warning:
         duplicate: 'A work with this URL already exists in the database. You can still create a new entry below.'

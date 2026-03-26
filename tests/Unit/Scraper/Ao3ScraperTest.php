@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Scraper;
 
 use App\Scraper\Ao3Scraper;
+use App\Scraper\RateLimitException;
 use App\Scraper\ScrapedWorkDto;
 use App\Scraper\ScrapingException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -15,12 +16,19 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 
 class Ao3ScraperTest extends TestCase
 {
-    private function makeScraper(string $html, int $status = 200): Ao3Scraper
+    /**
+     * @param MockResponse|list<MockResponse> $responses
+     */
+    private function makeScraper(MockResponse|array $responses, int $delayMs = 0): Ao3Scraper
     {
-        $response = new MockResponse($html, ['http_code' => $status]);
-        $client = new MockHttpClient($response);
+        $client = new MockHttpClient($responses);
 
-        return new Ao3Scraper($client, new NullLogger(), 'ReadingStats/test');
+        return new Ao3Scraper($client, new NullLogger(), 'ReadingStats/test', $delayMs);
+    }
+
+    private function makeScraperWithHtml(string $html, int $status = 200): Ao3Scraper
+    {
+        return $this->makeScraper(new MockResponse($html, ['http_code' => $status]));
     }
 
     private function fixture(string $name): string
@@ -50,7 +58,7 @@ class Ao3ScraperTest extends TestCase
     #[DataProvider('supportsProvider')]
     public function test_supports(string $url, bool $expected): void
     {
-        $scraper = $this->makeScraper('');
+        $scraper = $this->makeScraperWithHtml('');
         $this->assertSame($expected, $scraper->supports($url));
     }
 
@@ -58,7 +66,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_complete_work_title(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertSame('Test Complete Work Title', $dto->title);
@@ -66,7 +74,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_complete_work_author(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertCount(1, $dto->authors);
@@ -76,7 +84,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_complete_work_summary(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertStringContainsString('summary of the complete test work', $dto->summary ?? '');
@@ -84,7 +92,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_complete_work_words(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         // "12,345" → 12345
@@ -93,7 +101,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_complete_work_chapters(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertSame(5, $dto->chapters);
@@ -103,7 +111,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_complete_work_dates(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertSame('2023-01-15', $dto->publishedDate);
@@ -111,7 +119,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_complete_work_language(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertSame('English', $dto->language);
@@ -119,7 +127,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_complete_work_source_type(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertSame('AO3', $dto->sourceType);
@@ -128,7 +136,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_complete_work_metadata(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertArrayHasKey('Rating', $dto->metadata);
@@ -154,7 +162,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_ongoing_work_chapters_not_complete(): void
     {
-        $scraper = $this->makeScraper($this->fixture('ongoing_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('ongoing_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/22222');
 
         $this->assertSame(10, $dto->chapters);
@@ -164,7 +172,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_ongoing_work_updated_date_not_set_when_status_is_date(): void
     {
-        $scraper = $this->makeScraper($this->fixture('ongoing_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('ongoing_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/22222');
 
         // The ongoing fixture has "2024-06-15" in dd.status — should parse as updated date
@@ -175,7 +183,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_multi_author_returns_all_authors(): void
     {
-        $scraper = $this->makeScraper($this->fixture('multi_author'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('multi_author'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/33333');
 
         $this->assertCount(2, $dto->authors);
@@ -188,7 +196,12 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_series_work_series_fields(): void
     {
-        $scraper = $this->makeScraper($this->fixture('series_work'));
+        // scrape() makes two requests for a series work: work page then series page.
+        // Provide a blank second response so MockHttpClient doesn't run out.
+        $scraper = $this->makeScraper([
+            new MockResponse($this->fixture('series_work'), ['http_code' => 200]),
+            new MockResponse('<html></html>', ['http_code' => 200]),
+        ]);
         $dto = $scraper->scrape('https://archiveofourown.org/works/44444');
 
         $this->assertSame('Test Series Name', $dto->seriesName);
@@ -200,7 +213,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_scrape_minimal_work_tolerates_missing_fields(): void
     {
-        $scraper = $this->makeScraper($this->fixture('minimal_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('minimal_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/55555');
 
         $this->assertSame('Minimal Work Title', $dto->title);
@@ -216,7 +229,7 @@ class Ao3ScraperTest extends TestCase
 
     public function test_url_is_normalized_to_canonical_form(): void
     {
-        $scraper = $this->makeScraper($this->fixture('minimal_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('minimal_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/55555/chapters/99999');
 
         // sourceUrl should be the canonical works/{id} URL
@@ -224,19 +237,97 @@ class Ao3ScraperTest extends TestCase
         $this->assertStringNotContainsString('/chapters/', $dto->sourceUrl ?? '');
     }
 
-    // --- HTTP error handling ---
+    // --- HTTP error handling: RateLimitException ---
+
+    /** @return array<string, array{int}> */
+    public static function rateLimitStatusProvider(): array
+    {
+        return [
+            'HTTP 429' => [429],
+            'HTTP 503' => [503],
+            'HTTP 502' => [502],
+            'HTTP 504' => [504],
+        ];
+    }
+
+    #[DataProvider('rateLimitStatusProvider')]
+    public function test_scrape_throws_rate_limit_exception(int $status): void
+    {
+        $scraper = $this->makeScraperWithHtml('', $status);
+
+        $this->expectException(RateLimitException::class);
+        $scraper->scrape('https://archiveofourown.org/works/99999');
+    }
+
+    public function test_rate_limit_exception_carries_url(): void
+    {
+        $scraper = $this->makeScraperWithHtml('', 429);
+
+        try {
+            $scraper->scrape('https://archiveofourown.org/works/99999');
+            $this->fail('Expected RateLimitException');
+        } catch (RateLimitException $e) {
+            $this->assertStringContainsString('archiveofourown.org', $e->getUrl());
+        }
+    }
+
+    public function test_rate_limit_exception_parses_retry_after_header(): void
+    {
+        $response = new MockResponse('', [
+            'http_code'       => 429,
+            'response_headers' => ['Retry-After: 30'],
+        ]);
+        $scraper = $this->makeScraper($response);
+
+        try {
+            $scraper->scrape('https://archiveofourown.org/works/99999');
+            $this->fail('Expected RateLimitException');
+        } catch (RateLimitException $e) {
+            $this->assertSame(30, $e->getRetryAfterSeconds());
+        }
+    }
+
+    public function test_rate_limit_exception_returns_null_when_retry_after_absent(): void
+    {
+        $scraper = $this->makeScraperWithHtml('', 429);
+
+        try {
+            $scraper->scrape('https://archiveofourown.org/works/99999');
+            $this->fail('Expected RateLimitException');
+        } catch (RateLimitException $e) {
+            $this->assertNull($e->getRetryAfterSeconds());
+        }
+    }
+
+    public function test_rate_limit_exception_returns_null_when_retry_after_exceeds_cap(): void
+    {
+        $response = new MockResponse('', [
+            'http_code'       => 429,
+            'response_headers' => ['Retry-After: 999'],
+        ]);
+        $scraper = $this->makeScraper($response);
+
+        try {
+            $scraper->scrape('https://archiveofourown.org/works/99999');
+            $this->fail('Expected RateLimitException');
+        } catch (RateLimitException $e) {
+            $this->assertNull($e->getRetryAfterSeconds());
+        }
+    }
+
+    // --- HTTP error handling: ScrapingException ---
 
     public function test_scrape_throws_scraping_exception_on_404(): void
     {
-        $scraper = $this->makeScraper('Not found', 404);
+        $scraper = $this->makeScraperWithHtml('Not found', 404);
 
         $this->expectException(ScrapingException::class);
         $scraper->scrape('https://archiveofourown.org/works/99999');
     }
 
-    public function test_scraping_exception_carries_url(): void
+    public function test_scraping_exception_carries_url_and_status(): void
     {
-        $scraper = $this->makeScraper('Not found', 404);
+        $scraper = $this->makeScraperWithHtml('Not found', 404);
 
         try {
             $scraper->scrape('https://archiveofourown.org/works/99999');
@@ -247,11 +338,31 @@ class Ao3ScraperTest extends TestCase
         }
     }
 
+    // --- scrapeWorkPage() ---
+
+    public function test_scrape_work_page_returns_dto_without_series_data(): void
+    {
+        // series_work fixture has a seriesUrl — but scrapeWorkPage() must NOT fetch it.
+        // We supply only one response: if a second request were made, MockHttpClient would
+        // return an empty response and the series fields would silently be null anyway,
+        // but the important assertion is that the DTO is returned successfully.
+        $scraper = $this->makeScraperWithHtml($this->fixture('series_work'));
+        $dto = $scraper->scrapeWorkPage('https://archiveofourown.org/works/44444');
+
+        $this->assertInstanceOf(ScrapedWorkDto::class, $dto);
+        $this->assertSame('Test Series Name', $dto->seriesName);
+        $this->assertNotNull($dto->seriesUrl);
+        // Series stats must not be populated — scrapeWorkPage() stops before the series fetch.
+        $this->assertNull($dto->seriesNumberOfParts);
+        $this->assertNull($dto->seriesTotalWords);
+        $this->assertNull($dto->seriesIsComplete);
+    }
+
     // --- DTO guarantees ---
 
     public function test_scrape_result_is_scraped_work_dto(): void
     {
-        $scraper = $this->makeScraper($this->fixture('complete_work'));
+        $scraper = $this->makeScraperWithHtml($this->fixture('complete_work'));
         $dto = $scraper->scrape('https://archiveofourown.org/works/11111');
 
         $this->assertInstanceOf(ScrapedWorkDto::class, $dto);

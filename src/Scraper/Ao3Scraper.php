@@ -8,6 +8,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 /**
  * Scrapes metadata from Archive of Our Own (AO3) work pages.
@@ -22,11 +23,23 @@ class Ao3Scraper implements ScraperInterface
 {
     private const AO3_HOST = 'archiveofourown.org';
 
+    /** Retry-After values above this cap are treated as absent (null returned). */
+    private const RETRY_AFTER_CAP_SECONDS = 120;
+
+    /**
+     * Timestamp (microtime float) of the last outbound HTTP request made by this instance.
+     * Null until the first request. Persists across calls within the same process lifetime,
+     * so a Messenger worker correctly throttles across consecutive messages.
+     */
+    private ?float $lastRequestAt = null;
+
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly LoggerInterface $logger,
         #[Autowire(env: 'SCRAPER_USER_AGENT')]
         private readonly string $userAgent,
+        #[Autowire(env: 'int:SCRAPER_REQUEST_DELAY_MS')]
+        private readonly int $requestDelayMs,
     ) {
     }
 
@@ -47,7 +60,22 @@ class Ao3Scraper implements ScraperInterface
         return (bool) preg_match('#^/works/\d+#', $path);
     }
 
-    public function scrape(string $url): ScrapedWorkDto
+    /**
+     * Fetches and parses the work page only, without fetching series data.
+     *
+     * The returned DTO will have seriesUrl populated if the work belongs to a series,
+     * but seriesNumberOfParts, seriesTotalWords, and seriesIsComplete will be null.
+     *
+     * This method is intentionally not on ScraperInterface — it is an AO3-specific
+     * implementation detail that may not generalise to other scrapers. The future batch
+     * orchestrator will depend on the concrete Ao3Scraper directly.
+     *
+     * @throws \InvalidArgumentException if the URL is not a supported AO3 work URL
+     * @throws RateLimitException if AO3 returns 429, 503, 502, or 504
+     * @throws ScrapingException if AO3 returns any other non-200 status
+     * @throws TransportExceptionInterface if the HTTP request cannot be completed
+     */
+    public function scrapeWorkPage(string $url): ScrapedWorkDto
     {
         // Explicitly guard against non-AO3 URLs. This makes the security boundary
         // intentional and visible — do not rely on normalizeUrl() to enforce it,
@@ -60,62 +88,40 @@ class Ao3Scraper implements ScraperInterface
 
         $normalizedUrl = $this->normalizeUrl($url);
 
-        $this->logger->debug('AO3 scraper: fetching URL', ['url' => $normalizedUrl]);
+        $this->logger->debug('AO3 scraper: fetching work page', ['url' => $normalizedUrl]);
 
-        try {
-            $response = $this->httpClient->request('GET', $normalizedUrl, [
-                'headers' => [
-                    'User-Agent' => $this->userAgent,
-                    // AO3 redirects canonical work URLs to /chapters/{id} and drops query
-                    // params. Sending view_adult as a cookie ensures the adult-content
-                    // bypass persists through the entire redirect chain.
-                    'Cookie' => 'view_adult=true',
-                ],
-            ]);
+        $html = $this->fetchUrl($normalizedUrl);
 
-            $statusCode = $response->getStatusCode();
-            $finalUrl = $response->getInfo('url') ?? $normalizedUrl;
-            $this->logger->debug('AO3 scraper: received response', [
-                'requested_url' => $normalizedUrl,
-                'final_url' => $finalUrl,
-                'http_status' => $statusCode,
-                'redirected' => $finalUrl !== $normalizedUrl,
-            ]);
+        $this->logger->debug('AO3 scraper: fetched work page HTML', [
+            'url' => $normalizedUrl,
+            'bytes' => strlen($html),
+        ]);
 
-            if ($statusCode !== 200) {
-                throw new ScrapingException(
-                    $normalizedUrl,
-                    sprintf('AO3 returned HTTP %d for URL: %s', $statusCode, $normalizedUrl),
-                    $statusCode,
-                );
-            }
+        return $this->parse($html, $normalizedUrl);
+    }
 
-            $html = $response->getContent();
-            $this->logger->debug('AO3 scraper: fetched HTML', [
-                'url' => $finalUrl,
-                'bytes' => strlen($html),
-            ]);
-        } catch (ScrapingException $e) {
-            throw $e;
-        } catch (\Throwable $e) {
-            $this->logger->error('AO3 scraper: HTTP request failed', [
-                'url' => $normalizedUrl,
-                'error' => $e->getMessage(),
-                'exception_class' => $e::class,
-            ]);
-            throw new ScrapingException(
-                $normalizedUrl,
-                sprintf('Failed to fetch AO3 URL: %s', $e->getMessage()),
-                null,
-                $e,
-            );
-        }
+    /**
+     * Fetches and parses a work page, then fetches series data if the work belongs to a series.
+     *
+     * This is the interface-contract method. Its sync behavior is identical to before:
+     * one call, one DTO returned, series fields populated when available.
+     *
+     * Known limitation: if the work page fetch succeeds but the series fetch throws
+     * RateLimitException, the already-scraped work data is discarded and the caller must
+     * retry the entire operation. This is acceptable for the sync path — rate limits
+     * mid-scrape are rare, the doubled request is a single extra HTTP call, and preserving
+     * partial state would add unjustified complexity for a one-at-a-time user-facing flow.
+     * The async path avoids this entirely by calling scrapeWorkPage() directly.
+     *
+     * @throws \InvalidArgumentException if the URL is not a supported AO3 work URL
+     * @throws RateLimitException if AO3 returns 429, 503, 502, or 504
+     * @throws ScrapingException if AO3 returns any other non-200 status
+     * @throws TransportExceptionInterface if an HTTP request cannot be completed
+     */
+    public function scrape(string $url): ScrapedWorkDto
+    {
+        $dto = $this->scrapeWorkPage($url);
 
-        $dto = $this->parse($html, $normalizedUrl);
-
-        // If the work belongs to a series, fetch the series page to get the work count,
-        // total word count, and completion status. These can't be derived from the work
-        // page alone — the series page is the authoritative source.
         if ($dto->seriesUrl !== null) {
             $seriesData = $this->fetchSeriesData($dto->seriesUrl);
             $dto->seriesNumberOfParts = $seriesData['numberOfParts'];
@@ -124,6 +130,118 @@ class Ao3Scraper implements ScraperInterface
         }
 
         return $dto;
+    }
+
+    /**
+     * Performs a single outbound HTTP GET with proactive rate-limit throttling.
+     *
+     * Throttle: sleeps only the remaining portion of $requestDelayMs that hasn't elapsed
+     * since the last request. If more time has already passed (or this is the first call),
+     * sleeps zero. Updates $lastRequestAt after every successful response.
+     *
+     * Response handling:
+     * - 429 / 503: throws RateLimitException with Retry-After seconds (capped at 120 s; null if absent or over cap)
+     * - 502 / 504: throws RateLimitException with null (transient infra errors, same retry strategy)
+     * - any other non-200: throws ScrapingException
+     * - TransportExceptionInterface: propagates uncaught (no response received — caller decides)
+     *
+     * @throws RateLimitException
+     * @throws ScrapingException
+     * @throws TransportExceptionInterface
+     */
+    private function fetchUrl(string $url): string
+    {
+        $this->throttle();
+
+        $response = $this->httpClient->request('GET', $url, [
+            'headers' => [
+                'User-Agent' => $this->userAgent,
+                // AO3 redirects canonical work URLs to /chapters/{id} and drops query
+                // params. Sending view_adult as a cookie ensures the adult-content
+                // bypass persists through the entire redirect chain.
+                'Cookie' => 'view_adult=true',
+            ],
+        ]);
+
+        // getStatusCode() may throw TransportExceptionInterface for async clients — let it propagate.
+        $statusCode = $response->getStatusCode();
+        $this->lastRequestAt = microtime(true);
+
+        $finalUrl = $response->getInfo('url') ?? $url;
+        $this->logger->debug('AO3 scraper: received response', [
+            'requested_url' => $url,
+            'final_url' => $finalUrl,
+            'http_status' => $statusCode,
+            'redirected' => $finalUrl !== $url,
+        ]);
+
+        if ($statusCode === 200) {
+            return $response->getContent();
+        }
+
+        if ($statusCode === 429 || $statusCode === 503) {
+            $retryAfter = $this->parseRetryAfter($response->getHeaders(false));
+            throw new RateLimitException($url, $retryAfter);
+        }
+
+        if ($statusCode === 502 || $statusCode === 504) {
+            // Transient Cloudflare/infrastructure errors — indistinguishable from a rate limit
+            // in practice; apply the same backoff-with-jitter strategy.
+            throw new RateLimitException($url, null);
+        }
+
+        throw new ScrapingException(
+            $url,
+            sprintf('AO3 returned HTTP %d for URL: %s', $statusCode, $url),
+            $statusCode,
+        );
+    }
+
+    /**
+     * Sleeps for the remaining portion of $requestDelayMs that hasn't elapsed
+     * since the last outbound request. No-op on the first call or if enough time
+     * has already passed.
+     */
+    private function throttle(): void
+    {
+        if ($this->requestDelayMs <= 0 || $this->lastRequestAt === null) {
+            return;
+        }
+
+        $elapsedMs = (int) ((microtime(true) - $this->lastRequestAt) * 1000);
+        $remainingMs = $this->requestDelayMs - $elapsedMs;
+
+        if ($remainingMs > 0) {
+            usleep($remainingMs * 1000);
+        }
+    }
+
+    /**
+     * Parses the Retry-After response header.
+     * Returns null if absent or if the value exceeds RETRY_AFTER_CAP_SECONDS.
+     * Values over the cap are logged so the operator knows AO3's instruction was received.
+     *
+     * @param array<string, list<string>> $headers
+     */
+    private function parseRetryAfter(array $headers): ?int
+    {
+        // Header names are lowercased by Symfony's HTTP client.
+        $values = $headers['retry-after'] ?? [];
+        if ($values === []) {
+            return null;
+        }
+
+        $seconds = (int) $values[0];
+        if ($seconds > self::RETRY_AFTER_CAP_SECONDS) {
+            $this->logger->warning('AO3 scraper: Retry-After exceeds cap; treating as null', [
+                'retry_after' => $seconds,
+                'cap' => self::RETRY_AFTER_CAP_SECONDS,
+            ]);
+
+            return null;
+        }
+
+        return $seconds > 0 ? $seconds : null;
     }
 
     private function normalizeUrl(string $url): string
@@ -409,41 +527,22 @@ class Ao3Scraper implements ScraperInterface
      * Fetches the AO3 series page and extracts series-level metadata.
      * Returns null for any field that cannot be determined.
      *
+     * Unlike the work page fetch, transport failures and rate limits are allowed to propagate —
+     * the caller (scrape()) handles them uniformly.
+     *
      * @return array{numberOfParts: int|null, totalWords: int|null, isComplete: bool|null}
+     *
+     * @throws RateLimitException
+     * @throws ScrapingException
+     * @throws TransportExceptionInterface
      */
     private function fetchSeriesData(string $seriesUrl): array
     {
-        $empty = ['numberOfParts' => null, 'totalWords' => null, 'isComplete' => null];
-
         $this->logger->debug('AO3 scraper: fetching series page', ['url' => $seriesUrl]);
 
-        try {
-            $response = $this->httpClient->request('GET', $seriesUrl, [
-                'headers' => [
-                    'User-Agent' => $this->userAgent,
-                    'Cookie' => 'view_adult=true',
-                ],
-            ]);
+        $html = $this->fetchUrl($seriesUrl);
 
-            $statusCode = $response->getStatusCode();
-            if ($statusCode !== 200) {
-                $this->logger->warning('AO3 scraper: series page returned non-200', [
-                    'url' => $seriesUrl,
-                    'http_status' => $statusCode,
-                ]);
-
-                return $empty;
-            }
-
-            return $this->parseSeriesPage($response->getContent());
-        } catch (\Throwable $e) {
-            $this->logger->warning('AO3 scraper: failed to fetch series page', [
-                'url' => $seriesUrl,
-                'error' => $e->getMessage(),
-            ]);
-
-            return $empty;
-        }
+        return $this->parseSeriesPage($html);
     }
 
     /**

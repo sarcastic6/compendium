@@ -10,10 +10,12 @@ use App\Form\WorkFormType;
 use App\Repository\MetadataRepository;
 use App\Repository\MetadataTypeRepository;
 use App\Repository\WorkRepository;
+use App\Scraper\RateLimitException;
 use App\Scraper\ScrapedWorkDto;
 use App\Scraper\ScraperRegistry;
 use App\Scraper\ScrapingException;
 use App\Service\ImportService;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use App\Service\WorkService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -212,6 +214,15 @@ class WorkController extends AbstractController
 
         try {
             $scraped = $scraper->scrape($link);
+        } catch (RateLimitException $e) {
+            $this->logger->warning('Work refresh rate limited', [
+                'work_id'       => $id,
+                'url'           => $link,
+                'retry_after'   => $e->getRetryAfterSeconds(),
+            ]);
+            $this->addFlash('error', 'work.refresh.error.rate_limited');
+
+            return $this->redirectToRoute('app_work_show', ['id' => $id]);
         } catch (ScrapingException $e) {
             $this->logger->error('Work refresh scrape failed', [
                 'work_id'     => $id,
@@ -220,6 +231,15 @@ class WorkController extends AbstractController
                 'error'       => $e->getMessage(),
             ]);
             $this->addFlash('error', 'work.refresh.error.scrape_failed');
+
+            return $this->redirectToRoute('app_work_show', ['id' => $id]);
+        } catch (TransportExceptionInterface $e) {
+            $this->logger->error('Work refresh connection failed', [
+                'work_id' => $id,
+                'url'     => $link,
+                'error'   => $e->getMessage(),
+            ]);
+            $this->addFlash('error', 'work.refresh.error.connection_failed');
 
             return $this->redirectToRoute('app_work_show', ['id' => $id]);
         }
@@ -353,6 +373,14 @@ class WorkController extends AbstractController
 
             try {
                 $scraped = $scraper->scrape($url);
+            } catch (RateLimitException $e) {
+                $this->logger->warning('Import scrape rate limited', [
+                    'url'         => $url,
+                    'retry_after' => $e->getRetryAfterSeconds(),
+                ]);
+                $this->addFlash('error', 'import.error.rate_limited');
+
+                return $this->redirectToRoute('app_work_select');
             } catch (ScrapingException $e) {
                 $this->logger->error('Import scrape failed', [
                     'url'         => $url,
@@ -360,6 +388,14 @@ class WorkController extends AbstractController
                     'error'       => $e->getMessage(),
                 ]);
                 $this->addFlash('error', 'import.error.scrape_failed');
+
+                return $this->redirectToRoute('app_work_select');
+            } catch (TransportExceptionInterface $e) {
+                $this->logger->error('Import scrape connection failed', [
+                    'url'   => $url,
+                    'error' => $e->getMessage(),
+                ]);
+                $this->addFlash('error', 'import.error.connection_failed');
 
                 return $this->redirectToRoute('app_work_select');
             }
