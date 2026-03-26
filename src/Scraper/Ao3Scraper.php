@@ -33,6 +33,27 @@ class Ao3Scraper implements ScraperInterface
      */
     private ?float $lastRequestAt = null;
 
+    /**
+     * The authenticated session cookie string (e.g. "_otwarchive_session=VALUE"),
+     * set after a successful login and appended to all subsequent requests.
+     * Null when auth is disabled or login has not yet succeeded.
+     */
+    private ?string $sessionCookie = null;
+
+    /**
+     * True once a login attempt has been made (regardless of outcome),
+     * so we only attempt login once per process lifetime.
+     * Reset to false by invalidateSession() when a stale session is detected,
+     * allowing one re-authentication attempt per fetchUrl() call.
+     */
+    private bool $loginAttempted = false;
+
+    /**
+     * Absolute path to the JSON file used to persist the AO3 session cookie
+     * across process lifetimes. e.g. /path/to/project/var/ao3_session.json
+     */
+    private readonly string $sessionFilePath;
+
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly LoggerInterface $logger,
@@ -40,7 +61,18 @@ class Ao3Scraper implements ScraperInterface
         private readonly string $userAgent,
         #[Autowire(env: 'int:SCRAPER_REQUEST_DELAY_MS')]
         private readonly int $requestDelayMs,
+        #[Autowire(env: 'bool:AO3_AUTH_ENABLED')]
+        private readonly bool $authEnabled,
+        // Nullable so the container compiles when auth is disabled and the vars are absent.
+        // Values are only used when $authEnabled is true.
+        #[Autowire(env: 'default::AO3_USERNAME')]
+        private readonly ?string $username,
+        #[Autowire(env: 'default::AO3_PASSWORD')]
+        private readonly ?string $password,
+        #[Autowire(param: 'kernel.project_dir')]
+        string $projectDir,
     ) {
+        $this->sessionFilePath = $projectDir . '/var/ao3_session.json';
     }
 
     public function supports(string $url): bool
@@ -149,17 +181,23 @@ class Ao3Scraper implements ScraperInterface
      * @throws ScrapingException
      * @throws TransportExceptionInterface
      */
-    private function fetchUrl(string $url): string
+    private function fetchUrl(string $url, bool $isRetry = false): string
     {
+        $this->ensureLoggedIn();
         $this->throttle();
+
+        // Always send view_adult to bypass the adult-content interstitial.
+        // AO3 redirects canonical work URLs to /chapters/{id} and drops query params,
+        // so this must be a cookie (not a query param) to survive the redirect chain.
+        $cookies = ['view_adult=true'];
+        if ($this->sessionCookie !== null) {
+            $cookies[] = $this->sessionCookie;
+        }
 
         $response = $this->httpClient->request('GET', $url, [
             'headers' => [
                 'User-Agent' => $this->userAgent,
-                // AO3 redirects canonical work URLs to /chapters/{id} and drops query
-                // params. Sending view_adult as a cookie ensures the adult-content
-                // bypass persists through the entire redirect chain.
-                'Cookie' => 'view_adult=true',
+                'Cookie' => implode('; ', $cookies),
             ],
         ]);
 
@@ -176,6 +214,31 @@ class Ao3Scraper implements ScraperInterface
         ]);
 
         if ($statusCode === 200) {
+            // AO3 redirects requests for restricted works to the login page (still a 200).
+            if ($this->isLoginPage($finalUrl)) {
+                if (!$this->authEnabled) {
+                    throw new AuthRequiredException(
+                        $url,
+                        sprintf('AO3 requires authentication for URL: %s (auth is disabled)', $url),
+                    );
+                }
+
+                if (!$isRetry) {
+                    // Session may have expired — invalidate and re-authenticate once.
+                    $this->logger->warning('AO3 scraper: session expired (redirected to login page), re-authenticating');
+                    $this->invalidateSession();
+
+                    return $this->fetchUrl($url, true);
+                }
+
+                // Re-authentication did not help — credentials are likely wrong or the
+                // account does not have access to this work.
+                throw new AuthRequiredException(
+                    $url,
+                    sprintf('AO3 requires authentication for URL: %s (login failed or access denied)', $url),
+                );
+            }
+
             return $response->getContent();
         }
 
@@ -597,6 +660,263 @@ class Ao3Scraper implements ScraperInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Logs in to AO3 if auth is enabled and a login has not yet been attempted.
+     *
+     * Called once per process lifetime (guarded by $loginAttempted).
+     * On success, $sessionCookie is populated and included in all subsequent requests.
+     * On any non-rate-limit failure, logs a warning and continues without auth —
+     * scraping still works, just without access to registered-user-only works.
+     *
+     * Login flow:
+     *   1. GET /users/sign_in → extract authenticity_token + pre-login session cookie
+     *   2. POST /users/sign_in (no redirect follow) → on 302, extract _otwarchive_session
+     *
+     * @throws RateLimitException if AO3 rate-limits the login page request
+     * @throws TransportExceptionInterface if an HTTP request cannot be completed
+     */
+    private function ensureLoggedIn(): void
+    {
+        if (!$this->authEnabled || $this->loginAttempted) {
+            return;
+        }
+
+        if (empty($this->username) || empty($this->password)) {
+            $this->logger->warning('AO3 auth is enabled but AO3_USERNAME or AO3_PASSWORD is not set; skipping login');
+            $this->loginAttempted = true;
+
+            return;
+        }
+
+        // Try to reuse a persisted session from a previous process before doing a full login.
+        $storedCookie = $this->loadSession();
+        if ($storedCookie !== null) {
+            $this->sessionCookie = $storedCookie;
+            $this->loginAttempted = true;
+            $this->logger->debug('AO3 scraper: loaded persisted session from file');
+
+            return;
+        }
+
+        $this->loginAttempted = true;
+
+        $this->logger->debug('AO3 scraper: attempting login', ['username' => $this->username]);
+
+        // Step 1: GET login page — extract CSRF token and pre-login session cookie.
+        $loginUrl = 'https://' . self::AO3_HOST . '/users/login';
+
+        $this->throttle();
+        $pageResponse = $this->httpClient->request('GET', $loginUrl, [
+            'headers' => ['User-Agent' => $this->userAgent],
+        ]);
+        $pageStatus = $pageResponse->getStatusCode();
+        $this->lastRequestAt = microtime(true);
+
+        if ($pageStatus === 429 || $pageStatus === 503) {
+            throw new RateLimitException($loginUrl, $this->parseRetryAfter($pageResponse->getHeaders(false)));
+        }
+
+        if ($pageStatus !== 200) {
+            $this->logger->warning('AO3 login: could not load login page', ['status' => $pageStatus]);
+
+            return;
+        }
+
+        $token = $this->parseAuthenticityToken($pageResponse->getContent());
+        if ($token === null) {
+            $this->logger->warning('AO3 login: authenticity_token not found on login page');
+
+            return;
+        }
+
+        $preCookies = $this->extractAllCookies($pageResponse->getHeaders(false));
+
+        // Step 2: POST credentials. Use max_redirects=0 so we receive the 302 directly
+        // and can read its Set-Cookie header before the client follows the redirect.
+        $cookieHeader = implode('; ', array_filter([$preCookies, 'view_adult=true']));
+
+        $this->throttle();
+        $postResponse = $this->httpClient->request('POST', $loginUrl, [
+            'max_redirects' => 0,
+            'headers' => [
+                'User-Agent' => $this->userAgent,
+                'Cookie' => $cookieHeader,
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'body' => http_build_query([
+                'user[login]' => $this->username,
+                'user[password]' => $this->password,
+                'authenticity_token' => $token,
+                'user[remember_me]' => '1',
+                'commit' => 'Log in',
+            ]),
+        ]);
+        $postStatus = $postResponse->getStatusCode();
+        $this->lastRequestAt = microtime(true);
+
+        if ($postStatus === 429 || $postStatus === 503) {
+            throw new RateLimitException($loginUrl, $this->parseRetryAfter($postResponse->getHeaders(false)));
+        }
+
+        // A successful AO3 login redirects (302) to the user's profile page.
+        if ($postStatus !== 302) {
+            $this->logger->warning('AO3 login: unexpected POST response (wrong credentials?)', [
+                'status' => $postStatus,
+            ]);
+
+            return;
+        }
+
+        $sessionCookie = $this->extractSessionCookie($postResponse->getHeaders(false));
+        if ($sessionCookie === null) {
+            $this->logger->warning('AO3 login: session cookie not found in login redirect');
+
+            return;
+        }
+
+        $this->sessionCookie = $sessionCookie;
+        $this->saveSession();
+        $this->logger->info('AO3 scraper: login successful', ['username' => $this->username]);
+    }
+
+    /**
+     * Returns true if the given URL is the AO3 login page.
+     * Used to detect when a request was silently redirected due to an expired session.
+     */
+    private function isLoginPage(string $url): bool
+    {
+        $path = parse_url($url, PHP_URL_PATH) ?? '';
+
+        return str_contains($path, '/users/login');
+    }
+
+    /**
+     * Loads the persisted session cookie from the JSON file.
+     * Returns null if the file does not exist, is unreadable, or has no cookie value.
+     */
+    private function loadSession(): ?string
+    {
+        if (!file_exists($this->sessionFilePath)) {
+            return null;
+        }
+
+        try {
+            $contents = file_get_contents($this->sessionFilePath);
+            if ($contents === false) {
+                return null;
+            }
+
+            /** @var array{cookie?: string}|null $data */
+            $data = json_decode($contents, true);
+            if (!is_array($data) || empty($data['cookie'])) {
+                return null;
+            }
+
+            return $data['cookie'];
+        } catch (\Throwable $e) {
+            $this->logger->warning('AO3 scraper: failed to read session file', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Persists the current session cookie to the JSON file so it can be reused
+     * by future processes without requiring a fresh login.
+     */
+    private function saveSession(): void
+    {
+        if ($this->sessionCookie === null) {
+            return;
+        }
+
+        try {
+            $data = json_encode([
+                'cookie' => $this->sessionCookie,
+                'saved_at' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
+
+            file_put_contents($this->sessionFilePath, $data);
+        } catch (\Throwable $e) {
+            $this->logger->warning('AO3 scraper: failed to save session file', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Clears the in-memory session state and deletes the session file.
+     * Called when a stale session is detected so ensureLoggedIn() will perform
+     * a fresh login on the next fetchUrl() call.
+     */
+    private function invalidateSession(): void
+    {
+        $this->sessionCookie = null;
+        $this->loginAttempted = false;
+
+        if (file_exists($this->sessionFilePath)) {
+            @unlink($this->sessionFilePath);
+        }
+
+        $this->logger->info('AO3 scraper: session invalidated, will re-authenticate');
+    }
+
+    /**
+     * Parses the Rails authenticity_token from the login page HTML.
+     * Returns null if the field is not found or parsing fails.
+     */
+    private function parseAuthenticityToken(string $html): ?string
+    {
+        try {
+            $crawler = new Crawler($html);
+            $node = $crawler->filter('input[name="authenticity_token"]');
+            if ($node->count() === 0) {
+                return null;
+            }
+
+            return $node->first()->attr('value');
+        } catch (\Throwable $e) {
+            $this->logger->warning('AO3 login: failed to parse authenticity_token', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Extracts all name=value pairs from Set-Cookie response headers as a single
+     * cookie string suitable for use in a Cookie request header.
+     * Only the name=value portion is kept; attributes (Path, HttpOnly, etc.) are stripped.
+     *
+     * @param array<string, list<string>> $headers
+     */
+    private function extractAllCookies(array $headers): string
+    {
+        $cookies = [];
+        foreach ($headers['set-cookie'] ?? [] as $cookie) {
+            $nameValue = trim(explode(';', $cookie, 2)[0]);
+            if ($nameValue !== '') {
+                $cookies[] = $nameValue;
+            }
+        }
+
+        return implode('; ', $cookies);
+    }
+
+    /**
+     * Finds the _otwarchive_session cookie in Set-Cookie response headers and
+     * returns its name=value string, or null if not present.
+     *
+     * @param array<string, list<string>> $headers
+     */
+    private function extractSessionCookie(array $headers): ?string
+    {
+        foreach ($headers['set-cookie'] ?? [] as $cookie) {
+            if (str_starts_with($cookie, '_otwarchive_session=')) {
+                return trim(explode(';', $cookie, 2)[0]);
+            }
+        }
+
+        return null;
     }
 
     /**
