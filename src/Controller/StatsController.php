@@ -7,6 +7,9 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\MetadataTypeRepository;
 use App\Repository\StatusRepository;
+use App\Repository\UserAchievementRepository;
+use App\Service\AchievementService;
+use App\Service\ReadingGoalService;
 use App\Service\StatisticsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,6 +25,9 @@ class StatsController extends AbstractController
         private readonly StatisticsService $statisticsService,
         private readonly MetadataTypeRepository $metadataTypeRepository,
         private readonly StatusRepository $statusRepository,
+        private readonly AchievementService $achievementService,
+        private readonly ReadingGoalService $readingGoalService,
+        private readonly UserAchievementRepository $userAchievementRepository,
     ) {
     }
 
@@ -53,6 +59,19 @@ class StatsController extends AbstractController
             'pairing'  => $this->statisticsService->getTopMainPairingSpotlight($user, $year),
         ];
 
+        $currentYear      = (int) date('Y');
+        $goalsWithProgress = $this->readingGoalService->getGoalsWithProgress($user, $currentYear);
+        $achievementProgress = $this->achievementService->getProgress($user);
+        $recentAchievements  = $this->userAchievementRepository->findByUser($user);
+
+        // Only show the 5 most recently unlocked on the dashboard
+        $recentAchievements = array_slice($recentAchievements, 0, 5);
+
+        // Next to unlock: locked achievements sorted by progress descending
+        $nextAchievements = array_filter($achievementProgress, static fn (array $p): bool => !$p['unlocked']);
+        usort($nextAchievements, static fn (array $a, array $b): int => $b['progressPct'] <=> $a['progressPct']);
+        $nextAchievements = array_slice($nextAchievements, 0, 5);
+
         return $this->render('stats/dashboard.html.twig', [
             'summary' => $summary,
             'trendData' => $trendData,
@@ -64,6 +83,11 @@ class StatsController extends AbstractController
             'year' => $year,
             'chartUrls' => $chartUrls,
             'topMetadata' => $topMetadata,
+            'goalsWithProgress' => $goalsWithProgress,
+            'currentYear' => $currentYear,
+            'recentAchievements' => $recentAchievements,
+            'nextAchievements' => $nextAchievements,
+            'achievementProgress' => $achievementProgress,
         ]);
     }
 

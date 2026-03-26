@@ -129,6 +129,51 @@
 
 </div>
 
+{# ── Reading goals progress (current year, above tabs) ────────────────────── #}
+{% if goalsWithProgress is not empty %}
+<div class="chart-card mb-4">
+    <div class="chart-card-header">
+        <span class="chart-card-title">
+            {{ 'goal.dashboard.heading'|trans({'%year%': currentYear}) }}
+        </span>
+        <a href="{{ path('app_goals') }}" class="btn btn-sm btn-ghost">
+            {{ 'goal.dashboard.manage'|trans }}
+        </a>
+    </div>
+    <div class="chart-card-body">
+        <div class="row g-3">
+            {% for item in goalsWithProgress %}
+            <div class="col-12 col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span style="font-size: var(--text-sm);">
+                        {{ ('goal.type.' ~ item.goal.goalType.value)|trans }}
+                    </span>
+                    <span style="font-size: var(--text-sm); color: var(--color-text-muted);">
+                        {{ item.currentValue|number_format }} / {{ item.goal.targetValue|number_format }}
+                        {% if item.progressPct >= 100 %}
+                            <i class="bi bi-check-circle-fill text-success ms-1" aria-hidden="true"></i>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="progress" style="height: 8px;" role="progressbar"
+                     aria-valuenow="{{ item.progressPct|round }}"
+                     aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar{% if item.progressPct >= 100 %} bg-success{% endif %}"
+                         style="width: {{ item.progressPct }}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="mb-4 text-end" style="font-size: var(--text-sm);">
+    <a href="{{ path('app_goals') }}" class="text-muted">
+        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>{{ 'goal.dashboard.set_goal'|trans({'%year%': currentYear}) }}
+    </a>
+</div>
+{% endif %}
+
 {# ── Tabs ─────────────────────────────────────────────────────────────────── #}
 <div class="analytics-tabs" role="tablist">
     <button class="analytics-tab active" id="tab-overview-btn"
@@ -142,6 +187,12 @@
             type="button" role="tab"
             aria-selected="false" aria-controls="tab-breakdown">
         {{ 'stats.dashboard.tab_breakdown'|trans }}
+    </button>
+    <button class="analytics-tab" id="tab-achievements-btn"
+            data-bs-toggle="tab" data-bs-target="#tab-achievements"
+            type="button" role="tab"
+            aria-selected="false" aria-controls="tab-achievements">
+        {{ 'stats.dashboard.tab_achievements'|trans }}
     </button>
 </div>
 
@@ -436,6 +487,86 @@
         </div>
 
     </div>{# end tab-breakdown #}
+
+    {# ── Achievements tab ──────────────────────────────────────────────────── #}
+    <div class="tab-pane fade" id="tab-achievements" role="tabpanel">
+
+        {# Recently unlocked #}
+        {% if recentAchievements is not empty %}
+        <div class="chart-card mb-4">
+            <div class="chart-card-header">
+                <span class="chart-card-title">{{ 'achievement.dashboard.recent'|trans }}</span>
+                <a href="{{ path('app_achievements') }}" class="btn btn-sm btn-ghost">
+                    {{ 'achievement.dashboard.view_all'|trans }}
+                </a>
+            </div>
+            <div class="chart-card-body">
+                <div class="d-flex flex-column gap-3">
+                    {% for ua in recentAchievements %}
+                        {% set def = achievementProgress[ua.achievementKey].definition %}
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="achievement-icon-sm">
+                                <i class="bi {{ def.icon }}" aria-hidden="true"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div style="font-weight: var(--weight-semibold); font-size: var(--text-sm);">
+                                    {{ def.nameKey|trans }}
+                                </div>
+                                <div style="font-size: var(--text-xs); color: var(--color-text-muted);">
+                                    {{ ua.unlockedAt|date('M j, Y') }}
+                                </div>
+                            </div>
+                            <i class="bi bi-check-circle-fill text-success" aria-hidden="true"></i>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="chart-card mb-4">
+            <div class="chart-card-body">
+                <p class="empty-state-text">{{ 'achievement.dashboard.none_yet'|trans }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Next to unlock #}
+        {% if nextAchievements is not empty %}
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <span class="chart-card-title">{{ 'achievement.dashboard.next'|trans }}</span>
+            </div>
+            <div class="chart-card-body">
+                <div class="d-flex flex-column gap-3">
+                    {% for item in nextAchievements %}
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="bi {{ item.definition.icon }}" style="font-size: var(--text-base); color: var(--color-text-muted);" aria-hidden="true"></i>
+                                <span style="font-size: var(--text-sm); font-weight: var(--weight-semibold);">
+                                    {{ item.definition.nameKey|trans }}
+                                </span>
+                                <span class="ms-auto" style="font-size: var(--text-xs); color: var(--color-text-muted);">
+                                    {{ item.current|number_format }} / {{ item.target|number_format }}
+                                </span>
+                            </div>
+                            <div class="progress" style="height: 5px;" role="progressbar"
+                                 aria-valuenow="{{ item.progressPct|round }}"
+                                 aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar" style="width: {{ item.progressPct }}%"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3 text-end">
+                    <a href="{{ path('app_achievements') }}" style="font-size: var(--text-sm);">
+                        {{ 'achievement.dashboard.view_all'|trans }}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>{# end tab-achievements #}
 
 </div>{# end tab-content #}
 

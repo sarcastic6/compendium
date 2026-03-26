@@ -1,0 +1,66 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'achievement.page.heading'|trans }}{% endblock %}
+
+{% block body %}
+
+<div class="page-header">
+    <div class="page-header-text">
+        <h1 class="page-title">{{ 'achievement.page.heading'|trans }}</h1>
+        <p class="page-subtitle">{{ 'achievement.page.subtitle'|trans }}</p>
+    </div>
+</div>
+
+{% set categoryLabels = {
+    'volume':      'achievement.category.volume'|trans,
+    'exploration': 'achievement.category.exploration'|trans,
+    'dedication':  'achievement.category.dedication'|trans,
+    'engagement':  'achievement.category.engagement'|trans,
+} %}
+
+{% for category, defs in grouped %}
+<section class="mb-6">
+    <h2 class="section-heading mb-4">{{ categoryLabels[category] ?? category|capitalize }}</h2>
+    <div class="row g-3">
+        {% for def in defs %}
+            {% set item = progress[def.value] %}
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                <div class="achievement-card{% if not item.unlocked %} achievement-card--locked{% endif %}">
+                    <div class="achievement-card-icon">
+                        <i class="bi {{ def.icon }}" aria-hidden="true"></i>
+                    </div>
+                    <div class="achievement-card-body">
+                        <div class="achievement-card-name">{{ def.nameKey|trans }}</div>
+                        <div class="achievement-card-desc">{{ def.descriptionKey|trans }}</div>
+
+                        {% if item.unlocked %}
+                            <div class="achievement-card-date">
+                                <i class="bi bi-check-circle-fill text-success" aria-hidden="true"></i>
+                                {{ item.unlockedAt|date('M j, Y') }}
+                            </div>
+                        {% else %}
+                            {# Progress bar for locked achievements #}
+                            <div class="achievement-card-progress mt-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">
+                                        {{ item.current|number_format }} / {{ item.target|number_format }}
+                                    </small>
+                                    <small class="text-muted">{{ item.progressPct|round }}%</small>
+                                </div>
+                                <div class="progress" style="height: 6px;" role="progressbar"
+                                     aria-valuenow="{{ item.progressPct|round }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar"
+                                         style="width: {{ item.progressPct }}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+
+{% endblock %}

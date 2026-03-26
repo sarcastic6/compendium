@@ -121,6 +121,18 @@
                         </div>
                     </div>
 
+                    <a href="{{ path('app_achievements') }}"
+                       class="sidebar-nav-item{% if currentRoute starts with 'app_achievements' %} active{% endif %}">
+                        <i class="bi bi-trophy-fill sidebar-nav-icon" aria-hidden="true"></i>
+                        {{ 'nav.achievements'|trans }}
+                    </a>
+
+                    <a href="{{ path('app_goals') }}"
+                       class="sidebar-nav-item{% if currentRoute starts with 'app_goals' %} active{% endif %}">
+                        <i class="bi bi-bullseye sidebar-nav-icon" aria-hidden="true"></i>
+                        {{ 'nav.goals'|trans }}
+                    </a>
+
                     {% if is_granted('ROLE_ADMIN') %}
                         <a href="{{ path('app_admin_index') }}"
                            class="sidebar-nav-item{% if currentRoute starts with 'app_admin' %} active{% endif %}">

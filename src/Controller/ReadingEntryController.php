@@ -16,6 +16,7 @@ use App\Repository\ReadingEntryRepository;
 use App\Repository\SeriesRepository;
 use App\Repository\StatusRepository;
 use App\Repository\WorkRepository;
+use App\Service\AchievementService;
 use App\Service\ReadingEntryService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -38,6 +39,7 @@ class ReadingEntryController extends AbstractController
         private readonly LanguageRepository $languageRepository,
         private readonly MetadataRepository $metadataRepository,
         private readonly SeriesRepository $seriesRepository,
+        private readonly AchievementService $achievementService,
     ) {
     }
 
@@ -230,6 +232,7 @@ class ReadingEntryController extends AbstractController
                 // are never added to the unit of work.
                 $this->readingEntryService->validateAndSave($entry);
                 $this->addFlash('success', 'reading.entry.added');
+                $this->flashNewAchievements($user);
 
                 return $this->redirectToRoute('app_reading_entry_list');
             } catch (\InvalidArgumentException $e) {
@@ -264,6 +267,7 @@ class ReadingEntryController extends AbstractController
             try {
                 $this->readingEntryService->updateFromDto($entry, $dto);
                 $this->addFlash('success', 'reading.entry.updated');
+                $this->flashNewAchievements($user);
 
                 return $this->redirectToRoute('app_reading_entry_show', ['id' => $entry->getId()]);
             } catch (\InvalidArgumentException $e) {
@@ -327,6 +331,7 @@ class ReadingEntryController extends AbstractController
         $count = $this->readingEntryService->bulkUpdateStatus($user, $ids, $status);
 
         $this->addFlash('success', 'reading.bulk.status_updated');
+        $this->flashNewAchievements($user);
 
         return $this->redirectToRoute('app_reading_entry_list', $request->query->all());
     }
@@ -350,5 +355,17 @@ class ReadingEntryController extends AbstractController
         $this->addFlash('success', 'reading.bulk.entries_deleted');
 
         return $this->redirectToRoute('app_reading_entry_list', $request->query->all());
+    }
+
+    /**
+     * Evaluates achievements after a data-changing operation and adds a flash
+     * message for each newly unlocked achievement.
+     */
+    private function flashNewAchievements(User $user): void
+    {
+        $newlyUnlocked = $this->achievementService->evaluateAchievements($user);
+        foreach ($newlyUnlocked as $def) {
+            $this->addFlash('achievement', $def->getUnlockedMessageKey());
+        }
     }
 }

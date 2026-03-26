@@ -1987,4 +1987,350 @@ class ReadingEntryRepository extends ServiceEntityRepository
             }
         }
     }
+
+    // =========================================================================
+    // Achievement query methods
+    // All methods below are used exclusively by AchievementService.
+    // "Finished" means status.countsAsRead = true unless otherwise noted.
+    // The SoftDeleteFilter is not disabled here — achievement calculations
+    // intentionally exclude soft-deleted works (they no longer represent
+    // active content the user completed).
+    // =========================================================================
+
+    /**
+     * COUNT(DISTINCT metadata) of the given type across all finished entries.
+     * Used for unique-fandoms and unique-authors achievement conditions.
+     */
+    public function countDistinctMetadataForFinished(User $user, string $typeName): int
+    {
+        $result = $this->createQueryBuilder('re')
+            ->select('COUNT(DISTINCT m.id)')
+            ->innerJoin('re.status', 's')
+            ->innerJoin('re.work', 'w')
+            ->innerJoin('w.metadata', 'm')
+            ->innerJoin('m.metadataType', 'mt')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->andWhere('mt.name = :typeName')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true)
+            ->setParameter('typeName', $typeName)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $result;
+    }
+
+    /**
+     * COUNT(DISTINCT work.language) across all finished entries.
+     * Used for the unique-languages achievement condition.
+     */
+    public function countDistinctLanguagesForFinished(User $user): int
+    {
+        $result = $this->createQueryBuilder('re')
+            ->select('COUNT(DISTINCT w.language)')
+            ->innerJoin('re.status', 's')
+            ->innerJoin('re.work', 'w')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->andWhere('w.language IS NOT NULL')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $result;
+    }
+
+    /**
+     * Returns true if the user has at least one finished entry whose work has
+     * >= $minWords words. Used for long-work achievement conditions.
+     */
+    public function hasFinishedWorkWithMinWords(User $user, int $minWords): bool
+    {
+        $result = $this->createQueryBuilder('re')
+            ->select('COUNT(re.id)')
+            ->innerJoin('re.status', 's')
+            ->innerJoin('re.work', 'w')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->andWhere('w.words >= :minWords')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true)
+            ->setParameter('minWords', $minWords)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $result > 0;
+    }
+
+    /**
+     * COUNT of entries where reviewStars IS NOT NULL.
+     * Used for rated-count achievement conditions.
+     */
+    public function countRated(User $user): int
+    {
+        return (int) $this->createQueryBuilder('re')
+            ->select('COUNT(re.id)')
+            ->where('re.user = :user')
+            ->andWhere('re.reviewStars IS NOT NULL')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Returns the dateFinished (or createdAt fallback) of the Nth finished entry,
+     * ordered by dateFinished ASC. Used to derive historical unlock dates for
+     * finished-count achievements.
+     *
+     * Returns null if fewer than N finished entries exist.
+     */
+    public function getNthFinishedEntryDate(User $user, int $n): ?\DateTimeImmutable
+    {
+        $rows = $this->createQueryBuilder('re')
+            ->select('re.dateFinished', 're.createdAt')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true)
+            ->orderBy('re.dateFinished', 'ASC')
+            ->addOrderBy('re.createdAt', 'ASC')
+            ->setFirstResult($n - 1)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getScalarResult();
+
+        if (empty($rows)) {
+            return null;
+        }
+
+        $row = $rows[0];
+        // dateFinished may be null if user didn't record a finish date; fall back to createdAt
+        $dateStr = $row['dateFinished'] ?? $row['createdAt'];
+
+        if ($dateStr === null) {
+            return null;
+        }
+
+        return new \DateTimeImmutable((string) $dateStr);
+    }
+
+    /**
+     * Returns all finished entries with their work's word count, ordered by
+     * dateFinished ASC (then createdAt for stability). Used by AchievementService
+     * to compute running word-sum milestones in PHP.
+     *
+     * @return array<int, array{dateFinished: string|null, createdAt: string, words: int|null}>
+     */
+    public function getFinishedEntriesWithWordsOrderedByDate(User $user): array
+    {
+        /** @var array<int, array{dateFinished: string|null, createdAt: string, words: int|null}> */
+        return $this->createQueryBuilder('re')
+            ->select('re.dateFinished', 're.createdAt', 'w.words')
+            ->innerJoin('re.status', 's')
+            ->innerJoin('re.work', 'w')
+            ->where('re.user = :user')
+            ->andWhere('s.hasBeenStarted = :started')
+            ->setParameter('user', $user)
+            ->setParameter('started', true)
+            ->orderBy('re.dateFinished', 'ASC')
+            ->addOrderBy('re.createdAt', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+    }
+
+    /**
+     * Returns finished entries with metadata of the given type, ordered by
+     * dateFinished ASC. Each row has dateFinished, createdAt, and metadataId.
+     * Used by AchievementService to compute unique-metadata milestones in PHP.
+     *
+     * @return array<int, array{dateFinished: string|null, createdAt: string, metadataId: int}>
+     */
+    public function getFinishedEntriesWithMetadataOrderedByDate(User $user, string $typeName): array
+    {
+        /** @var array<int, array{dateFinished: string|null, createdAt: string, metadataId: int}> */
+        return $this->createQueryBuilder('re')
+            ->select('re.dateFinished', 're.createdAt', 'm.id AS metadataId')
+            ->innerJoin('re.status', 's')
+            ->innerJoin('re.work', 'w')
+            ->innerJoin('w.metadata', 'm')
+            ->innerJoin('m.metadataType', 'mt')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->andWhere('mt.name = :typeName')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true)
+            ->setParameter('typeName', $typeName)
+            ->orderBy('re.dateFinished', 'ASC')
+            ->addOrderBy('re.createdAt', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+    }
+
+    /**
+     * Returns finished entries with their work's language, ordered by dateFinished ASC.
+     * Each row has dateFinished, createdAt, and languageId.
+     * Used by AchievementService to compute unique-language milestones in PHP.
+     *
+     * @return array<int, array{dateFinished: string|null, createdAt: string, languageId: int|null}>
+     */
+    public function getFinishedEntriesWithLanguageOrderedByDate(User $user): array
+    {
+        /** @var array<int, array{dateFinished: string|null, createdAt: string, languageId: int|null}> */
+        return $this->createQueryBuilder('re')
+            ->select('re.dateFinished', 're.createdAt', 'IDENTITY(w.language) AS languageId')
+            ->innerJoin('re.status', 's')
+            ->innerJoin('re.work', 'w')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->andWhere('w.language IS NOT NULL')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true)
+            ->orderBy('re.dateFinished', 'ASC')
+            ->addOrderBy('re.createdAt', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+    }
+
+    /**
+     * Returns the dateFinished of the first "second finished read" of any work
+     * for this user — i.e. the earliest re-read completion date.
+     *
+     * Strategy: for each work with >= 2 finished entries, rank the entries by
+     * dateFinished ASC. The re-read date is the dateFinished of rank 2 (the
+     * second time they finished that work). We return the minimum across all works.
+     *
+     * Computed in PHP for cross-DB portability (avoids window functions).
+     */
+    public function getDateOfFirstReread(User $user): ?\DateTimeImmutable
+    {
+        // Fetch (work_id, dateFinished, createdAt) for all finished entries,
+        // ordered consistently. Group in PHP.
+        $rows = $this->createQueryBuilder('re')
+            ->select('IDENTITY(re.work) AS workId', 're.dateFinished', 're.createdAt')
+            ->innerJoin('re.status', 's')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true)
+            ->orderBy('re.dateFinished', 'ASC')
+            ->addOrderBy('re.createdAt', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+
+        // Group by workId, collect ordered dateFinished values
+        $byWork = [];
+        foreach ($rows as $row) {
+            $byWork[(int) $row['workId']][] = $row['dateFinished'] ?? $row['createdAt'];
+        }
+
+        $firstRereadDate = null;
+        foreach ($byWork as $dates) {
+            if (count($dates) < 2) {
+                continue;
+            }
+            // Index 1 = second finished read (0-based)
+            $secondDate = $dates[1];
+            if ($secondDate === null) {
+                continue;
+            }
+            $dt = new \DateTimeImmutable((string) $secondDate);
+            if ($firstRereadDate === null || $dt < $firstRereadDate) {
+                $firstRereadDate = $dt;
+            }
+        }
+
+        return $firstRereadDate;
+    }
+
+    /**
+     * Returns the dateFinished of the first finished entry whose work has
+     * >= $minWords words. Returns null if no such entry exists.
+     */
+    public function getDateOfFirstLongWorkFinished(User $user, int $minWords): ?\DateTimeImmutable
+    {
+        $rows = $this->createQueryBuilder('re')
+            ->select('re.dateFinished', 're.createdAt')
+            ->innerJoin('re.status', 's')
+            ->innerJoin('re.work', 'w')
+            ->where('re.user = :user')
+            ->andWhere('s.countsAsRead = :countsAsRead')
+            ->andWhere('w.words >= :minWords')
+            ->setParameter('user', $user)
+            ->setParameter('countsAsRead', true)
+            ->setParameter('minWords', $minWords)
+            ->orderBy('re.dateFinished', 'ASC')
+            ->addOrderBy('re.createdAt', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getScalarResult();
+
+        if (empty($rows)) {
+            return null;
+        }
+
+        $dateStr = $rows[0]['dateFinished'] ?? $rows[0]['createdAt'];
+
+        return $dateStr !== null ? new \DateTimeImmutable((string) $dateStr) : null;
+    }
+
+    /**
+     * Returns the dateFinished (or createdAt fallback) of the Nth entry with
+     * a non-null reviewStars, ordered by dateFinished ASC.
+     * Used to derive historical unlock dates for rated-count achievements.
+     */
+    public function getNthRatedEntryDate(User $user, int $n): ?\DateTimeImmutable
+    {
+        $rows = $this->createQueryBuilder('re')
+            ->select('re.dateFinished', 're.createdAt')
+            ->where('re.user = :user')
+            ->andWhere('re.reviewStars IS NOT NULL')
+            ->setParameter('user', $user)
+            ->orderBy('re.dateFinished', 'ASC')
+            ->addOrderBy('re.createdAt', 'ASC')
+            ->setFirstResult($n - 1)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getScalarResult();
+
+        if (empty($rows)) {
+            return null;
+        }
+
+        $dateStr = $rows[0]['dateFinished'] ?? $rows[0]['createdAt'];
+
+        return $dateStr !== null ? new \DateTimeImmutable((string) $dateStr) : null;
+    }
+
+    /**
+     * Returns the dateFinished (or createdAt fallback) of the Nth starred entry,
+     * ordered by dateFinished ASC.
+     * Used to derive historical unlock dates for starred-count achievements.
+     */
+    public function getNthStarredEntryDate(User $user, int $n): ?\DateTimeImmutable
+    {
+        $rows = $this->createQueryBuilder('re')
+            ->select('re.dateFinished', 're.createdAt')
+            ->where('re.user = :user')
+            ->andWhere('re.starred = :starred')
+            ->setParameter('user', $user)
+            ->setParameter('starred', true)
+            ->orderBy('re.dateFinished', 'ASC')
+            ->addOrderBy('re.createdAt', 'ASC')
+            ->setFirstResult($n - 1)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getScalarResult();
+
+        if (empty($rows)) {
+            return null;
+        }
+
+        $dateStr = $rows[0]['dateFinished'] ?? $rows[0]['createdAt'];
+
+        return $dateStr !== null ? new \DateTimeImmutable((string) $dateStr) : null;
+    }
 }

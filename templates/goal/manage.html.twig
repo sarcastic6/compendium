@@ -1,0 +1,159 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ currentYear }} {{ 'goal.page.title_suffix'|trans }}{% endblock %}
+
+{% block body %}
+
+<div class="page-header">
+    <div class="page-header-text">
+        <h1 class="page-title">{{ 'goal.page.heading'|trans({'%year%': currentYear}) }}</h1>
+        <p class="page-subtitle">{{ 'goal.page.subtitle'|trans }}</p>
+    </div>
+</div>
+
+{# ── Current year goals ──────────────────────────────────────────────────── #}
+{% if currentGoals is not empty %}
+<section class="mb-6">
+    <h2 class="section-heading mb-4">{{ 'goal.section.progress'|trans({'%year%': currentYear}) }}</h2>
+    <div class="row g-3 mb-4">
+        {% for item in currentGoals %}
+        <div class="col-12 col-md-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="stat-card-label mb-1">
+                            {{ ('goal.type.' ~ item.goal.goalType.value)|trans }}
+                        </div>
+                        <div class="stat-card-value" style="font-size: var(--text-xl);">
+                            {{ item.currentValue|number_format }}
+                            <span class="text-muted" style="font-size: var(--text-base); font-weight: var(--weight-normal);">
+                                / {{ item.goal.targetValue|number_format }}
+                            </span>
+                        </div>
+                    </div>
+                    <form method="post" action="{{ path('app_goals_delete', {id: item.goal.id}) }}"
+                          class="d-inline">
+                        <input type="hidden" name="_token"
+                               value="{{ csrf_token('goal_delete_' ~ item.goal.id) }}">
+                        <button type="submit" class="btn btn-sm btn-ghost"
+                                title="{{ 'goal.action.delete'|trans }}"
+                                onclick="return confirm('{{ 'goal.confirm.delete'|trans|e('js') }}')">
+                            <i class="bi bi-trash" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                </div>
+                <div class="progress mb-2" style="height: 8px;" role="progressbar"
+                     aria-valuenow="{{ item.progressPct|round }}"
+                     aria-valuemin="0" aria-valuemax="100"
+                     aria-label="{{ ('goal.type.' ~ item.goal.goalType.value)|trans }}">
+                    <div class="progress-bar{% if item.progressPct >= 100 %} bg-success{% endif %}"
+                         style="width: {{ item.progressPct }}%"></div>
+                </div>
+                <small class="text-muted">
+                    {% if item.progressPct >= 100 %}
+                        <i class="bi bi-check-circle-fill text-success" aria-hidden="true"></i>
+                        {{ 'goal.completed'|trans }}
+                    {% else %}
+                        {{ item.progressPct|round }}%
+                        &mdash;
+                        {{ (item.goal.targetValue - item.currentValue)|number_format }}
+                        {{ 'goal.remaining'|trans }}
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{# ── Set / update a goal ─────────────────────────────────────────────────── #}
+<section class="mb-6">
+    <h2 class="section-heading mb-4">
+        {% if currentGoals is not empty %}
+            {{ 'goal.section.add_another'|trans }}
+        {% else %}
+            {{ 'goal.section.set_goal'|trans({'%year%': currentYear}) }}
+        {% endif %}
+    </h2>
+
+    <div class="chart-card" style="max-width: 480px;">
+        <div class="chart-card-body">
+            <form method="post" action="{{ path('app_goals_save') }}" novalidate>
+                <input type="hidden" name="_token" value="{{ csrf_token('goal_save') }}">
+
+                <div class="mb-3">
+                    <label for="goal_type" class="form-label">{{ 'goal.field.type'|trans }}</label>
+                    <select name="goal_type" id="goal_type" class="form-select" required>
+                        <option value="">{{ 'goal.field.type_placeholder'|trans }}</option>
+                        {% for type in goalTypes %}
+                            <option value="{{ type.value }}">
+                                {{ ('goal.type.' ~ type.value)|trans }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="target_value" class="form-label">{{ 'goal.field.target'|trans }}</label>
+                    <input type="number" name="target_value" id="target_value"
+                           class="form-control" min="1" required
+                           placeholder="{{ 'goal.field.target_placeholder'|trans }}">
+                    <div class="form-text">{{ 'goal.field.target_help'|trans }}</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    {{ 'goal.action.save'|trans }}
+                </button>
+            </form>
+        </div>
+    </div>
+    <p class="text-muted mt-3" style="font-size: var(--text-sm);">
+        {{ 'goal.note.update'|trans }}
+    </p>
+</section>
+
+{# ── Past years (read-only) ──────────────────────────────────────────────── #}
+{% if pastYears is not empty %}
+<section class="mb-6">
+    <h2 class="section-heading mb-4">{{ 'goal.section.past_years'|trans }}</h2>
+    {% for year, items in pastYears %}
+        <h3 class="mb-3" style="font-size: var(--text-lg); font-weight: var(--weight-semibold);">
+            {{ year }}
+        </h3>
+        <div class="row g-3 mb-4">
+            {% for item in items %}
+            <div class="col-12 col-md-6">
+                <div class="stat-card">
+                    <div class="stat-card-label mb-1">
+                        {{ ('goal.type.' ~ item.goal.goalType.value)|trans }}
+                    </div>
+                    <div class="stat-card-value" style="font-size: var(--text-xl);">
+                        {{ item.currentValue|number_format }}
+                        <span class="text-muted" style="font-size: var(--text-base); font-weight: var(--weight-normal);">
+                            / {{ item.goal.targetValue|number_format }}
+                        </span>
+                    </div>
+                    <div class="progress mt-3 mb-2" style="height: 6px;" role="progressbar"
+                         aria-valuenow="{{ item.progressPct|round }}"
+                         aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar{% if item.progressPct >= 100 %} bg-success{% endif %}"
+                             style="width: {{ item.progressPct }}%"></div>
+                    </div>
+                    <small class="text-muted">
+                        {% if item.progressPct >= 100 %}
+                            <i class="bi bi-check-circle-fill text-success" aria-hidden="true"></i>
+                            {{ 'goal.completed'|trans }}
+                        {% else %}
+                            {{ item.progressPct|round }}%
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</section>
+{% endif %}
+
+{% endblock %}

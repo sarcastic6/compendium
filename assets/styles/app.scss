@@ -30,6 +30,7 @@
 @use 'auth';
 @use 'rankings';
 @use 'work';
+@use 'achievements';
 
 // 7. Utilities (last — can override everything above)
 @use 'utilities';

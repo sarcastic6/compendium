@@ -56,6 +56,8 @@ nav:
     rankings_categories: 'Categories'
     rankings_series: 'Series'
     rankings_main_pairings: 'Main Pairings'
+    achievements: 'Achievements'
+    goals: 'Reading Goals'
     settings: 'Settings'
     open_menu: 'Open navigation menu'
 
@@ -313,6 +315,7 @@ stats:
         empty: 'No reading entries yet. Start logging your reads!'
         tab_overview: 'Overview'
         tab_breakdown: 'Breakdown'
+        tab_achievements: 'Progress & Achievements'
     filter:
         all_time: 'All Time'
         finished_in: 'Finished in %year%'
@@ -451,3 +454,142 @@ import:
         create_btn: 'Import as new work'
     success:
         updated: 'Work updated successfully.'
+
+# ── Achievements ──────────────────────────────────────────────────────────────
+achievement:
+    page:
+        heading: 'Achievements'
+        subtitle: 'Milestones earned from your reading journey.'
+    dashboard:
+        recent: 'Recent Achievements'
+        next: 'Next to Unlock'
+        view_all: 'View all achievements'
+        none_yet: 'No achievements unlocked yet. Keep reading!'
+    category:
+        volume: 'Volume'
+        exploration: 'Exploration'
+        dedication: 'Dedication'
+        engagement: 'Engagement'
+    # ── Volume ────────────────────────────────────────────────────────────────
+    first_entry:
+        name: 'First Read'
+        description: 'Log your very first completed read.'
+        unlocked: '🎉 Achievement unlocked: First Read!'
+    entries_10:
+        name: 'Getting Started'
+        description: 'Complete 10 reads.'
+        unlocked: '🎉 Achievement unlocked: Getting Started!'
+    entries_50:
+        name: 'Avid Reader'
+        description: 'Complete 50 reads.'
+        unlocked: '🎉 Achievement unlocked: Avid Reader!'
+    entries_100:
+        name: 'Centurion'
+        description: 'Complete 100 reads.'
+        unlocked: '🎉 Achievement unlocked: Centurion!'
+    entries_500:
+        name: 'Bookworm'
+        description: 'Complete 500 reads.'
+        unlocked: '🎉 Achievement unlocked: Bookworm!'
+    entries_1000:
+        name: 'Literary Legend'
+        description: 'Complete 1,000 reads.'
+        unlocked: '🎉 Achievement unlocked: Literary Legend!'
+    words_100k:
+        name: 'Wordsmith'
+        description: 'Read 100,000 words.'
+        unlocked: '🎉 Achievement unlocked: Wordsmith!'
+    words_1m:
+        name: 'Million Words'
+        description: 'Read 1,000,000 words.'
+        unlocked: '🎉 Achievement unlocked: Million Words!'
+    words_10m:
+        name: 'Library of Alexandria'
+        description: 'Read 10,000,000 words.'
+        unlocked: '🎉 Achievement unlocked: Library of Alexandria!'
+    # ── Exploration ───────────────────────────────────────────────────────────
+    fandoms_5:
+        name: 'Explorer'
+        description: 'Read works from 5 different fandoms.'
+        unlocked: '🎉 Achievement unlocked: Explorer!'
+    fandoms_20:
+        name: 'Globetrotter'
+        description: 'Read works from 20 different fandoms.'
+        unlocked: '🎉 Achievement unlocked: Globetrotter!'
+    authors_10:
+        name: 'Diverse Reader'
+        description: 'Read works from 10 different authors.'
+        unlocked: '🎉 Achievement unlocked: Diverse Reader!'
+    authors_50:
+        name: 'Literary Connoisseur'
+        description: 'Read works from 50 different authors.'
+        unlocked: '🎉 Achievement unlocked: Literary Connoisseur!'
+    languages_3:
+        name: 'Polyglot Reader'
+        description: 'Read works in 3 different languages.'
+        unlocked: '🎉 Achievement unlocked: Polyglot Reader!'
+    # ── Dedication ────────────────────────────────────────────────────────────
+    first_reread:
+        name: 'Revisited'
+        description: 'Finish the same work for a second time.'
+        unlocked: '🎉 Achievement unlocked: Revisited!'
+    long_work_100k:
+        name: 'Marathon Reader'
+        description: 'Complete a work with at least 100,000 words.'
+        unlocked: '🎉 Achievement unlocked: Marathon Reader!'
+    long_work_500k:
+        name: 'Ultra Marathon'
+        description: 'Complete a work with at least 500,000 words.'
+        unlocked: '🎉 Achievement unlocked: Ultra Marathon!'
+    # ── Engagement ────────────────────────────────────────────────────────────
+    first_review:
+        name: "Critic's Debut"
+        description: 'Rate your first read.'
+        unlocked: "🎉 Achievement unlocked: Critic's Debut!"
+    reviews_50:
+        name: 'Seasoned Critic'
+        description: 'Rate 50 reads.'
+        unlocked: '🎉 Achievement unlocked: Seasoned Critic!'
+    first_star:
+        name: 'First Favorite'
+        description: 'Star your first favorite entry.'
+        unlocked: '🎉 Achievement unlocked: First Favorite!'
+
+# ── Reading Goals ─────────────────────────────────────────────────────────────
+goal:
+    page:
+        heading: '%year% Reading Goals'
+        title_suffix: 'Reading Goals'
+        subtitle: 'Set personal targets and track your progress.'
+    section:
+        progress: '%year% Progress'
+        set_goal: 'Set a Goal for %year%'
+        add_another: 'Add Another Goal'
+        past_years: 'Past Years'
+    dashboard:
+        heading: '%year% Goals'
+        manage: 'Manage goals'
+        set_goal: 'Set a %year% reading goal'
+    field:
+        type: 'Goal type'
+        type_placeholder: 'Choose a goal type…'
+        target: 'Target'
+        target_placeholder: 'e.g. 52'
+        target_help: 'Set mid-year and it will update your existing goal for this type.'
+    type:
+        entries_completed: 'Reads Completed'
+        words_read: 'Words Read'
+    action:
+        save: 'Save Goal'
+        delete: 'Remove goal'
+    confirm:
+        delete: 'Remove this goal?'
+    note:
+        update: 'Saving a goal type you already have set will update the target.'
+    completed: 'Goal reached!'
+    remaining: 'remaining'
+    saved: 'Reading goal saved.'
+    deleted: 'Reading goal removed.'
+    error:
+        invalid_type: 'Invalid goal type.'
+        invalid_value: 'Target value must be a positive number.'
