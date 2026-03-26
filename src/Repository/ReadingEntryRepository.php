@@ -739,6 +739,66 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Returns all pinned entries for a user, applying the same sort logic as findByUserFiltered()
+     * but with no other filters. Used to populate the pinned section on the list page.
+     *
+     * The SoftDeleteFilter is temporarily disabled so pinned entries referencing
+     * soft-deleted works still appear.
+     *
+     * @return ReadingEntry[]
+     */
+    public function findPinnedByUser(User $user, string $sort = 'dateFinished', string $dir = 'desc'): array
+    {
+        $em = $this->getEntityManager();
+        $emFilters = $em->getFilters();
+        $softDeleteEnabled = $emFilters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $emFilters->disable('soft_delete');
+        }
+
+        try {
+            $qb = $this->createQueryBuilder('re')
+                ->innerJoin('re.work', 'w')
+                ->addSelect('w')
+                ->innerJoin('re.status', 's')
+                ->addSelect('s')
+                ->where('re.user = :user')
+                ->andWhere('re.pinned = :pinned')
+                ->setParameter('user', $user)
+                ->setParameter('pinned', true);
+
+            $dirUpper = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
+
+            if ($sort === 'title') {
+                $qb->orderBy('LOWER(w.title)', $dirUpper);
+            } elseif ($sort === 'status') {
+                $qb->orderBy('s.name', $dirUpper);
+            } elseif ($sort === 'author') {
+                $qb->addSelect(
+                    '(SELECT MIN(LOWER(sortA.name))
+                      FROM App\Entity\Work sortW
+                      JOIN sortW.metadata sortA
+                      JOIN sortA.metadataType sortAType
+                      WHERE sortW = w AND sortAType.name = :sortAuthorType)
+                     AS HIDDEN authorSort'
+                )
+                ->setParameter('sortAuthorType', 'Author')
+                ->orderBy('authorSort', $dirUpper);
+            } else {
+                $qb->addSelect('CASE WHEN re.dateFinished IS NULL THEN 1 ELSE 0 END AS HIDDEN dateNullOrder')
+                    ->orderBy('dateNullOrder', 'ASC')
+                    ->addOrderBy('re.dateFinished', $dirUpper);
+            }
+
+            return $qb->getQuery()->getResult();
+        } finally {
+            if ($softDeleteEnabled) {
+                $emFilters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
      * Count of pinned reading entries for the given user.
      */
     public function countPinned(User $user, ?int $year = null): int

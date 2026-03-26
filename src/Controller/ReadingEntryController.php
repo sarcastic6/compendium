@@ -157,8 +157,11 @@ class ReadingEntryController extends AbstractController
             $statThisYear   = $this->readingEntryRepository->countByUser($user, $currentYear);
         }
 
+        $pinnedEntries = $this->readingEntryRepository->findPinnedByUser($user, $sort, $dir);
+
         return $this->render('reading_entry/list.html.twig', [
             'entries' => $entries,
+            'pinned_entries' => $pinnedEntries,
             'page' => $page,
             'total_pages' => $totalPages,
             'total' => $total,
@@ -355,6 +358,31 @@ class ReadingEntryController extends AbstractController
         $this->addFlash('success', 'reading.bulk.entries_deleted');
 
         return $this->redirectToRoute('app_reading_entry_list', $request->query->all());
+    }
+
+    #[Route('/{id}/pin', name: 'app_reading_entry_toggle_pin', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function togglePin(Request $request, int $id): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $entry = $this->readingEntryRepository->findByIdForUser($id, $user);
+        if ($entry === null) {
+            throw $this->createNotFoundException();
+        }
+
+        if (!$this->isCsrfTokenValid('pin-entry-' . $id, $request->request->get('_token'))) {
+            $this->addFlash('error', 'security.csrf_invalid');
+
+            return $this->redirectToRoute('app_reading_entry_list');
+        }
+
+        $entry->setPinned(!$entry->isPinned());
+        $this->entityManager->flush();
+
+        $referer = $request->headers->get('referer', '');
+
+        return $this->redirect($referer !== '' ? $referer : $this->generateUrl('app_reading_entry_list'));
     }
 
     /**

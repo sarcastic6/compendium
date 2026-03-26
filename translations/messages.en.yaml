@@ -71,6 +71,8 @@ action:
     confirm: 'Confirm'
     yes: 'Yes'
     no: 'No'
+    pin: 'Pin'
+    unpin: 'Unpin'
 
 auth:
     login:
@@ -108,6 +110,7 @@ reading:
         updated: 'Entry updated.'
         deleted: 'Entry deleted.'
         list_heading: 'My Reading List'
+        pinned_heading: 'Pinned'
         empty: 'No reading entries yet. Add your first one!'
         empty_filtered: 'No entries match your filters.'
         work_deleted: '[Deleted work]'

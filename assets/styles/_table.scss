@@ -393,6 +393,25 @@
             background: rgba(220, 53, 69, 0.08);
         }
     }
+
+    &--pinned {
+        color: #e05c7a;
+        border-color: #e05c7a;
+
+        &:hover {
+            background: rgba(224, 92, 122, 0.08);
+        }
+    }
+}
+
+// Pinned section heading
+.pinned-section-heading {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #e05c7a;
+    margin-bottom: var(--space-3);
 }
 
 .me-fields {

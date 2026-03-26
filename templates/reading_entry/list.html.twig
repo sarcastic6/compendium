@@ -68,6 +68,37 @@
     </div>
 </div>
 
+{# ── Pinned entries section — hidden when nothing is pinned ───────────────── #}
+{% if pinned_entries is not empty %}
+<section class="pinned-section mb-4" aria-label="{{ 'reading.entry.pinned_heading'|trans }}">
+    <h2 class="pinned-section-heading">
+        <i class="bi bi-pin-angle-fill me-2" aria-hidden="true"></i>
+        {{ 'reading.entry.pinned_heading'|trans }}
+    </h2>
+    <div class="table-wrapper" style="overflow: visible;">
+        <table class="data-table table-responsive-card">
+            <thead>
+                <tr>
+                    <th class="cover-col d-none d-md-table-cell" aria-hidden="true"></th>
+                    <th class="d-none d-md-table-cell">{{ 'reading.entry.col_title'|trans }}</th>
+                    <th class="d-none d-lg-table-cell">{{ 'entry.list.col_fandom'|trans }}</th>
+                    <th class="words-col d-none d-md-table-cell">{{ 'reading.entry.col_words'|trans }}</th>
+                    <th class="d-none d-md-table-cell">{{ 'reading.field.status'|trans }}</th>
+                    <th class="d-none d-lg-table-cell">{{ 'reading.entry.col_date_finished'|trans }}</th>
+                    <th class="d-none d-md-table-cell">{{ 'reading.entry.col_review_spice'|trans }}</th>
+                    <th class="actions-col d-none d-md-table-cell"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in pinned_entries %}
+                    {% include 'reading_entry/_entry_row.html.twig' with {entry: entry, showCheckbox: false} only %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
 {# ── Active filter chips — always visible when filters are set ────────────── #}
 {% if has_filters %}
     {# Build a status ID → name map so the status chip can show the name, not the ID #}
@@ -489,6 +520,16 @@
                                         </a>
                                     </li>
                                     <li>
+                                        <button type="button" class="dropdown-item"
+                                                data-pin-url="{{ path('app_reading_entry_toggle_pin', {id: entry.id}) }}"
+                                                data-pin-token="{{ csrf_token('pin-entry-' ~ entry.id) }}"
+                                                onclick="var f=document.getElementById('pin-form');f.action=this.dataset.pinUrl;document.getElementById('pin-form-token').value=this.dataset.pinToken;f.submit();">
+                                            <i class="bi bi-{{ entry.pinned ? 'pin-angle' : 'pin-angle-fill' }} me-2" aria-hidden="true"></i>
+                                            {{ (entry.pinned ? 'action.unpin' : 'action.pin')|trans }}
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
                                         <button type="button" class="dropdown-item text-danger"
                                                 data-bs-toggle="modal" data-bs-target="#deleteModal"
                                                 data-entry-id="{{ entry.id }}"
@@ -613,6 +654,14 @@
                                         <i class="bi bi-pencil" aria-hidden="true"></i>
                                     </a>
                                     <button type="button"
+                                            class="me-action-btn{{ entry.pinned ? ' me-action-btn--pinned' : '' }}"
+                                            aria-label="{{ (entry.pinned ? 'action.unpin' : 'action.pin')|trans }}"
+                                            data-pin-url="{{ path('app_reading_entry_toggle_pin', {id: entry.id}) }}"
+                                            data-pin-token="{{ csrf_token('pin-entry-' ~ entry.id) }}"
+                                            onclick="event.stopPropagation();var f=document.getElementById('pin-form');f.action=this.dataset.pinUrl;document.getElementById('pin-form-token').value=this.dataset.pinToken;f.submit();">
+                                        <i class="bi bi-{{ entry.pinned ? 'pin-angle-fill' : 'pin-angle' }}" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="button"
                                             class="me-action-btn me-action-btn--danger"
                                             data-bs-toggle="modal" data-bs-target="#deleteModal"
                                             data-entry-id="{{ entry.id }}"
@@ -685,6 +734,12 @@
 </form>
 
 {% endif %}{# end entries is not empty #}
+
+{# ── Shared pin-toggle form — outside the bulk form to avoid invalid nesting ── #}
+{# Pin buttons in the main list use JS to set action/token then submit this form. #}
+<form id="pin-form" method="post" action="">
+    <input type="hidden" name="_token" id="pin-form-token" value="">
+</form>
 
 {# ── Single-entry delete confirmation modal ───────────────────────────────── #}
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
