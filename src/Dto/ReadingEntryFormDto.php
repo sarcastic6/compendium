@@ -29,7 +29,7 @@ class ReadingEntryFormDto
 
     public ?string $comments = null;
 
-    public bool $starred = false;
+    public bool $pinned = false;
 
     public static function fromEntity(ReadingEntry $entry): self
     {
@@ -42,7 +42,7 @@ class ReadingEntryFormDto
         $dto->spiceStars = $entry->getSpiceStars();
         $dto->mainPairing = $entry->getMainPairing();
         $dto->comments = $entry->getComments();
-        $dto->starred = $entry->isStarred();
+        $dto->pinned = $entry->isPinned();
 
         return $dto;
     }

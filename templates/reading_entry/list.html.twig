@@ -123,10 +123,10 @@
                 <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
-        {% if filters.starred %}
-            <a href="{{ path('app_reading_entry_list', filters|merge({'starred': ''})) }}"
+        {% if filters.pinned %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'pinned': ''})) }}"
                class="chip chip-filter">
-                {{ 'reading.filter.starred'|trans }}
+                {{ 'reading.filter.pinned'|trans }}
                 <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
             </a>
         {% endif %}
@@ -375,13 +375,13 @@
                                            class="text-decoration-none" style="color: inherit;">
                                             {{ entry.work.title }}
                                         </a>
-                                        {% if entry.work.starred %}
-                                            <i class="bi bi-star-fill starred-icon ms-1"
-                                               aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+                                        {% if entry.work.pinned %}
+                                            <i class="bi bi-pin-fill pinned-icon ms-1"
+                                               aria-label="{{ 'entry.list.pinned_work'|trans }}"></i>
                                         {% endif %}
-                                        {% if entry.starred %}
-                                            <i class="bi bi-heart-fill ms-1" style="color: #e05c7a; font-size: 0.7em;"
-                                               aria-label="{{ 'entry.list.favorite_entry'|trans }}"></i>
+                                        {% if entry.pinned %}
+                                            <i class="bi bi-pin-angle-fill ms-1" style="color: #e05c7a; font-size: 0.7em;"
+                                               aria-label="{{ 'entry.list.pinned_entry'|trans }}"></i>
                                         {% endif %}
                                         {% if entry.comments %}
                                             <button type="button"
@@ -536,13 +536,13 @@
                                                 <span class="entry-deleted-work">{{ 'reading.entry.work_deleted'|trans }}</span>
                                             {% else %}
                                                 {{ entry.work.title }}
-                                                {% if entry.work.starred %}
-                                                    <i class="bi bi-star-fill starred-icon ms-1"
-                                                       aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+                                                {% if entry.work.pinned %}
+                                                    <i class="bi bi-pin-fill pinned-icon ms-1"
+                                                       aria-label="{{ 'entry.list.pinned_work'|trans }}"></i>
                                                 {% endif %}
-                                                {% if entry.starred %}
-                                                    <i class="bi bi-heart-fill ms-1" style="color: #e05c7a; font-size: 0.7em;"
-                                                       aria-label="{{ 'entry.list.favorite_entry'|trans }}"></i>
+                                                {% if entry.pinned %}
+                                                    <i class="bi bi-pin-angle-fill ms-1" style="color: #e05c7a; font-size: 0.7em;"
+                                                       aria-label="{{ 'entry.list.pinned_entry'|trans }}"></i>
                                                 {% endif %}
                                                 {% if entry.comments %}
                                                     <i class="bi bi-chat-left-text me-comment-indicator ms-1"
@@ -856,10 +856,10 @@
                     </div>
                 </div>
                 <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" id="filter-starred" name="starred" value="1"
-                           {% if filters.starred == '1' %}checked{% endif %}>
-                    <label class="form-check-label" for="filter-starred">
-                        {{ 'reading.filter.starred'|trans }}
+                    <input class="form-check-input" type="checkbox" id="filter-pinned" name="pinned" value="1"
+                           {% if filters.pinned == '1' %}checked{% endif %}>
+                    <label class="form-check-label" for="filter-pinned">
+                        {{ 'reading.filter.pinned'|trans }}
                     </label>
                 </div>
             </div>

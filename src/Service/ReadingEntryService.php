@@ -86,7 +86,7 @@ class ReadingEntryService
         $entry->setSpiceStars($dto->spiceStars);
         $entry->setMainPairing($dto->mainPairing);
         $entry->setComments($dto->comments);
-        $entry->setStarred($dto->starred);
+        $entry->setPinned($dto->pinned);
 
         $this->validateAndSave($entry);
     }

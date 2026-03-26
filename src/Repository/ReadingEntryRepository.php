@@ -70,7 +70,7 @@ class ReadingEntryRepository extends ServiceEntityRepository
      *   - status (int): status ID exact match
      *   - q (string): case-insensitive LIKE on work title
      *   - author (string): case-insensitive LIKE on author metadata name
-     *   - starred (bool): entry starred flag
+     *   - pinned (bool): entry pinned flag
      *   - rating (int): exact reviewStars match
      *   - dateFrom (string: Y-m-d): dateFinished >= this date
      *   - dateTo (string: Y-m-d): dateFinished <= this date
@@ -739,16 +739,16 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Count of starred reading entries for the given user.
+     * Count of pinned reading entries for the given user.
      */
-    public function countStarred(User $user, ?int $year = null): int
+    public function countPinned(User $user, ?int $year = null): int
     {
         $qb = $this->createQueryBuilder('re')
             ->select('COUNT(re.id)')
             ->where('re.user = :user')
-            ->andWhere('re.starred = :starred')
+            ->andWhere('re.pinned = :pinned')
             ->setParameter('user', $user)
-            ->setParameter('starred', true);
+            ->setParameter('pinned', true);
 
         $this->applyYearFilter($qb, $year);
 
@@ -1866,9 +1866,9 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 ->setParameter('filter_author', '%' . $filterParams['author'] . '%');
         }
 
-        if (isset($filterParams['starred']) && $filterParams['starred'] !== '') {
-            $qb->andWhere('re.starred = :filter_starred')
-                ->setParameter('filter_starred', (bool) $filterParams['starred']);
+        if (isset($filterParams['pinned']) && $filterParams['pinned'] !== '') {
+            $qb->andWhere('re.pinned = :filter_pinned')
+                ->setParameter('filter_pinned', (bool) $filterParams['pinned']);
         }
 
         if (!empty($filterParams['rating'])) {
@@ -2306,18 +2306,18 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Returns the dateFinished (or createdAt fallback) of the Nth starred entry,
+     * Returns the dateFinished (or createdAt fallback) of the Nth pinned entry,
      * ordered by dateFinished ASC.
-     * Used to derive historical unlock dates for starred-count achievements.
+     * Used to derive historical unlock dates for pinned-count achievements.
      */
-    public function getNthStarredEntryDate(User $user, int $n): ?\DateTimeImmutable
+    public function getNthPinnedEntryDate(User $user, int $n): ?\DateTimeImmutable
     {
         $rows = $this->createQueryBuilder('re')
             ->select('re.dateFinished', 're.createdAt')
             ->where('re.user = :user')
-            ->andWhere('re.starred = :starred')
+            ->andWhere('re.pinned = :pinned')
             ->setParameter('user', $user)
-            ->setParameter('starred', true)
+            ->setParameter('pinned', true)
             ->orderBy('re.dateFinished', 'ASC')
             ->addOrderBy('re.createdAt', 'ASC')
             ->setFirstResult($n - 1)

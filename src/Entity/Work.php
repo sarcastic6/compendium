@@ -63,7 +63,7 @@ class Work
     private SourceType $sourceType = SourceType::Manual;
 
     #[ORM\Column(options: ['default' => false])]
-    private bool $starred = false;
+    private bool $pinned = false;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?DateTimeImmutable $deletedAt = null;
@@ -243,14 +243,14 @@ class Work
         return $this;
     }
 
-    public function isStarred(): bool
+    public function isPinned(): bool
     {
-        return $this->starred;
+        return $this->pinned;
     }
 
-    public function setStarred(bool $starred): static
+    public function setPinned(bool $pinned): static
     {
-        $this->starred = $starred;
+        $this->pinned = $pinned;
 
         return $this;
     }

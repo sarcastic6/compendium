@@ -96,8 +96,8 @@ class ReadingEntryFormType extends AbstractType
                 'required' => false,
                 'attr' => ['rows' => 4],
             ])
-            ->add('starred', CheckboxType::class, [
-                'label' => 'reading.field.starred',
+            ->add('pinned', CheckboxType::class, [
+                'label' => 'reading.field.pinned',
                 'required' => false,
             ]);
     }

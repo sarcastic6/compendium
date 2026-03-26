@@ -153,7 +153,7 @@ enum AchievementDefinition: string
      *   - 'reread'              — same work with >= 2 finished entries
      *   - 'long_work'           — finished a single work with >= threshold words
      *   - 'rated_count'         — COUNT of entries where reviewStars IS NOT NULL
-     *   - 'starred_count'       — COUNT of entries where starred = true
+     *   - 'pinned_count'        — COUNT of entries where pinned = true
      */
     public function getConditionType(): string
     {
@@ -168,7 +168,7 @@ enum AchievementDefinition: string
             self::LongWork100k, self::LongWork500k                => 'long_work',
             self::FirstReview                                     => 'rated_count',
             self::Reviews50                                       => 'rated_count',
-            self::FirstStar                                       => 'starred_count',
+            self::FirstStar                                       => 'pinned_count',
         };
     }
 

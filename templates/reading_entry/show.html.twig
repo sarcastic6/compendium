@@ -108,9 +108,9 @@
                 {% set statusSlug = entry.status.name|lower|replace({' ': '-'}) %}
                 <div>
                     <span class="chip chip--{{ statusSlug }}">{{ entry.status.name }}</span>
-                    {% if entry.starred %}
+                    {% if entry.pinned %}
                         <span class="ms-2" style="color: #f4b942; font-size: var(--text-sm);">
-                            <i class="bi bi-heart-fill" aria-label="{{ 'reading.field.starred'|trans }}"></i>
+                            <i class="bi bi-pin-fill" aria-label="{{ 'reading.field.pinned'|trans }}"></i>
                         </span>
                     {% endif %}
                 </div>
@@ -194,10 +194,10 @@
             <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
                 <h1 class="work-detail-title">
                     {{ entry.work.title }}
-                    {% if entry.work.starred %}
-                        <i class="bi bi-star-fill ms-1"
+                    {% if entry.work.pinned %}
+                        <i class="bi bi-pin-fill ms-1"
                            style="color: #f4b942; font-size: 0.6em; vertical-align: middle;"
-                           aria-label="{{ 'entry.list.favorite_work'|trans }}"></i>
+                           aria-label="{{ 'entry.list.pinned_work'|trans }}"></i>
                     {% endif %}
                 </h1>
                 {% if entry.work.lastUpdatedDate %}

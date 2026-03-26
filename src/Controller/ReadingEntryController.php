@@ -77,7 +77,7 @@ class ReadingEntryController extends AbstractController
             'status'      => $request->query->get('status', ''),
             'q'           => $request->query->get('q', ''),
             'author'      => $request->query->get('author', ''),
-            'starred'     => $request->query->get('starred', ''),
+            'pinned'      => $request->query->get('pinned', ''),
             'rating'      => $request->query->get('rating', ''),
             'dateFrom'    => $request->query->get('dateFrom', ''),
             'dateTo'      => $request->query->get('dateTo', ''),
@@ -225,7 +225,7 @@ class ReadingEntryController extends AbstractController
             $entry->setSpiceStars($dto->spiceStars);
             $entry->setMainPairing($dto->mainPairing);
             $entry->setComments($dto->comments);
-            $entry->setStarred($dto->starred);
+            $entry->setPinned($dto->pinned);
 
             try {
                 // persist() is called inside validateAndSave() — after validation — so invalid entries

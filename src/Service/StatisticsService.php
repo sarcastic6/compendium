@@ -37,7 +37,7 @@ class StatisticsService
      *   finishRate: float,
      *   averageRating: float|null,
      *   averageSpice: float|null,
-     *   starredCount: int,
+     *   pinnedCount: int,
      *   byStatus: array<string, int>,
      *   availableYears: int[],
      * }
@@ -57,7 +57,7 @@ class StatisticsService
             'finishRate' => $this->calculateFinishRate($finished, $started),
             'averageRating' => $this->readingEntryRepository->getAverageRating($user, $year),
             'averageSpice' => $this->readingEntryRepository->getAverageSpice($user, $year),
-            'starredCount' => $this->readingEntryRepository->countStarred($user, $year),
+            'pinnedCount' => $this->readingEntryRepository->countPinned($user, $year),
             'byStatus' => $this->readingEntryRepository->countByStatus($user, $year),
             'byWorkType' => $this->readingEntryRepository->countByWorkType($user, $year),
             'availableYears' => $this->readingEntryRepository->findAvailableYears($user),

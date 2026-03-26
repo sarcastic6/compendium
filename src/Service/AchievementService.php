@@ -87,7 +87,7 @@ class AchievementService
             'reread'           => $this->readingEntryRepository->getDateOfFirstReread($user) !== null,
             'long_work'        => $this->readingEntryRepository->hasFinishedWorkWithMinWords($user, $threshold),
             'rated_count'      => $this->readingEntryRepository->countRated($user) >= $threshold,
-            'starred_count'    => $this->countStarred($user) >= $threshold,
+            'pinned_count'     => $this->countPinned($user) >= $threshold,
             default            => false,
         };
     }
@@ -119,7 +119,7 @@ class AchievementService
 
             'rated_count' => $this->readingEntryRepository->getNthRatedEntryDate($user, $threshold),
 
-            'starred_count' => $this->readingEntryRepository->getNthStarredEntryDate($user, $threshold),
+            'pinned_count' => $this->readingEntryRepository->getNthPinnedEntryDate($user, $threshold),
 
             default => null,
         };
@@ -191,14 +191,14 @@ class AchievementService
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private function countStarred(User $user): int
+    private function countPinned(User $user): int
     {
         return (int) $this->readingEntryRepository->createQueryBuilder('re')
             ->select('COUNT(re.id)')
             ->where('re.user = :user')
-            ->andWhere('re.starred = :starred')
+            ->andWhere('re.pinned = :pinned')
             ->setParameter('user', $user)
-            ->setParameter('starred', true)
+            ->setParameter('pinned', true)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -286,7 +286,7 @@ class AchievementService
             'unique_authors'   => $this->readingEntryRepository->countDistinctMetadataForFinished($user, 'Author'),
             'unique_languages' => $this->readingEntryRepository->countDistinctLanguagesForFinished($user),
             'rated_count'      => $this->readingEntryRepository->countRated($user),
-            'starred_count'    => $this->countStarred($user),
+            'pinned_count'     => $this->countPinned($user),
         ];
     }
 }

@@ -96,8 +96,8 @@ class WorkFormType extends AbstractType
                 'choice_label' => static fn (SourceType $type) => $type->value,
                 'choice_value' => static fn (?SourceType $type) => $type?->value,
             ])
-            ->add('starred', CheckboxType::class, [
-                'label' => 'work.field.starred',
+            ->add('pinned', CheckboxType::class, [
+                'label' => 'work.field.pinned',
                 'required' => false,
             ])
             ->add('authors', CollectionType::class, [
