@@ -146,6 +146,37 @@ class UserIsolationTest extends AbstractFunctionalTest
         $this->assertStringNotContainsString('Bob Book', $content);
     }
 
+    public function test_user_cannot_pin_other_users_entry(): void
+    {
+        $alice = $this->createUser('alice@example.com', 'Alice', 'CorrectHorse99!');
+        $bob = $this->createUser('bob@example.com', 'Bob', 'CorrectHorse99!');
+        $status = $this->createStatus('Reading');
+
+        $work = new Work(WorkType::Book, 'Bob Book');
+        $this->em->persist($work);
+        $this->em->flush();
+
+        $entry = new ReadingEntry($bob, $work, $status);
+        $this->em->persist($entry);
+        $this->em->flush();
+        $entryId = $entry->getId();
+
+        // Alice tries to pin Bob's entry
+        $this->logIn($this->client, 'alice@example.com', 'CorrectHorse99!');
+        $this->client->followRedirect();
+
+        $this->client->request('POST', '/reading-entries/' . $entryId . '/pin', [
+            '_token' => 'any-token-value',
+        ]);
+
+        // findByIdForUser() returns null for Bob's entry when Alice is logged in → 404
+        $this->assertResponseStatusCodeSame(404);
+
+        // Bob's entry must remain unpinned
+        $this->em->clear();
+        $this->assertFalse($this->em->find(ReadingEntry::class, $entryId)->isPinned());
+    }
+
     public function test_user_cannot_create_entry_as_another_user(): void
     {
         $alice = $this->createUser('alice@example.com', 'Alice', 'CorrectHorse99!');
