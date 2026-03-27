@@ -32,6 +32,10 @@ class StatusFormType extends AbstractType
             ->add('countsAsRead', CheckboxType::class, [
                 'label' => 'admin.statuses.field.counts_as_read',
                 'required' => false,
+            ])
+            ->add('isActive', CheckboxType::class, [
+                'label' => 'admin.statuses.field.is_active',
+                'required' => false,
             ]);
     }
 

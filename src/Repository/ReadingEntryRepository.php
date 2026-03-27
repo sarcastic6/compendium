@@ -128,9 +128,14 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 ->setParameter('sortAuthorType', 'Author')
                 ->orderBy('authorSort', $dirUpper);
             } else {
-                // dateFinished — always push NULLs to the bottom regardless of direction.
-                $qb->addSelect('CASE WHEN re.dateFinished IS NULL THEN 1 ELSE 0 END AS HIDDEN dateNullOrder')
-                    ->orderBy('dateNullOrder', 'ASC')
+                // dateFinished sort — active entries (is_active = true, e.g. Reading) always
+                // float to the top so they are easy to find and update. Within the non-active
+                // group, entries sort by dateFinished with NULLs (e.g. DNF, On Hold) sinking
+                // to the bottom since they are not actionable.
+                $qb->addSelect('CASE WHEN s.isActive = true THEN 0 ELSE 1 END AS HIDDEN activeSort')
+                    ->addSelect('CASE WHEN re.dateFinished IS NULL THEN 1 ELSE 0 END AS HIDDEN dateNullOrder')
+                    ->orderBy('activeSort', 'ASC')
+                    ->addOrderBy('dateNullOrder', 'ASC')
                     ->addOrderBy('re.dateFinished', $dirUpper);
             }
 
@@ -785,8 +790,12 @@ class ReadingEntryRepository extends ServiceEntityRepository
                 ->setParameter('sortAuthorType', 'Author')
                 ->orderBy('authorSort', $dirUpper);
             } else {
-                $qb->addSelect('CASE WHEN re.dateFinished IS NULL THEN 1 ELSE 0 END AS HIDDEN dateNullOrder')
-                    ->orderBy('dateNullOrder', 'ASC')
+                // dateFinished sort — same logic as findByUserFiltered(): active entries float
+                // to top, NULLs in the non-active group sink to the bottom.
+                $qb->addSelect('CASE WHEN s.isActive = true THEN 0 ELSE 1 END AS HIDDEN activeSort')
+                    ->addSelect('CASE WHEN re.dateFinished IS NULL THEN 1 ELSE 0 END AS HIDDEN dateNullOrder')
+                    ->orderBy('activeSort', 'ASC')
+                    ->addOrderBy('dateNullOrder', 'ASC')
                     ->addOrderBy('re.dateFinished', $dirUpper);
             }
 

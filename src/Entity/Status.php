@@ -52,11 +52,27 @@ class Status
     #[ORM\Column(options: ['default' => false])]
     private bool $countsAsRead = false;
 
-    public function __construct(string $name, bool $hasBeenStarted = true, bool $countsAsRead = false)
+    /**
+     * True when entries with this status should float to the top of the reading
+     * list when sorting by completion date descending.
+     *
+     * Intended for statuses that represent active, in-progress reads (e.g. Reading)
+     * so they remain visible and easy to update. DNF and On Hold should be false —
+     * those entries are not actionable and should sort with completed entries.
+     *
+     * The admin decides per-status whether On Hold should count as active.
+     *
+     * APPLICATION-LEVEL CONSTRAINT: controlled by the admin at runtime.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isActive = false;
+
+    public function __construct(string $name, bool $hasBeenStarted = true, bool $countsAsRead = false, bool $isActive = false)
     {
         $this->name = $name;
         $this->hasBeenStarted = $hasBeenStarted;
         $this->countsAsRead = $countsAsRead;
+        $this->isActive = $isActive;
     }
 
     public function getId(): ?int
@@ -96,6 +112,18 @@ class Status
     public function setCountsAsRead(bool $countsAsRead): static
     {
         $this->countsAsRead = $countsAsRead;
+
+        return $this;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->isActive;
+    }
+
+    public function setIsActive(bool $isActive): static
+    {
+        $this->isActive = $isActive;
 
         return $this;
     }

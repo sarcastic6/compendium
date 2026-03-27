@@ -29,6 +29,7 @@
                     <th>{{ 'admin.statuses.field.name'|trans }}</th>
                     <th>{{ 'admin.statuses.field.has_been_started'|trans }}</th>
                     <th>{{ 'admin.statuses.field.counts_as_read'|trans }}</th>
+                    <th>{{ 'admin.statuses.field.is_active'|trans }}</th>
                     <th class="actions-col"></th>
                 </tr>
             </thead>
@@ -60,6 +61,17 @@
                                 </span>
                             {% endif %}
                         </td>
+                        <td>
+                            {% if status.isActive %}
+                                <span class="chip chip-tag" style="background: var(--color-tertiary); color: var(--color-primary);">
+                                    <i class="bi bi-check-lg" aria-hidden="true"></i> {{ 'action.yes'|trans }}
+                                </span>
+                            {% else %}
+                                <span class="chip chip-tag" style="background: #fce8e8; color: #8b2020; border-color: #f4c0c0;">
+                                    <i class="bi bi-x-lg" aria-hidden="true"></i> {{ 'action.no'|trans }}
+                                </span>
+                            {% endif %}
+                        </td>
                         <td class="actions-col">
                             <a href="{{ path('app_admin_status_edit', {id: status.id}) }}"
                                class="btn btn-sm btn-ghost">
@@ -72,4 +84,19 @@
         </table>
     </div>
 {% endif %}
+
+<div class="row mt-4">
+    <div class="col-lg-8">
+        <div class="chart-card">
+            <div class="chart-card-body">
+                <h2 class="chart-card-title" style="font-size: var(--text-base); margin-bottom: var(--space-3);">{{ 'admin.statuses.help.heading'|trans }}</h2>
+                <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; font-size: var(--text-sm);">
+                    <li>{{ 'admin.statuses.help.has_been_started'|trans|raw }}</li>
+                    <li>{{ 'admin.statuses.help.counts_as_read'|trans|raw }}</li>
+                    <li>{{ 'admin.statuses.help.is_active'|trans|raw }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

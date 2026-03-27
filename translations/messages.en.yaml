@@ -247,6 +247,12 @@ admin:
             name: 'Name'
             has_been_started: 'Has Been Started'
             counts_as_read: 'Counts as Read'
+            is_active: 'Active'
+        help:
+            heading: 'What do these settings do?'
+            has_been_started: '<strong>Has Been Started</strong> — mark this when the user has actually opened the work and read some of it. Entries with this flag contribute to word count statistics.'
+            counts_as_read: '<strong>Counts as Read</strong> — mark this for statuses that represent a genuine completion. Drives the trend chart, finished count, finish rate, and rankings read counts.'
+            is_active: '<strong>Active</strong> — mark this when the read is still ongoing and likely needs attention. Entries with this status float to the top of the reading list regardless of completion date.'
     metadata_types:
         heading: 'Metadata Types'
         manage: 'Manage Metadata Types'
