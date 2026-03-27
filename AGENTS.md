@@ -17,7 +17,8 @@ works.
 Users can:
 
 -   record and manage reading entries
--   import works automatically from AO3 via URL
+-   import work metadata automatically from AO3 via URL (title, authors,
+    tags, word count, etc. — never the work content itself)
 -   track authors, fandoms, characters, pairings, and tags
 -   search and filter their reading list
 -   analyze reading trends through dashboards and statistics
