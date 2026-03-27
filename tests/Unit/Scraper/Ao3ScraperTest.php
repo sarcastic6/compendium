@@ -71,6 +71,28 @@ class Ao3ScraperTest extends TestCase
         $this->assertSame($expected, $scraper->supports($url));
     }
 
+    // --- canonicalizeUrl() ---
+
+    /** @return array<string, array{string, string}> */
+    public static function canonicalizeUrlProvider(): array
+    {
+        return [
+            'plain work url'              => ['https://archiveofourown.org/works/12345', 'https://archiveofourown.org/works/12345'],
+            'trailing slash stripped'     => ['https://archiveofourown.org/works/12345/', 'https://archiveofourown.org/works/12345'],
+            'chapter path stripped'       => ['https://archiveofourown.org/works/12345/chapters/67890', 'https://archiveofourown.org/works/12345'],
+            'www subdomain normalised'    => ['https://www.archiveofourown.org/works/12345', 'https://archiveofourown.org/works/12345'],
+            'http upgraded to https'      => ['http://archiveofourown.org/works/12345', 'https://archiveofourown.org/works/12345'],
+            'query string stripped'       => ['https://archiveofourown.org/works/12345?view_adult=true', 'https://archiveofourown.org/works/12345'],
+        ];
+    }
+
+    #[DataProvider('canonicalizeUrlProvider')]
+    public function test_canonicalize_url(string $input, string $expected): void
+    {
+        $scraper = $this->makeScraperWithHtml('');
+        $this->assertSame($expected, $scraper->canonicalizeUrl($input));
+    }
+
     // --- scrape(): complete work ---
 
     public function test_scrape_complete_work_title(): void
