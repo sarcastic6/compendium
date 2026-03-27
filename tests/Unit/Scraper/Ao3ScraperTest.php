@@ -23,7 +23,16 @@ class Ao3ScraperTest extends TestCase
     {
         $client = new MockHttpClient($responses);
 
-        return new Ao3Scraper($client, new NullLogger(), 'ReadingStats/test', $delayMs);
+        return new Ao3Scraper(
+            $client,
+            new NullLogger(),
+            'ReadingStats/test',
+            $delayMs,
+            false,        // authEnabled — disabled for unit tests; no real HTTP login
+            null,         // username
+            null,         // password
+            sys_get_temp_dir(), // projectDir — session file is never written when auth is disabled
+        );
     }
 
     private function makeScraperWithHtml(string $html, int $status = 200): Ao3Scraper
