@@ -10,15 +10,19 @@ this document.
 
 # Project Overview
 
-Reading Stats is a Symfony web application that tracks reading activity
-across books, fanfiction, and other written works.
+Reading Stats (branded as **Compendium**) is a Symfony web application
+that tracks reading activity across books, fanfiction, and other written
+works.
 
-Users can: - record reading entries - track authors, characters,
-pairings, and tags - analyze reading trends through dashboards and
-statistics
+Users can:
 
-Future phases may include AO3 integration for automated fanfiction
-metadata import.
+-   record and manage reading entries
+-   import works automatically from AO3 via URL
+-   track authors, fandoms, characters, pairings, and tags
+-   search and filter their reading list
+-   analyze reading trends through dashboards and statistics
+-   pin entries for quick access
+-   earn achievements and track yearly reading goals
 
 ## Tech Stack
 
