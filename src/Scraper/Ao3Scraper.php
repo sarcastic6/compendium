@@ -405,6 +405,11 @@ class Ao3Scraper implements ScraperInterface
         return $seconds > 0 ? $seconds : null;
     }
 
+    public function canonicalizeUrl(string $url): string
+    {
+        return $this->normalizeUrl($url);
+    }
+
     private function normalizeUrl(string $url): string
     {
         // Ensure https scheme

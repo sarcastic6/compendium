@@ -29,6 +29,12 @@ interface ScraperInterface
     public function supports(string $url): bool;
 
     /**
+     * Returns the canonical form of the given URL without making any HTTP requests.
+     * Used for duplicate detection before scraping.
+     */
+    public function canonicalizeUrl(string $url): string;
+
+    /**
      * Fetches metadata for the work at the given URL.
      *
      * @throws ScrapingException on HTTP errors or unrecoverable parse failures

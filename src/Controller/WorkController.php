@@ -270,50 +270,6 @@ class WorkController extends AbstractController
     }
 
     /**
-     * Applies a pending import session to an existing Work instead of creating a new one.
-     * Used when the import flow detects a duplicate URL and the user chooses to update.
-     */
-    #[Route('/{id}/update-from-import', name: 'app_work_update_from_import', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function updateFromImport(int $id, Request $request): Response
-    {
-        $work = $this->workRepository->find($id);
-        if ($work === null) {
-            throw $this->createNotFoundException();
-        }
-
-        if (!$this->isCsrfTokenValid('update_from_import_' . $id, $request->request->getString('_token'))) {
-            throw $this->createAccessDeniedException();
-        }
-
-        $session = $request->getSession();
-        $scraped = $session->get('import_scraped_work');
-        if (!($scraped instanceof ScrapedWorkDto)) {
-            $this->addFlash('error', 'import.error.session_expired');
-
-            return $this->redirectToRoute('app_work_select');
-        }
-
-        $session->remove('import_scraped_work');
-        $session->remove('import_duplicate_work_id');
-
-        $result = $this->importService->mapToWorkFormDto($scraped);
-        foreach ($result->warnings as $warning) {
-            $this->addFlash('warning', $warning);
-        }
-
-        try {
-            $this->workService->refreshWork($work, $result->dto);
-            $this->addFlash('success', 'import.success.updated');
-        } catch (\InvalidArgumentException $e) {
-            $this->addFlash('error', $e->getMessage());
-
-            return $this->redirectToRoute('app_work_select');
-        }
-
-        return $this->redirectToRoute('app_reading_entry_new', ['workId' => $work->getId()]);
-    }
-
-    /**
      * Read-only detail page for a single Work.
      */
     #[Route('/{id}', name: 'app_work_show', requirements: ['id' => '\d+'], methods: ['GET'])]
@@ -381,6 +337,16 @@ class WorkController extends AbstractController
                 return $this->redirectToRoute('app_work_select');
             }
 
+            // Duplicate detection before scraping: canonicalize the URL (no HTTP request)
+            // and check if a work already exists. This avoids an unnecessary AO3 request.
+            $canonicalUrl = $scraper->canonicalizeUrl($url);
+            $existing = $this->workRepository->findByLink($canonicalUrl);
+            if ($existing !== null) {
+                $this->addFlash('info', 'import.info.existing_work_used');
+
+                return $this->redirectToRoute('app_reading_entry_new', ['workId' => $existing->getId()]);
+            }
+
             try {
                 $scraped = $scraper->scrape($url);
             } catch (RateLimitException $e) {
@@ -424,29 +390,10 @@ class WorkController extends AbstractController
                 return $this->redirectToRoute('app_work_select');
             }
 
-            // Duplicate detection: if a work with this URL already exists, redirect back to
-            // the select page with a prompt instead of silently creating a duplicate.
-            if ($scraped->sourceUrl !== null) {
-                $existing = $this->workRepository->findByLink($scraped->sourceUrl);
-                if ($existing !== null) {
-                    $request->getSession()->set('import_scraped_work', $scraped);
-                    $request->getSession()->set('import_duplicate_work_id', $existing->getId());
-
-                    return $this->redirectToRoute('app_work_select');
-                }
-            }
-
             // Store DTO in session — WorkController::new() reads it on the next GET and applies mapping
             $request->getSession()->set('import_scraped_work', $scraped);
 
             return $this->redirectToRoute('app_work_new');
-        }
-
-        // Check for a pending duplicate-work prompt set by the POST branch above.
-        $duplicateWorkId = $request->getSession()->get('import_duplicate_work_id');
-        $duplicateWork = null;
-        if (is_int($duplicateWorkId)) {
-            $duplicateWork = $this->workRepository->find($duplicateWorkId);
         }
 
         $query = $request->query->getString('q', '');
@@ -463,9 +410,8 @@ class WorkController extends AbstractController
         }
 
         return $this->render('work/select.html.twig', [
-            'works'         => $works,
-            'query'         => $query,
-            'duplicateWork' => $duplicateWork,
+            'works' => $works,
+            'query' => $query,
         ]);
     }
 }

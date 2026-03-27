@@ -11,35 +11,6 @@
     </div>
 </div>
 
-{# Duplicate work notice #}
-{% if duplicateWork is not null %}
-<div class="work-notice work-notice-warning mb-4" role="alert">
-    <div class="work-notice-heading">
-        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-        {{ 'import.duplicate.heading'|trans }}
-    </div>
-    <p class="work-notice-body">{{ 'import.duplicate.body'|trans }}</p>
-    <p class="work-notice-body"><strong>{{ duplicateWork.title }}</strong></p>
-    <div class="d-flex flex-wrap gap-2">
-        <form method="post" action="{{ path('app_work_update_from_import', {id: duplicateWork.id}) }}">
-            <input type="hidden" name="_token" value="{{ csrf_token('update_from_import_' ~ duplicateWork.id) }}">
-            <button type="submit" class="btn btn-secondary btn-sm">
-                <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
-                {{ 'import.duplicate.update_btn'|trans }}
-            </button>
-        </form>
-        <a href="{{ path('app_reading_entry_new', {workId: duplicateWork.id}) }}"
-           class="btn btn-primary btn-sm">
-            <i class="bi bi-plus-lg" aria-hidden="true"></i>
-            {{ 'import.duplicate.log_btn'|trans }}
-        </a>
-        <a href="{{ path('app_work_new') }}" class="btn btn-ghost btn-sm">
-            {{ 'import.duplicate.create_btn'|trans }}
-        </a>
-    </div>
-</div>
-{% endif %}
-
 {# Import form — most common workflow #}
 <div class="work-select-section mb-4">
     <p class="work-select-section-label">{{ 'work.import_separator'|trans }}</p>

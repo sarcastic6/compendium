@@ -145,7 +145,7 @@ class ImportFlowTest extends AbstractFunctionalTest
 
     // --- Duplicate detection ---
 
-    public function test_duplicate_url_redirects_to_select_with_prompt(): void
+    public function test_duplicate_url_redirects_directly_to_reading_entry_creation(): void
     {
         $this->configureMockHttpClient($this->fixture('minimal_work'));
         $this->loginAsUser();
@@ -160,14 +160,8 @@ class ImportFlowTest extends AbstractFunctionalTest
         $this->client->request('GET', '/work/select');
         $this->submitImportForm(['import_url' => 'https://archiveofourown.org/works/55555']);
 
-        // Should redirect back to /work/select (not /work/new)
-        $this->assertResponseRedirects('/work/select');
-        $this->client->followRedirect();
-
-        // The select page should show the duplicate prompt with the existing work title
-        $content = (string) $this->client->getResponse()->getContent();
-        $this->assertStringContainsString('Existing Work', $content);
-        $this->assertStringContainsString('update-from-import', $content);
+        // Should redirect straight to reading entry creation for the existing work
+        $this->assertResponseRedirects('/reading-entries/new/' . $work->getId());
     }
 
     // --- Session cleared after WorkController consumes it ---
