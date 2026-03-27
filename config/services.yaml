@@ -31,3 +31,16 @@ services:
             # env(base64:...) decodes the base64-encoded env var to raw bytes before injection.
             # Generate a key: php -r "echo base64_encode(random_bytes(32)) . PHP_EOL;"
             $encryptionKey: '%env(base64:TOTP_ENCRYPTION_KEY)%'
+
+    # The AO3 scraper uses NativeHttpClient (PHP stream sockets) instead of the default
+    # CurlHttpClient. The cURL transport maintains an internal cookie jar that is
+    # automatically populated from Set-Cookie headers during redirect chains. This
+    # conflicts with our manually-managed session cookie — both end up in the same
+    # request as separate Cookie headers with different _otwarchive_session values,
+    # causing AO3 to redirect to /lost_cookie. NativeHttpClient has no internal cookie
+    # jar, so our Cookie header is the sole source of truth.
+    Symfony\Component\HttpClient\NativeHttpClient: ~
+
+    App\Scraper\Ao3Scraper:
+        arguments:
+            $httpClient: '@Symfony\Component\HttpClient\NativeHttpClient'
