@@ -69,9 +69,6 @@ final class Version20260327010000 extends AbstractMigration
             SELECT 'Warning', 1, 1, 1 WHERE NOT EXISTS (SELECT 1 FROM metadata_types WHERE name = 'Warning')");
         $this->addSql("INSERT INTO metadata_types (name, multiple_allowed, show_as_dropdown, show_as_checkboxes)
             SELECT 'Category', 1, 1, 1 WHERE NOT EXISTS (SELECT 1 FROM metadata_types WHERE name = 'Category')");
-
-        // Fix Rating misconfiguration on existing installs
-        $this->addSql("UPDATE metadata_types SET multiple_allowed = 0, show_as_checkboxes = 0 WHERE name = 'Rating'");
     }
 
     public function down(Schema $schema): void
