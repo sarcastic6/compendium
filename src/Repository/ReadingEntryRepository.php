@@ -991,8 +991,8 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Average spiceStars for entries that have a spice rating (including 0 = ice
-     * cold), for the given user. Returns null when no rated entries exist.
+     * Average spiceStars for entries that have a spice rating (including 0 = no
+     * spice), for the given user. Returns null when no rated entries exist.
      */
     public function getAverageSpice(User $user, ?int $year = null): ?float
     {

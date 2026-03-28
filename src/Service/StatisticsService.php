@@ -39,6 +39,7 @@ class StatisticsService
      *   averageSpice: float|null,
      *   pinnedCount: int,
      *   byStatus: array<string, int>,
+     *   byWorkType: array<string, int>,
      *   availableYears: int[],
      * }
      */
