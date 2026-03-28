@@ -5,7 +5,7 @@
   this template only provides the scrollable body content.
 #}
 {% macro metadataBadge(item, sourceType) %}
-    {% set link = item.getLinkForSource(sourceType) %}
+    {% set link = item.getLinkForSource(sourceType)|safe_url %}
     {% if link %}
         <a href="{{ link }}" target="_blank" rel="noopener noreferrer"
            class="badge bg-secondary me-1 text-decoration-none">{{ item.name }}</a>
@@ -20,7 +20,7 @@
         <dt class="col-sm-4 text-muted fw-normal">{{ 'work.field.authors'|trans }}</dt>
         <dd class="col-sm-8 mb-1">
             {% for author in work.authors %}
-                {% set authorLink = author.getLinkForSource(work.sourceType) %}
+                {% set authorLink = author.getLinkForSource(work.sourceType)|safe_url %}
                 {% if authorLink %}
                     <a href="{{ authorLink }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
                 {% else %}

@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Enum\SourceType;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'series_source_links')]
@@ -25,6 +26,10 @@ class SeriesSourceLink
     #[ORM\Column(type: 'string', length: 32, enumType: SourceType::class)]
     private SourceType $sourceType;
 
+    // Enforced at application level only — entities are created programmatically
+    // (scraper, import service) and do not go through a Symfony Form validation flow.
+    // The safe_url Twig filter is the primary XSS defence at the render layer.
+    #[Assert\Url(protocols: ['http', 'https'])]
     #[ORM\Column(length: 1024)]
     private string $link;
 

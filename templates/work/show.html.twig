@@ -1,7 +1,7 @@
 {% extends 'base.html.twig' %}
 
 {% macro metadataChip(item, sourceType, chipClass) %}
-    {% set link = item.getLinkForSource(sourceType) %}
+    {% set link = item.getLinkForSource(sourceType)|safe_url %}
     {% if link %}
         <a href="{{ link }}" target="_blank" rel="noopener noreferrer"
            class="chip {{ chipClass }} text-decoration-none">{{ item.name }}</a>
@@ -69,7 +69,7 @@
             {# Series info #}
             {% if work.series %}
                 <div class="work-series-info">
-                    {% set seriesLink = work.series.getLinkForSource(work.sourceType) %}
+                    {% set seriesLink = work.series.getLinkForSource(work.sourceType)|safe_url %}
                     <i class="bi bi-collection me-1" aria-hidden="true"></i>
                     {% if seriesLink %}
                         <a href="{{ seriesLink }}" target="_blank" rel="noopener noreferrer">{{ work.series.name }}</a>
@@ -104,7 +104,7 @@
         {% if work.authors is not empty %}
             <p class="work-detail-authors mb-0">
                 {% for author in work.authors %}
-                    {% set authorLink = author.getLinkForSource(work.sourceType) %}
+                    {% set authorLink = author.getLinkForSource(work.sourceType)|safe_url %}
                     {% if authorLink %}
                         <a href="{{ authorLink }}" target="_blank" rel="noopener noreferrer">{{ author.name }}</a>
                     {% else %}
