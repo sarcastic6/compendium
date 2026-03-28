@@ -704,6 +704,18 @@ class Ao3Scraper implements ScraperInterface
      */
     private function fetchSeriesData(string $seriesUrl): array
     {
+        // Guard against SSRF: the series URL is extracted from AO3's HTML and could
+        // theoretically point to an arbitrary host if AO3 serves an absolute URL.
+        // Validate the host explicitly rather than relying on parseSeries() to always
+        // produce an AO3 URL — defence in depth, consistent with scrapeWorkPage().
+        $host = parse_url($seriesUrl, PHP_URL_HOST);
+        if ($host !== self::AO3_HOST && $host !== 'www.' . self::AO3_HOST) {
+            throw new ScrapingException(sprintf(
+                'Refusing to fetch series URL with unexpected host: %s',
+                $seriesUrl,
+            ));
+        }
+
         $this->logger->debug('AO3 scraper: fetching series page', ['url' => $seriesUrl]);
 
         $html = $this->fetchUrl($seriesUrl);
