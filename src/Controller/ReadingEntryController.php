@@ -380,9 +380,17 @@ class ReadingEntryController extends AbstractController
         $entry->setPinned(!$entry->isPinned());
         $this->entityManager->flush();
 
+        // Validate same-origin before redirecting to the Referer header: the header is
+        // attacker-controllable in crafted HTTP requests and must not be used to redirect
+        // the user to an external host (open redirect).
         $referer = $request->headers->get('referer', '');
+        $refererHost = parse_url($referer, PHP_URL_HOST);
 
-        return $this->redirect($referer !== '' ? $referer : $this->generateUrl('app_reading_entry_list'));
+        if ($referer !== '' && $refererHost === $request->getHost()) {
+            return $this->redirect($referer);
+        }
+
+        return $this->redirectToRoute('app_reading_entry_list');
     }
 
     /**
