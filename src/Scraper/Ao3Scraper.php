@@ -1062,8 +1062,10 @@ class Ao3Scraper implements ScraperInterface
         $this->userCredentials   = null;
         $this->loginAttempted    = false;
 
-        if (file_exists($this->sessionFilePath)) {
-            @unlink($this->sessionFilePath);
+        if (file_exists($this->sessionFilePath) && !unlink($this->sessionFilePath)) {
+            $this->logger->warning('AO3 scraper: failed to delete session file', [
+                'path' => $this->sessionFilePath,
+            ]);
         }
 
         $this->logger->info('AO3 scraper: session invalidated, will re-authenticate');
