@@ -420,7 +420,7 @@ class StatisticsService
                 'read'          => $a['read'],
                 'read_in_words' => $a['readInWords'],
                 'avg_review'    => $a['avgReview'],
-                default         => $a['count'],
+                default         => throw new \UnexpectedValueException('Unknown sort column: ' . $sortColumn),
             };
             $valB = match ($sortColumn) {
                 'name'          => $b['name'],
@@ -431,7 +431,7 @@ class StatisticsService
                 'read'          => $b['read'],
                 'read_in_words' => $b['readInWords'],
                 'avg_review'    => $b['avgReview'],
-                default         => $b['count'],
+                default         => throw new \UnexpectedValueException('Unknown sort column: ' . $sortColumn),
             };
 
             // Null values (missing data) always sort to the bottom regardless of direction
@@ -491,7 +491,7 @@ class StatisticsService
                 'words_read' => $a['wordsRead'],
                 'coverage'   => $a['coverageWords'],
                 'avg_review' => $a['avgReview'],
-                default      => $a['count'],
+                default      => throw new \UnexpectedValueException('Unknown sort column: ' . $sortColumn),
             };
             $valB = match ($sortColumn) {
                 'name'       => $b['name'],
@@ -500,7 +500,7 @@ class StatisticsService
                 'words_read' => $b['wordsRead'],
                 'coverage'   => $b['coverageWords'],
                 'avg_review' => $b['avgReview'],
-                default      => $b['count'],
+                default      => throw new \UnexpectedValueException('Unknown sort column: ' . $sortColumn),
             };
 
             // Null values always sort to the bottom regardless of direction
@@ -568,7 +568,7 @@ class StatisticsService
                 'read_pct' => $a['readPct'],
                 'avg_review' => $a['avgReview'],
                 'abandon_rate' => $a['abandonRate'],
-                default => $a['count'],
+                default => throw new \UnexpectedValueException('Unknown sort column: ' . $sortColumn),
             };
             $valB = match ($sortColumn) {
                 'name' => $b['name'],
@@ -578,7 +578,7 @@ class StatisticsService
                 'read_pct' => $b['readPct'],
                 'avg_review' => $b['avgReview'],
                 'abandon_rate' => $b['abandonRate'],
-                default => $b['count'],
+                default => throw new \UnexpectedValueException('Unknown sort column: ' . $sortColumn),
             };
 
             // Null values (no reviews) always sort to the bottom regardless of direction
