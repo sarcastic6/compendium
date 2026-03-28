@@ -28,8 +28,8 @@ class ChangeEmailFormType extends AbstractType
                 'label'       => 'profile.field.new_email',
                 'mapped'      => false,
                 'constraints' => [
-                    new NotBlank(),
-                    new Email(),
+                    new NotBlank(message: 'auth.email.not_blank'),
+                    new Email(message: 'auth.email.invalid'),
                 ],
             ]);
     }

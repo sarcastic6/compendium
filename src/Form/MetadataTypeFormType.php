@@ -21,8 +21,8 @@ class MetadataTypeFormType extends AbstractType
             ->add('name', TextType::class, [
                 'label' => 'admin.metadata_types.field.name',
                 'constraints' => [
-                    new NotBlank(),
-                    new Length(['max' => 100]),
+                    new NotBlank(message: 'admin.metadata_type.name.not_blank'),
+                    new Length(max: 100, maxMessage: 'admin.metadata_type.name.too_long'),
                 ],
             ])
             ->add('multipleAllowed', CheckboxType::class, [

@@ -21,8 +21,8 @@ class StatusFormType extends AbstractType
             ->add('name', TextType::class, [
                 'label' => 'admin.statuses.field.name',
                 'constraints' => [
-                    new NotBlank(),
-                    new Length(['max' => 100]),
+                    new NotBlank(message: 'admin.status.name.not_blank'),
+                    new Length(max: 100, maxMessage: 'admin.status.name.too_long'),
                 ],
             ])
             ->add('hasBeenStarted', CheckboxType::class, [

@@ -20,8 +20,8 @@ class ProfileFormType extends AbstractType
             ->add('name', TextType::class, [
                 'label' => 'profile.field.name',
                 'constraints' => [
-                    new NotBlank(),
-                    new Length(max: 255),
+                    new NotBlank(message: 'auth.name.not_blank'),
+                    new Length(max: 255, maxMessage: 'auth.name.too_long'),
                 ],
             ])
 ;

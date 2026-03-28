@@ -12,6 +12,16 @@ auth:
         not_blank: 'Please enter an email address.'
         invalid: 'Please enter a valid email address.'
 
+admin:
+    status:
+        name:
+            not_blank: 'Please enter a status name.'
+            too_long: 'Status name must not exceed 100 characters.'
+    metadata_type:
+        name:
+            not_blank: 'Please enter a metadata type name.'
+            too_long: 'Metadata type name must not exceed 100 characters.'
+
 reading:
     entry:
         stars:
