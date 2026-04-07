@@ -69,11 +69,9 @@
                             data-bs-target="#rankings-subnav"
                             aria-expanded="{{ onRankingsPage ? 'true' : 'false' }}"
                             aria-controls="rankings-subnav">
-                        <span class="d-flex align-items-center gap-2 flex-grow-1">
-                            <i class="bi bi-trophy sidebar-nav-icon" aria-hidden="true"></i>
-                            {{ 'nav.rankings'|trans }}
-                        </span>
-                        <i class="bi bi-chevron-down sidebar-nav-group-caret" aria-hidden="true"></i>
+                        <i class="bi bi-trophy sidebar-nav-icon" aria-hidden="true"></i>
+                        {{ 'nav.rankings'|trans }}
+                        <i class="bi bi-chevron-down sidebar-nav-group-caret ms-auto" aria-hidden="true"></i>
                     </button>
 
                     <div class="collapse{% if onRankingsPage %} show{% endif %}" id="rankings-subnav">
@@ -226,11 +224,9 @@
                                 data-bs-target="#rankings-subnav-mobile"
                                 aria-expanded="{{ onRankingsPage ? 'true' : 'false' }}"
                                 aria-controls="rankings-subnav-mobile">
-                            <span class="d-flex align-items-center gap-2 flex-grow-1">
-                                <i class="bi bi-trophy sidebar-nav-icon" aria-hidden="true"></i>
-                                {{ 'nav.rankings'|trans }}
-                            </span>
-                            <i class="bi bi-chevron-down sidebar-nav-group-caret" aria-hidden="true"></i>
+                            <i class="bi bi-trophy sidebar-nav-icon" aria-hidden="true"></i>
+                            {{ 'nav.rankings'|trans }}
+                            <i class="bi bi-chevron-down sidebar-nav-group-caret ms-auto" aria-hidden="true"></i>
                         </button>
                         <div class="collapse{% if onRankingsPage %} show{% endif %}" id="rankings-subnav-mobile">
                             <div class="sidebar-nav-sub">
