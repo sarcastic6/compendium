@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Export\DataDumpExportFormat;
+use App\Export\FamiliarExportFormat;
 use App\Service\ReadingEntryExportService;
 use DateTimeImmutable;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -22,6 +23,7 @@ class DataController extends AbstractController
     public function __construct(
         private readonly ReadingEntryExportService $exportService,
         private readonly DataDumpExportFormat $dataDumpFormat,
+        private readonly FamiliarExportFormat $familiarFormat,
     ) {
     }
 
@@ -48,6 +50,40 @@ class DataController extends AbstractController
         // Write to a temp file so the content can be read back as a string.
         // This keeps the response testable (StreamedResponse content cannot be captured
         // by Symfony's KernelBrowser) and is appropriate for this app's export scale.
+        $tmpFile = tempnam(sys_get_temp_dir(), 'compendium_export_');
+
+        try {
+            $writer->save($tmpFile);
+            $content = (string) file_get_contents($tmpFile);
+        } finally {
+            @unlink($tmpFile);
+        }
+
+        $response = new Response($content, Response::HTTP_OK);
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set(
+            'Content-Disposition',
+            $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename),
+        );
+        $response->headers->set('Cache-Control', 'max-age=0');
+
+        return $response;
+    }
+
+    #[Route('/export/familiar', name: 'app_data_export_familiar')]
+    public function exportFamiliar(): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $spreadsheet = $this->exportService->buildSpreadsheet($user, $this->familiarFormat);
+        $writer = new Xlsx($spreadsheet);
+
+        $filename = sprintf(
+            'compendium-familiar-export-%s.xlsx',
+            (new DateTimeImmutable())->format('Y-m-d'),
+        );
+
         $tmpFile = tempnam(sys_get_temp_dir(), 'compendium_export_');
 
         try {

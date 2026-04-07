@@ -27,6 +27,22 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h3 class="card-title h6">{{ 'data.export.familiar.label'|trans }}</h3>
+                    <p class="card-text text-muted small flex-grow-1">
+                        {{ 'data.export.familiar.description'|trans }}
+                    </p>
+                    <a href="{{ path('app_data_export_familiar') }}"
+                       class="btn btn-primary btn-sm mt-3 align-self-start">
+                        <i class="bi bi-download me-1" aria-hidden="true"></i>
+                        {{ 'data.export.familiar.button'|trans }}
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock %}

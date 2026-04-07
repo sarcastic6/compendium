@@ -612,3 +612,7 @@ data:
             label: 'Data Dump'
             description: 'All fields as raw values. For external analysis, personal backups, and third-party portability.'
             button: 'Download XLSX'
+        familiar:
+            label: 'Familiar Format'
+            description: 'Modelled after the original spreadsheet tracker. Structured for future re-import into Compendium.'
+            button: 'Download XLSX'
