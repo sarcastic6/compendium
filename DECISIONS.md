@@ -542,6 +542,88 @@ A shared lock (e.g. a database semaphore or Redis rate limiter) across multiple 
 workers is intentionally deferred to the batch orchestration layer. The scraper has no opinion
 on process topology — it only throttles what it can observe: its own outbound requests.
 
+---
+
+## Export — Two Formats, Strategy Pattern
+
+The export feature ships two XLSX formats:
+
+- **Data Dump** — raw values (integers, plain text, dates). For personal data manipulation and
+  third-party portability. Not designed to be re-imported into Compendium.
+- **Familiar Format** — presentation-oriented, modelled after the original Google Sheets tracker.
+  Designed for round-trip import back into Compendium.
+
+### Why a strategy pattern rather than a single service with a flag?
+
+The two formats have entirely different column layouts, encoding choices, and purpose. A single
+service with conditional branches per format would grow unwieldy and would need to change whenever
+either format changes. The strategy pattern (`ExportFormatInterface`) keeps each format
+self-contained and makes adding a third format in the future a non-invasive change.
+
+### Why column definitions are not shared between formats
+
+The formats serve different purposes with no shared import contract. Coordinating column indices
+between them would couple two independent things and add complexity with no benefit. Each format
+implementation owns its own column layout.
+
+---
+
+## Export — Familiar Format, Column A (Completion Status)
+
+Column A derives a human-readable completion label from `Status` flag combinations rather than
+the status name. This is intentional: status names are admin-controlled at runtime and cannot be
+relied upon in code.
+
+| Condition | Output |
+|-----------|--------|
+| `counts_as_read = true` | `"Complete"` |
+| `has_been_started = true` AND `counts_as_read = false` AND `is_active = true` | `"WIP"` |
+| `has_been_started = true` AND `counts_as_read = false` AND `is_active = false` | `"Abandoned"` |
+| `has_been_started = false` | *(blank)* |
+
+### Why On Hold must have `is_active = true` for this to work
+
+DNF and On Hold share identical flag values under the original defaults
+(`has_been_started = true`, `counts_as_read = false`, `is_active = false`). Without distinguishing
+them, both would export as "Abandoned" — incorrect for On Hold.
+
+Setting `is_active = true` on On Hold resolves the ambiguity: On Hold + Reading both become "WIP",
+while DNF remains "Abandoned". This is semantically consistent with the existing `is_active`
+definition (an actively in-progress read). The change is made via the admin status edit UI — no
+migration required.
+
+---
+
+## Export — Emoji Encoding is Intentionally Round-Trippable
+
+The Familiar Format uses emoji to encode review and spice values in columns J, K, and L:
+- J: `reviewStars` × ★
+- K: `reviewStars` × ♥  
+- L: `spiceStars` encoded as 🌶️×N, with 0 → 🚫 and NULL → blank
+
+This encoding was deliberately chosen so that the future import feature can **count the characters**
+to recover the integer. It is not purely cosmetic — it is a lossless encoding scheme.
+
+### Spice import special case
+
+`spice_stars = 0` exports as 🚫 (not zero chili emojis). The import service must treat 🚫 as `0`
+and any cell that does not match the chili or 🚫 pattern as `NULL`. This handles legacy
+spreadsheet data that may use different notation for absence of spice.
+
+---
+
+## Export — Soft-Delete Filter Bypassed
+
+The repository method used by both export formats temporarily disables the Doctrine soft-delete
+filter on `Work`. This means reading entries that reference soft-deleted works are included in
+the export.
+
+This is intentional: the export is a personal data backup. A user who logged a read against a
+work that was later soft-deleted should still see that entry in their export. Hiding it would
+produce a silently incomplete backup, which defeats the purpose of the feature.
+
+---
+
 ### Recommended backoff strategy for the future Messenger handler
 
 When the handler catches `RateLimitException`, it should requeue the message with a `DelayStamp`
