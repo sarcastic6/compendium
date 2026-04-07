@@ -206,6 +206,63 @@ class ReadingEntryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Fetches all reading entries for the user with all associations eager-loaded
+     * (work, series, series source links, language, metadata + type, status,
+     * main pairing). Used for full-data exports.
+     *
+     * The soft-delete filter is temporarily disabled so entries referencing
+     * soft-deleted works are still included — export must reflect the complete
+     * reading history, including works deleted after the entry was recorded.
+     *
+     * Ordered by dateFinished DESC, then createdAt DESC.
+     *
+     * Joining w.metadata (a collection) without setMaxResults() is safe here —
+     * Doctrine deduplicates rows via the identity map and no pagination is applied.
+     *
+     * @return ReadingEntry[]
+     */
+    public function findAllForUserExport(User $user): array
+    {
+        $em = $this->getEntityManager();
+        $filters = $em->getFilters();
+
+        $softDeleteEnabled = $filters->isEnabled('soft_delete');
+        if ($softDeleteEnabled) {
+            $filters->disable('soft_delete');
+        }
+
+        try {
+            return $this->createQueryBuilder('re')
+                ->innerJoin('re.work', 'w')
+                ->addSelect('w')
+                ->leftJoin('w.series', 'ser')
+                ->addSelect('ser')
+                ->leftJoin('ser.sourceLinks', 'sersl')
+                ->addSelect('sersl')
+                ->leftJoin('w.language', 'lang')
+                ->addSelect('lang')
+                ->leftJoin('w.metadata', 'm')
+                ->addSelect('m')
+                ->leftJoin('m.metadataType', 'mt')
+                ->addSelect('mt')
+                ->innerJoin('re.status', 's')
+                ->addSelect('s')
+                ->leftJoin('re.mainPairing', 'mp')
+                ->addSelect('mp')
+                ->where('re.user = :user')
+                ->setParameter('user', $user)
+                ->orderBy('re.dateFinished', 'DESC')
+                ->addOrderBy('re.createdAt', 'DESC')
+                ->getQuery()
+                ->getResult();
+        } finally {
+            if ($softDeleteEnabled) {
+                $filters->enable('soft_delete');
+            }
+        }
+    }
+
+    /**
      * Total reading entry count for the given user.
      * When $year is provided, only counts entries with dateFinished in that year.
      */

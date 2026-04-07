@@ -57,6 +57,7 @@ nav:
     rankings_main_pairings: 'Main Pairings'
     achievements: 'Achievements'
     goals: 'Reading Goals'
+    data: 'Data'
     settings: 'Settings'
     open_menu: 'Open navigation menu'
 
@@ -600,3 +601,14 @@ goal:
     error:
         invalid_type: 'Invalid goal type.'
         invalid_value: 'Target value must be a positive number.'
+
+data:
+    index:
+        heading: 'Data'
+        description: 'Export your reading archive or manage your data.'
+    export:
+        section_heading: 'Export'
+        data_dump:
+            label: 'Data Dump'
+            description: 'All fields as raw values. For external analysis, personal backups, and third-party portability.'
+            button: 'Download XLSX'

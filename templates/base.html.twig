@@ -133,6 +133,12 @@
                         {{ 'nav.goals'|trans }}
                     </a>
 
+                    <a href="{{ path('app_data_index') }}"
+                       class="sidebar-nav-item{% if currentRoute starts with 'app_data' %} active{% endif %}">
+                        <i class="bi bi-database sidebar-nav-icon" aria-hidden="true"></i>
+                        {{ 'nav.data'|trans }}
+                    </a>
+
                     {% if is_granted('ROLE_ADMIN') %}
                         <a href="{{ path('app_admin_index') }}"
                            class="sidebar-nav-item{% if currentRoute starts with 'app_admin' %} active{% endif %}">
@@ -270,6 +276,12 @@
                                 </a>
                             </div>
                         </div>
+                        <a href="{{ path('app_data_index') }}"
+                           class="sidebar-nav-item{% if currentRoute starts with 'app_data' %} active{% endif %}">
+                            <i class="bi bi-database sidebar-nav-icon" aria-hidden="true"></i>
+                            {{ 'nav.data'|trans }}
+                        </a>
+
                         {% if is_granted('ROLE_ADMIN') %}
                             <a href="{{ path('app_admin_index') }}"
                                class="sidebar-nav-item{% if currentRoute starts with 'app_admin' %} active{% endif %}">
