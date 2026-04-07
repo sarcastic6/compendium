@@ -139,11 +139,11 @@ Rules:
 
 Common prefixes:
 
-feat -- new feature\
-fix -- bug fix\
-refactor -- restructure code without behavior change\
-test -- add/update tests\
-docs -- documentation changes\
+feat -- new feature
+fix -- bug fix
+refactor -- restructure code without behavior change
+test -- add/update tests
+docs -- documentation changes
 chore -- maintenance tasks
 
 ## Branch Naming
@@ -484,8 +484,6 @@ Never:
 -   hardcode user-facing text
 -   use typographic quotes
 -   use database-specific SQL
--   use SCSS or LESS
--   add nested CSS rules
 
 ------------------------------------------------------------------------
 
