@@ -544,6 +544,90 @@ on process topology — it only throttles what it can observe: its own outbound 
 
 ---
 
+## Import — Work Type Default
+
+The Familiar Format XLSX has no Work Type column. All works created during a spreadsheet
+import default to `WorkType::Fanfiction`.
+
+**Rationale:** The app's primary use case is fanfiction tracking. The original spreadsheet
+that motivated this feature contained only fanfiction. If a user imports a file containing
+books, they can manually correct the work type afterward.
+
+---
+
+## Import — Not Idempotent by Design
+
+The import feature does not detect or prevent duplicate imports. Importing the same file
+twice creates duplicate reading entries. A prominent warning on the import page communicates
+this explicitly.
+
+**Why not detect duplicates?** There is no reliable fingerprint for a reading entry at import
+time. Matching on (work URL + status + date_finished) would catch some duplicates but miss
+re-reads with identical dates. The complexity is not justified for a feature used occasionally.
+
+---
+
+## Import — AO3 as Source of Truth (Full Replace on Scrape)
+
+When the Messenger handler scrapes a work after import, it calls `WorkService::refreshWork()`
+with `$fullReplace = true`. This replaces ALL metadata on the Work, not just types present in
+the scraped data, and overwrites all scalar fields with non-null scraped values.
+
+The stub created at import time from spreadsheet columns is a placeholder only. AO3 data is
+authoritative for AO3 works, and any discrepancy between the spreadsheet and AO3 should
+resolve in AO3's favour.
+
+The existing sync "Refresh from source" flow (via the reading entry detail page) continues to
+use `$fullReplace = false` (partial update). This can be changed to full replace in a future
+session if desired.
+
+**Side effect — orphaned Metadata records:** When a stub is created from spreadsheet columns
+and later fully replaced by AO3 data, the old `WorkMetadata` junction rows are removed but
+the `Metadata` records themselves persist (metadata is never deleted by design). Spreadsheet
+names that differ from AO3 names become orphaned — no works reference them, but they appear
+in filter dropdowns. This is an accepted trade-off of the no-delete metadata design. A cleanup
+query is documented in `doc/plans/spreadsheet-import.md` under "Known Post-Import Cleanup".
+
+---
+
+## Import — Main Pairing Resolution (Chicken/Egg)
+
+The Familiar Format includes a Main Pairing field (Col T) on the reading entry. This is a FK
+to a `Metadata` record with type='Relationships'. The problem: Relationships metadata normally
+comes from AO3 scraping, which happens after the reading entry is created.
+
+**Solution:** At import time, find-or-create a `Metadata` record from the Col T text directly
+(type='Relationships', no source link). The reading entry FK is valid immediately. When the
+scraper runs, it finds the same record by name (via the `UNIQUE(name, metadata_type_id)`
+constraint) and enriches it with the AO3 source link. No duplicate is created.
+
+---
+
+## Import — Job Status Tracking
+
+The import feature uses a **basic** tracking approach rather than a full per-row status page:
+
+- After upload, a summary page shows counts: N entries created, N works queued for scraping, N rows skipped with reasons.
+- A `scrape_status` flag on the `Work` entity tracks whether background scraping is pending, complete, or failed.
+- The user can filter for works with failed scrapes and retry them individually via the existing "Refresh from source" button on the reading entry detail page.
+
+### Why not a full per-row ImportBatch entity?
+
+A full tracking page (`ImportBatch` + `ImportBatchRow` entities, status page controller, Twig template, Messenger write-back on every message) adds meaningful complexity for a feature used occasionally. The basic approach provides sufficient diagnostic information: you know which works failed (via the `scrape_status` flag) and can act on them individually.
+
+### Extending this in the future
+
+If the basic approach proves insufficient — e.g., you want a dedicated "scrape failures" list page, bulk retry, or a progress indicator during a large import — the natural extension is:
+
+1. Add an `ImportBatch` entity (created per upload, stores timestamp + summary counts)
+2. Add an `ImportBatchRow` entity (one per row: status pending/complete/failed, error message if failed, FK to `ImportBatch` and optionally to `ReadingEntry`)
+3. The Messenger handler writes back to `ImportBatchRow` on completion or failure
+4. A `/data/import/{batch}` status page shows per-row results
+
+The `scrape_status` flag on `Work` can be retained alongside this for filtering purposes.
+
+---
+
 ## Export — Two Formats, Strategy Pattern
 
 The export feature ships two XLSX formats:
@@ -609,6 +693,23 @@ to recover the integer. It is not purely cosmetic — it is a lossless encoding 
 `spice_stars = 0` exports as 🚫 (not zero chili emojis). The import service must treat 🚫 as `0`
 and any cell that does not match the chili or 🚫 pattern as `NULL`. This handles legacy
 spreadsheet data that may use different notation for absence of spice.
+
+---
+
+## Export — Data Dump Uses JSON Arrays for Multi-Value Metadata
+
+The Data Dump format encodes multi-value metadata fields (Author, Warning, Category, Fandom,
+Relationships, Character, Tag) as JSON arrays rather than comma-separated strings. Single-value
+types (Rating) remain plain strings.
+
+**Why not comma-separated?** Metadata values — especially AO3 tags — can contain commas
+(e.g. "Slow Burn, Like Really Slow"). Comma-delimited encoding is lossy: splitting on commas
+during import would break such values into fragments. JSON arrays handle all special characters
+unambiguously and are trivially parseable in any language.
+
+The Familiar Format retains comma-separated encoding because it is modelled after the original
+Google Sheets tracker and prioritizes human readability. Its round-trip is accepted as lossy
+for values containing commas.
 
 ---
 
