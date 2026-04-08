@@ -1,0 +1,205 @@
+{#
+ # Filter offcanvas panel — included by list.html.twig.
+ #
+ # Variables (passed via `with ... only`):
+ #   filters                 array   — active filter params
+ #   statuses                array   — all Status entities (for the status dropdown)
+ #   languages               array   — all Language entities (for the language dropdown)
+ #   metadataTypes           array   — all MetadataType entities
+ #   metadataDropdownValues  array   — map of MetadataType name → array of existing values
+ #                                     (only populated for types with showAsDropdown = true)
+ #}
+<div class="offcanvas offcanvas-end filter-offcanvas"
+     tabindex="-1"
+     id="filterOffcanvas"
+     aria-labelledby="filterOffcanvasTitle">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="filterOffcanvasTitle">
+            <i class="bi bi-funnel me-2" aria-hidden="true"></i>
+            {{ 'entry.filter.panel_title'|trans }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+                aria-label="{{ 'action.close'|trans }}"></button>
+    </div>
+
+    <div class="offcanvas-body">
+        <form method="get" action="{{ path('app_reading_entry_list') }}" id="filter-form">
+
+            {# Section: Text Search ─────────────────────────────────────── #}
+            <div>
+                <p class="filter-section-label">{{ 'entry.filter.section_text'|trans }}</p>
+                <div class="mb-3">
+                    <label for="filter-q" class="form-label form-label-sm">{{ 'reading.entry.col_title'|trans }}</label>
+                    <input type="text" id="filter-q" name="q" class="form-control form-control-sm"
+                           value="{{ filters.q }}"
+                           placeholder="{{ 'reading.filter.search_placeholder'|trans }}">
+                </div>
+                <div class="mb-3">
+                    <label for="filter-author" class="form-label form-label-sm">{{ 'reading.filter.author'|trans }}</label>
+                    <input type="text" id="filter-author" name="author" class="form-control form-control-sm"
+                           value="{{ filters.author }}"
+                           placeholder="{{ 'reading.filter.author_placeholder'|trans }}">
+                </div>
+                <div class="mb-3">
+                    <label for="filter-main-pairing" class="form-label form-label-sm">{{ 'reading.filter.main_pairing'|trans }}</label>
+                    <input type="text" id="filter-main-pairing" name="mainPairing" class="form-control form-control-sm"
+                           value="{{ filters.mainPairing }}">
+                </div>
+            </div>
+
+            {# Section: Date Finished ───────────────────────────────────── #}
+            <div>
+                <p class="filter-section-label">{{ 'reading.entry.col_date_finished'|trans }}</p>
+                <div class="filter-range-grid mb-3">
+                    <div>
+                        <label for="filter-date-from" class="form-label form-label-sm">{{ 'reading.filter.date_from'|trans }}</label>
+                        <input type="date" id="filter-date-from" name="dateFrom" class="form-control form-control-sm"
+                               value="{{ filters.dateFrom }}">
+                    </div>
+                    <div>
+                        <label for="filter-date-to" class="form-label form-label-sm">{{ 'reading.filter.date_to'|trans }}</label>
+                        <input type="date" id="filter-date-to" name="dateTo" class="form-control form-control-sm"
+                               value="{{ filters.dateTo }}">
+                    </div>
+                </div>
+            </div>
+
+            {# Section: Metrics ─────────────────────────────────────────── #}
+            <div>
+                <p class="filter-section-label">{{ 'entry.filter.section_metrics'|trans }}</p>
+                <div class="filter-range-grid mb-3">
+                    <div>
+                        <label for="filter-words-min" class="form-label form-label-sm">{{ 'reading.filter.words_min'|trans }}</label>
+                        <input type="number" id="filter-words-min" name="wordsMin" class="form-control form-control-sm"
+                               min="0" step="1000" value="{{ filters.wordsMin }}">
+                    </div>
+                    <div>
+                        <label for="filter-words-max" class="form-label form-label-sm">{{ 'reading.filter.words_max'|trans }}</label>
+                        <input type="number" id="filter-words-max" name="wordsMax" class="form-control form-control-sm"
+                               min="0" step="1000" value="{{ filters.wordsMax }}">
+                    </div>
+                </div>
+                <div class="filter-range-grid mb-3">
+                    <div>
+                        <label for="filter-rating" class="form-label form-label-sm">{{ 'reading.filter.rating'|trans }}</label>
+                        <select id="filter-rating" name="rating" class="form-select form-select-sm">
+                            <option value="">{{ 'reading.filter.any_rating'|trans }}</option>
+                            {% for i in 1..5 %}
+                                <option value="{{ i }}" {% if filters.rating == (i ~ '') %}selected{% endif %}>
+                                    {% for j in 1..i %}★{% endfor %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-spice" class="form-label form-label-sm">{{ 'reading.filter.spice'|trans }}</label>
+                        <select id="filter-spice" name="spice" class="form-select form-select-sm">
+                            <option value="">{{ 'reading.filter.any_spice'|trans }}</option>
+                            <option value="0" {% if filters.spice == '0' %}selected{% endif %}>🚫 {{ 'reading.filter.no_spice'|trans }}</option>
+                            {% for i in 1..5 %}
+                                <option value="{{ i }}" {% if filters.spice == (i ~ '') %}selected{% endif %}>
+                                    {% for j in 1..i %}🌶️{% endfor %}{% if i < 5 %}+{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="filter-pinned" name="pinned" value="1"
+                           {% if filters.pinned == '1' %}checked{% endif %}>
+                    <label class="form-check-label" for="filter-pinned">
+                        {{ 'reading.filter.pinned'|trans }}
+                    </label>
+                </div>
+            </div>
+
+            {# Section: Status, Type, Dropdowns ────────────────────────── #}
+            <div>
+                <p class="filter-section-label">{{ 'entry.filter.section_classify'|trans }}</p>
+                <div class="mb-3">
+                    <label for="filter-status" class="form-label form-label-sm">{{ 'reading.filter.status'|trans }}</label>
+                    <select id="filter-status" name="status" class="form-select form-select-sm">
+                        <option value="">{{ 'reading.filter.any_status'|trans }}</option>
+                        {% for status in statuses %}
+                            <option value="{{ status.id }}" {% if filters.status == (status.id ~ '') %}selected{% endif %}>
+                                {{ status.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="filter-type" class="form-label form-label-sm">{{ 'reading.filter.type'|trans }}</label>
+                    <select id="filter-type" name="type" class="form-select form-select-sm">
+                        <option value="">{{ 'reading.filter.any_type'|trans }}</option>
+                        <option value="Book" {% if filters.type == 'Book' %}selected{% endif %}>{{ 'reading.filter.type_book'|trans }}</option>
+                        <option value="Fanfiction" {% if filters.type == 'Fanfiction' %}selected{% endif %}>{{ 'reading.filter.type_fanfiction'|trans }}</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="filter-language" class="form-label form-label-sm">{{ 'reading.filter.language'|trans }}</label>
+                    <select id="filter-language" name="language" class="form-select form-select-sm">
+                        <option value="">{{ 'reading.filter.any_language'|trans }}</option>
+                        {% for language in languages %}
+                            <option value="{{ language.name }}" {% if filters.language == language.name %}selected{% endif %}>
+                                {{ language.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {# Dropdown metadata types (Rating, Warning, Category, etc.) #}
+                {% for metadataType in metadataTypes %}
+                    {% if metadataType.name != 'Author' and metadataType.showAsDropdown and metadataDropdownValues[metadataType.name] is defined %}
+                        <div class="mb-3">
+                            <label for="filter-meta-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
+                            <select id="filter-meta-{{ loop.index }}"
+                                    name="metadata[{{ metadataType.name }}]"
+                                    class="form-select form-select-sm">
+                                <option value="">{{ 'reading.filter.any'|trans }} {{ metadataType.name|lower }}</option>
+                                {% for value in metadataDropdownValues[metadataType.name] %}
+                                    <option value="{{ value }}" {% if filters.metadata[metadataType.name] ?? '' == value %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {# Section: Free-text metadata ──────────────────────────────── #}
+            {% set hasFreeTextMeta = false %}
+            {% for metadataType in metadataTypes %}
+                {% if metadataType.name != 'Author' and not metadataType.showAsDropdown %}
+                    {% set hasFreeTextMeta = true %}
+                {% endif %}
+            {% endfor %}
+            {% if hasFreeTextMeta %}
+                <div>
+                    <p class="filter-section-label">{{ 'entry.filter.section_metadata'|trans }}</p>
+                    {% for metadataType in metadataTypes %}
+                        {% if metadataType.name != 'Author' and not metadataType.showAsDropdown %}
+                            <div class="mb-3">
+                                <label for="filter-meta-ft-{{ loop.index }}" class="form-label form-label-sm">{{ metadataType.name }}</label>
+                                <input type="text" id="filter-meta-ft-{{ loop.index }}"
+                                       name="metadata[{{ metadataType.name }}]"
+                                       class="form-control form-control-sm"
+                                       value="{{ filters.metadata[metadataType.name] ?? '' }}">
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+        </form>
+    </div>
+
+    <div class="offcanvas-footer">
+        <button type="submit" form="filter-form" class="btn btn-primary">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            {{ 'reading.filter.apply'|trans }}
+        </button>
+        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-secondary">
+            {{ 'entry.filter.clear_all'|trans }}
+        </a>
+    </div>
+</div>

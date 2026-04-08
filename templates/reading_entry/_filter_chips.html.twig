@@ -1,0 +1,146 @@
+{#
+ # Active filter chip strip — included by list.html.twig.
+ #
+ # Variables (passed via `with ... only`):
+ #   has_filters   bool    — whether any filter is currently active
+ #   filters       array   — active filter params (q, author, status, rating, spice,
+ #                           spiceExact, pinned, dateFrom, dateTo, wordsMin, wordsMax,
+ #                           type, language, mainPairing, series, metadata[])
+ #   statuses      array   — all Status entities (for ID → name lookup in the status chip)
+ #   seriesName    string  — display name for the active series filter (may be null)
+ #}
+{% if has_filters %}
+    {# Build a status ID → name map so the status chip can show the name, not the ID #}
+    {% set statusMap = {} %}
+    {% for s in statuses %}
+        {% set statusMap = statusMap|merge({(s.id ~ ''): s.name}) %}
+    {% endfor %}
+
+    <div class="filter-chip-strip">
+        {% if filters.q %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'q': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.entry.col_title'|trans }}: {{ filters.q }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.author %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'author': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.author'|trans }}: {{ filters.author }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.status %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'status': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.status'|trans }}: {{ statusMap[filters.status] ?? filters.status }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.rating %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'rating': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.rating'|trans }}: {% for j in 1..filters.rating %}★{% endfor %}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.spiceExact != '' %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'spiceExact': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.spice'|trans }}:
+                {% if filters.spiceExact == '0' %}🚫
+                {% else %}{% for j in 1..filters.spiceExact %}🌶️{% endfor %}{% endif %}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.spice != '' %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'spice': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.spice'|trans }}:
+                {% if filters.spice == '0' %}🚫
+                {% else %}{% for j in 1..filters.spice %}🌶️{% endfor %}+{% endif %}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.pinned %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'pinned': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.pinned'|trans }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.dateFrom %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'dateFrom': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.date_from'|trans }}: {{ filters.dateFrom }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.dateTo %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'dateTo': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.date_to'|trans }}: {{ filters.dateTo }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.wordsMin %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'wordsMin': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.words_min'|trans }}: {{ filters.wordsMin|number_format }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.wordsMax %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'wordsMax': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.words_max'|trans }}: {{ filters.wordsMax|number_format }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.type %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'type': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.type'|trans }}: {{ filters.type }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.language %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'language': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.language'|trans }}: {{ filters.language }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.mainPairing %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'mainPairing': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.main_pairing'|trans }}: {{ filters.mainPairing }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {% if filters.series %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'series': ''})) }}"
+               class="chip chip-filter">
+                {{ 'reading.filter.series'|trans }}: {{ seriesName ?? filters.series }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+        {# One chip per active metadata[] filter — X button removes only that type #}
+        {% for metaType, metaValue in filters.metadata %}
+            {% set newMeta = {} %}
+            {% for k, v in filters.metadata %}
+                {% if k != metaType %}{% set newMeta = newMeta|merge({(k): v}) %}{% endif %}
+            {% endfor %}
+            <a href="{{ path('app_reading_entry_list', filters|merge({'metadata': newMeta})) }}"
+               class="chip chip-filter">
+                {{ metaType }}: {{ metaValue }}
+                <i class="bi bi-x chip-filter-remove" aria-hidden="true"></i>
+            </a>
+        {% endfor %}
+
+        <a href="{{ path('app_reading_entry_list') }}" class="filter-chip-clear-all">
+            {{ 'entry.filter.clear_all'|trans }}
+        </a>
+    </div>
+{% endif %}

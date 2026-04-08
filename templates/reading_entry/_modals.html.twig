@@ -1,0 +1,67 @@
+{#
+ # Shared overlay elements for the reading entry list — included by list.html.twig.
+ #
+ # Contains:
+ #   - Shared pin-toggle form (outside the bulk form to avoid invalid nesting)
+ #   - Single-entry delete confirmation modal
+ #   - Bulk delete confirmation modal
+ #
+ # No variables required. All dynamic values are wired by JS via data attributes.
+ #}
+
+{# ── Shared pin-toggle form — outside the bulk form to avoid invalid nesting ── #}
+{# Pin buttons in the main list use JS to set action/token then submit this form. #}
+<form id="pin-form" method="post" action="">
+    <input type="hidden" name="_token" id="pin-form-token" value="">
+</form>
+
+{# ── Single-entry delete confirmation modal ───────────────────────────────── #}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">{{ 'reading.entry.delete_confirm'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'action.cancel'|trans }}"></button>
+            </div>
+            <div class="modal-body">
+                {{ 'reading.entry.delete_confirm_message'|trans }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {{ 'action.cancel'|trans }}
+                </button>
+                <form id="singleDeleteForm" method="post" action="">
+                    <input type="hidden" name="_token" id="singleDeleteToken" value="">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash" aria-hidden="true"></i>
+                        {{ 'action.delete'|trans }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Bulk delete confirmation modal ───────────────────────────────────────── #}
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkDeleteModalLabel">{{ 'reading.entry.delete_confirm'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'action.cancel'|trans }}"></button>
+            </div>
+            <div class="modal-body">
+                {{ 'reading.bulk.confirm_bulk_delete'|trans }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {{ 'action.cancel'|trans }}
+                </button>
+                <button type="button" id="bulk-delete-confirm-btn" class="btn btn-danger">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                    {{ 'reading.bulk.delete_selected'|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
