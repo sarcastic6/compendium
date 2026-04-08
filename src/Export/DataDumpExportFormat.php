@@ -71,7 +71,7 @@ class DataDumpExportFormat implements ExportFormatInterface
                 $entry->getMainPairing()?->getName(),
                 $entry->getComments(),
                 $entry->isPinned(),
-                $this->getMetadataString($work, 'Author'),
+                $this->getMetadataJson($work, 'Author'),
                 $work->getSeries()?->getName(),
                 $work->getPlaceInSeries(),
                 $work->getLanguage()?->getName(),
@@ -79,13 +79,13 @@ class DataDumpExportFormat implements ExportFormatInterface
                 $work->getLastUpdatedDate()?->format('Y-m-d'),
                 $work->getWords(),
                 $work->getChapters(),
-                $this->getMetadataString($work, 'Rating'),
-                $this->getMetadataString($work, 'Warning'),
-                $this->getMetadataString($work, 'Category'),
-                $this->getMetadataString($work, 'Fandom'),
-                $this->getMetadataString($work, 'Relationships'),
-                $this->getMetadataString($work, 'Character'),
-                $this->getMetadataString($work, 'Tag'),
+                $this->getSingleMetadata($work, 'Rating'),
+                $this->getMetadataJson($work, 'Warning'),
+                $this->getMetadataJson($work, 'Category'),
+                $this->getMetadataJson($work, 'Fandom'),
+                $this->getMetadataJson($work, 'Relationships'),
+                $this->getMetadataJson($work, 'Character'),
+                $this->getMetadataJson($work, 'Tag'),
                 $work->getSummary(),
             ];
         }
@@ -94,10 +94,14 @@ class DataDumpExportFormat implements ExportFormatInterface
     }
 
     /**
-     * Returns a comma-separated string of all metadata names of the given type,
+     * Returns a JSON array of all metadata names of the given type,
      * or null if the work has no metadata of that type.
+     *
+     * JSON encoding is used instead of comma-separated strings because
+     * metadata values (especially tags) can contain commas, making
+     * comma-delimited values lossy on round-trip.
      */
-    private function getMetadataString(Work $work, string $typeName): ?string
+    private function getMetadataJson(Work $work, string $typeName): ?string
     {
         $names = [];
 
@@ -107,6 +111,21 @@ class DataDumpExportFormat implements ExportFormatInterface
             }
         }
 
-        return $names !== [] ? implode(', ', $names) : null;
+        return $names !== [] ? json_encode($names, JSON_UNESCAPED_UNICODE) : null;
+    }
+
+    /**
+     * Returns the single metadata value of the given type, or null if absent.
+     * Used for types where multiple_allowed is false (e.g. Rating).
+     */
+    private function getSingleMetadata(Work $work, string $typeName): ?string
+    {
+        foreach ($work->getMetadata() as $metadata) {
+            if ($metadata->getMetadataType()->getName() === $typeName) {
+                return $metadata->getName();
+            }
+        }
+
+        return null;
     }
 }
