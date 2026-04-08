@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\ScrapeStatus;
 use App\Enum\SourceType;
 use App\Enum\WorkType;
 use App\Repository\WorkRepository;
@@ -61,6 +62,9 @@ class Work
 
     #[ORM\Column(type: 'string', length: 32, enumType: SourceType::class)]
     private SourceType $sourceType = SourceType::Manual;
+
+    #[ORM\Column(length: 32, nullable: true, enumType: ScrapeStatus::class)]
+    private ?ScrapeStatus $scrapeStatus = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?DateTimeImmutable $deletedAt = null;
@@ -240,6 +244,18 @@ class Work
         return $this;
     }
 
+
+    public function getScrapeStatus(): ?ScrapeStatus
+    {
+        return $this->scrapeStatus;
+    }
+
+    public function setScrapeStatus(?ScrapeStatus $scrapeStatus): static
+    {
+        $this->scrapeStatus = $scrapeStatus;
+
+        return $this;
+    }
 
     public function getDeletedAt(): ?DateTimeImmutable
     {

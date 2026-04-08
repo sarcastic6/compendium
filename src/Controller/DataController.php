@@ -8,9 +8,11 @@ use App\Entity\User;
 use App\Export\DataDumpExportFormat;
 use App\Export\FamiliarExportFormat;
 use App\Service\ReadingEntryExportService;
+use App\Service\SpreadsheetImportService;
 use DateTimeImmutable;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
@@ -24,6 +26,7 @@ class DataController extends AbstractController
         private readonly ReadingEntryExportService $exportService,
         private readonly DataDumpExportFormat $dataDumpFormat,
         private readonly FamiliarExportFormat $familiarFormat,
+        private readonly SpreadsheetImportService $spreadsheetImportService,
     ) {
     }
 
@@ -31,6 +34,60 @@ class DataController extends AbstractController
     public function index(): Response
     {
         return $this->render('data/index.html.twig');
+    }
+
+    #[Route('/import', name: 'app_data_import', methods: ['GET'])]
+    public function importForm(): Response
+    {
+        return $this->render('data/import.html.twig');
+    }
+
+    #[Route('/import', name: 'app_data_import_post', methods: ['POST'])]
+    public function importProcess(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('data_import', $request->request->get('_token'))) {
+            $this->addFlash('error', 'security.csrf_invalid');
+
+            return $this->redirectToRoute('app_data_import');
+        }
+
+        $file = $request->files->get('import_file');
+        if ($file === null) {
+            $this->addFlash('error', 'data.import.error.no_file');
+
+            return $this->redirectToRoute('app_data_import');
+        }
+
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+        $mimeType  = $file->getMimeType() ?? '';
+        $validMimes = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/octet-stream',
+            'application/zip',
+        ];
+
+        if ($extension !== 'xlsx' || !in_array($mimeType, $validMimes, true)) {
+            $this->addFlash('error', 'data.import.error.invalid_file');
+
+            return $this->redirectToRoute('app_data_import');
+        }
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'compendium_import_');
+        $file->move(dirname($tmpPath), basename($tmpPath));
+
+        try {
+            /** @var User $user */
+            $user    = $this->getUser();
+            $summary = $this->spreadsheetImportService->import($user, $tmpPath);
+        } finally {
+            if (file_exists($tmpPath)) {
+                @unlink($tmpPath);
+            }
+        }
+
+        return $this->render('data/import_result.html.twig', [
+            'summary' => $summary,
+        ]);
     }
 
     #[Route('/export/data-dump', name: 'app_data_export_data_dump')]

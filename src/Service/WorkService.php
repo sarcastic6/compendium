@@ -33,12 +33,16 @@ class WorkService
      * Only fields with non-null scraped values are updated — if a field fails to parse
      * (returns null), the stored value is preserved rather than overwritten with nothing.
      *
-     * Metadata sync is selective: only the types present in the scraped data are replaced.
-     * Types not returned by the scraper (e.g., manually added types) are left untouched.
+     * When $fullReplace = false (default): metadata sync is selective — only types present
+     * in the scraped data are replaced. Types not in the scrape are left untouched.
+     *
+     * When $fullReplace = true: ALL existing WorkMetadata associations are cleared before
+     * applying the new set. Used by ScrapeWorkMessageHandler after import: the stub data
+     * from the spreadsheet is a placeholder; AO3 is the authoritative source of truth.
      *
      * @throws \InvalidArgumentException if a metadata type enforces single values but the scrape returns multiple
      */
-    public function refreshWork(Work $work, WorkFormDto $dto): void
+    public function refreshWork(Work $work, WorkFormDto $dto, bool $fullReplace = false): void
     {
         if ($dto->title !== null) {
             $work->setTitle($dto->title);
@@ -75,7 +79,29 @@ class WorkService
             $work->setPlaceInSeries($dto->placeInSeries);
         }
 
-        $this->syncMetadata($work, $dto->authors, $dto->metadata);
+        if ($fullReplace) {
+            // Full replace: clear all existing WorkMetadata associations so types absent from
+            // the scraped data (e.g. scraper returned no Characters) are removed rather than
+            // preserved. AO3 data is authoritative — the stub from the import is a placeholder.
+            $work->getMetadata()->clear();
+            $allEntries = $dto->metadata;
+            if ($dto->authors !== []) {
+                $authorType = $this->findOrCreateAuthorType();
+                foreach ($dto->authors as $entry) {
+                    $name = trim((string) ($entry['name'] ?? ''));
+                    if ($name !== '') {
+                        $allEntries[] = [
+                            'metadataType' => $authorType,
+                            'name'         => $name,
+                            'link'         => $entry['link'] ?? null,
+                        ];
+                    }
+                }
+            }
+            $this->applyMetadata($work, $allEntries, $work->getSourceType());
+        } else {
+            $this->syncMetadata($work, $dto->authors, $dto->metadata);
+        }
 
         $this->entityManager->flush();
     }
@@ -158,7 +184,23 @@ class WorkService
         ?int $totalWords = null,
         ?bool $isComplete = null,
     ): Series {
-        $series = $this->seriesRepository->findOneBy(['name' => $name]);
+        // URL-first lookup: AO3 series names are not globally unique; different authors can
+        // share the same series name. Matching on URL is reliable; name-only is not.
+        if ($sourceUrl !== null && $sourceUrl !== '') {
+            $series = $this->seriesRepository->findBySourceUrl($workSourceType, $sourceUrl);
+            if ($series !== null) {
+                // AO3 is source of truth — update the name if it has changed
+                if ($series->getName() !== $name) {
+                    $series->setName($name);
+                }
+            }
+        }
+
+        // Fall back to name match if no URL or URL didn't find anything
+        if (!isset($series)) {
+            $series = $this->seriesRepository->findOneBy(['name' => $name]);
+        }
+
         if ($series === null) {
             $series = new Series($name);
             $this->entityManager->persist($series);

@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'data.import.result.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1 class="page-title">{{ 'data.import.result.heading'|trans }}</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8">
+
+        {# ── Summary counts ─────────────────────────────────────────────── #}
+        <div class="card mb-4">
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-1">
+                        <i class="bi bi-check-circle-fill text-success me-2" aria-hidden="true"></i>
+                        {{ 'data.import.result.entries_created'|trans({'count': summary.entriesCreated}) }}
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-file-earmark-plus me-2" aria-hidden="true"></i>
+                        {{ 'data.import.result.works_created'|trans({'count': summary.worksCreated}) }}
+                    </li>
+                    <li class="mb-1">
+                        <i class="bi bi-link-45deg me-2" aria-hidden="true"></i>
+                        {{ 'data.import.result.works_reused'|trans({'count': summary.worksReused}) }}
+                    </li>
+                    {% if summary.worksQueuedForScraping > 0 %}
+                    <li class="mb-1">
+                        <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>
+                        {{ 'data.import.result.queued'|trans({'count': summary.worksQueuedForScraping}) }}
+                    </li>
+                    {% endif %}
+                    {% if summary.rowsSkipped > 0 %}
+                    <li class="mb-1">
+                        <i class="bi bi-exclamation-circle-fill text-warning me-2" aria-hidden="true"></i>
+                        {{ 'data.import.result.skipped'|trans({'count': summary.rowsSkipped}) }}
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        {# ── Scraping note ──────────────────────────────────────────────── #}
+        {% if summary.worksQueuedForScraping > 0 %}
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+            {{ 'data.import.result.scraping_note'|trans }}
+        </div>
+        {% endif %}
+
+        {# ── Skipped rows error table ───────────────────────────────────── #}
+        {% if summary.errors|length > 0 %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="h6 mb-0">{{ 'data.import.result.errors_heading'|trans }}</h2>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="ps-3">Row</th>
+                            <th scope="col">Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for error in summary.errors %}
+                        <tr>
+                            <td class="ps-3 text-muted">{{ error.rowNumber }}</td>
+                            <td>{{ error.message }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Navigation ─────────────────────────────────────────────────── #}
+        <a href="{{ path('app_reading_entry_list') }}" class="btn btn-primary">
+            <i class="bi bi-list-ul me-1" aria-hidden="true"></i>
+            {{ 'data.import.result.back'|trans }}
+        </a>
+
+    </div>
+</div>
+{% endblock %}

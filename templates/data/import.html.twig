@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'data.import.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1 class="page-title">{{ 'data.import.heading'|trans }}</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+
+        <div class="alert alert-warning" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+            <strong>{{ 'flash.warning'|trans }}:</strong>
+            {{ 'data.import.warning'|trans }}
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="{{ path('app_data_import_post') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="_token" value="{{ csrf_token('data_import') }}">
+
+                    <div class="mb-3">
+                        <label for="import_file" class="form-label">
+                            {{ 'data.import.label'|trans }}
+                        </label>
+                        <input type="file"
+                               class="form-control"
+                               id="import_file"
+                               name="import_file"
+                               accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                               required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload me-1" aria-hidden="true"></i>
+                        {{ 'data.import.submit'|trans }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
