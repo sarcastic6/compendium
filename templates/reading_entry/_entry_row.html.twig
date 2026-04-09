@@ -2,16 +2,15 @@
  # Reading entry table row — included by list.html.twig for both the main list
  # and the pinned section.
  #
- # Variables inherited from parent context:
+ # Variables (passed via `with ... only`):
  #   entry          ReadingEntry  — the entry to render
- #   filters        array         — active filter params (for links)
- #   current_sort   string        — active sort column
- #   current_dir    string        — active sort direction
- #
- # Variables passed via `with`:
  #   showCheckbox   bool          — whether to render the checkbox column (false for pinned section)
+ #   usePinForm     bool          — when true, pin buttons use the shared #pin-form + JS instead of
+ #                                  an inline <form>. Required when this partial is rendered inside
+ #                                  #bulk-form to avoid invalid nested form elements.
  #}
 {% set showCheckbox = showCheckbox is defined ? showCheckbox : true %}
+{% set usePinForm = usePinForm is defined ? usePinForm : false %}
 {% set statusSlug = entry.status.name|lower|replace({' ': '-'}) %}
 {% set chipClass = 'chip chip--' ~ statusSlug %}
 
@@ -159,6 +158,7 @@
             <button class="btn btn-ghost btn-icon btn-sm"
                     type="button"
                     data-bs-toggle="dropdown"
+                    data-bs-popper-config='{"strategy":"fixed"}'
                     aria-expanded="false"
                     aria-label="{{ 'entry.list.actions'|trans }}">
                 <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
@@ -171,13 +171,23 @@
                     </a>
                 </li>
                 <li>
-                    <form method="post" action="{{ path('app_reading_entry_toggle_pin', {id: entry.id}) }}">
-                        <input type="hidden" name="_token" value="{{ csrf_token('pin-entry-' ~ entry.id) }}">
-                        <button type="submit" class="dropdown-item">
+                    {% if usePinForm %}
+                        <button type="button" class="dropdown-item"
+                                data-pin-url="{{ path('app_reading_entry_toggle_pin', {id: entry.id}) }}"
+                                data-pin-token="{{ csrf_token('pin-entry-' ~ entry.id) }}"
+                                onclick="var f=document.getElementById('pin-form');f.action=this.dataset.pinUrl;document.getElementById('pin-form-token').value=this.dataset.pinToken;f.submit();">
                             <i class="bi bi-{{ entry.pinned ? 'pin-angle' : 'pin-angle-fill' }} me-2" aria-hidden="true"></i>
                             {{ (entry.pinned ? 'action.unpin' : 'action.pin')|trans }}
                         </button>
-                    </form>
+                    {% else %}
+                        <form method="post" action="{{ path('app_reading_entry_toggle_pin', {id: entry.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('pin-entry-' ~ entry.id) }}">
+                            <button type="submit" class="dropdown-item">
+                                <i class="bi bi-{{ entry.pinned ? 'pin-angle' : 'pin-angle-fill' }} me-2" aria-hidden="true"></i>
+                                {{ (entry.pinned ? 'action.unpin' : 'action.pin')|trans }}
+                            </button>
+                        </form>
+                    {% endif %}
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
@@ -304,16 +314,27 @@
                    onclick="event.stopPropagation()">
                     <i class="bi bi-pencil" aria-hidden="true"></i>
                 </a>
-                <form method="post" action="{{ path('app_reading_entry_toggle_pin', {id: entry.id}) }}"
-                      onclick="event.stopPropagation()">
-                    <input type="hidden" name="_token" value="{{ csrf_token('pin-entry-' ~ entry.id) }}">
-                    <button type="submit"
+                {% if usePinForm %}
+                    <button type="button"
                             class="me-action-btn{{ entry.pinned ? ' me-action-btn--pinned' : '' }}"
                             aria-label="{{ (entry.pinned ? 'action.unpin' : 'action.pin')|trans }}"
-                            onclick="event.stopPropagation()">
+                            data-pin-url="{{ path('app_reading_entry_toggle_pin', {id: entry.id}) }}"
+                            data-pin-token="{{ csrf_token('pin-entry-' ~ entry.id) }}"
+                            onclick="event.stopPropagation();var f=document.getElementById('pin-form');f.action=this.dataset.pinUrl;document.getElementById('pin-form-token').value=this.dataset.pinToken;f.submit();">
                         <i class="bi bi-{{ entry.pinned ? 'pin-angle-fill' : 'pin-angle' }}" aria-hidden="true"></i>
                     </button>
-                </form>
+                {% else %}
+                    <form method="post" action="{{ path('app_reading_entry_toggle_pin', {id: entry.id}) }}"
+                          onclick="event.stopPropagation()">
+                        <input type="hidden" name="_token" value="{{ csrf_token('pin-entry-' ~ entry.id) }}">
+                        <button type="submit"
+                                class="me-action-btn{{ entry.pinned ? ' me-action-btn--pinned' : '' }}"
+                                aria-label="{{ (entry.pinned ? 'action.unpin' : 'action.pin')|trans }}"
+                                onclick="event.stopPropagation()">
+                            <i class="bi bi-{{ entry.pinned ? 'pin-angle-fill' : 'pin-angle' }}" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                {% endif %}
                 <button type="button"
                         class="me-action-btn me-action-btn--danger"
                         data-bs-toggle="modal" data-bs-target="#deleteModal"
