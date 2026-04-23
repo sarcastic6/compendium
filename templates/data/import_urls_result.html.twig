@@ -1,0 +1,102 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'data.import_urls.result.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1 class="page-title">{{ 'data.import_urls.result.heading'|trans }}</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8">
+
+        {# ── Summary counts ─────────────────────────────────────────────── #}
+        <div class="card mb-4">
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-1">
+                        <i class="bi bi-arrow-repeat text-success me-2" aria-hidden="true"></i>
+                        {{ 'data.import_urls.result.queued'|trans({'count': summary.worksQueued}) }}
+                    </li>
+                    {% if summary.skippedUrls|length > 0 %}
+                    <li class="mb-1">
+                        <i class="bi bi-skip-forward-fill text-warning me-2" aria-hidden="true"></i>
+                        {{ 'data.import_urls.result.skipped'|trans({'count': summary.skippedUrls|length}) }}
+                    </li>
+                    {% endif %}
+                    {% if summary.invalidUrls|length > 0 %}
+                    <li class="mb-1">
+                        <i class="bi bi-x-circle-fill text-danger me-2" aria-hidden="true"></i>
+                        {{ 'data.import_urls.result.invalid'|trans({'count': summary.invalidUrls|length}) }}
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        {# ── Scraping note ──────────────────────────────────────────────── #}
+        {% if summary.worksQueued > 0 %}
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+            {{ 'data.import_urls.result.scraping_note'|trans }}
+        </div>
+        {% endif %}
+
+        {# ── Skipped URLs (already in library) ─────────────────────────── #}
+        {% if summary.skippedUrls|length > 0 %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="h6 mb-0">{{ 'data.import_urls.result.skipped_heading'|trans }}</h2>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="ps-3">{{ 'data.import_urls.result.col_url'|trans }}</th>
+                            <th scope="col">{{ 'data.import_urls.result.col_work'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for url, title in summary.skippedUrls %}
+                        <tr>
+                            <td class="ps-3 text-muted small font-monospace text-break">{{ url }}</td>
+                            <td>{{ title }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Invalid / unsupported URLs ─────────────────────────────────── #}
+        {% if summary.invalidUrls|length > 0 %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="h6 mb-0">{{ 'data.import_urls.result.invalid_heading'|trans }}</h2>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush mb-0">
+                    {% for url in summary.invalidUrls %}
+                    <li class="list-group-item text-muted small font-monospace text-break">{{ url }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Navigation ─────────────────────────────────────────────────── #}
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ path('app_data_import_urls') }}" class="btn btn-primary">
+                <i class="bi bi-cloud-download me-1" aria-hidden="true"></i>
+                {{ 'data.import_urls.result.import_more'|trans }}
+            </a>
+            <a href="{{ path('app_data_scrape_status') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-activity me-1" aria-hidden="true"></i>
+                {{ 'data.import_urls.result.view_status'|trans }}
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

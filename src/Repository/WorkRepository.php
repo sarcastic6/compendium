@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Work;
+use App\Enum\ScrapeStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -49,6 +50,22 @@ class WorkRepository extends ServiceEntityRepository
             ->orderBy('w.title', 'ASC')
             ->setMaxResults($limit)
             ->setParameter('q', '%' . $q . '%')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Returns all works with the given scrape status, ordered by creation date descending.
+     * Used by the scrape status page to surface pending and failed scrape jobs.
+     *
+     * @return Work[]
+     */
+    public function findByScrapeStatus(ScrapeStatus $status): array
+    {
+        return $this->createQueryBuilder('w')
+            ->where('w.scrapeStatus = :status')
+            ->setParameter('status', $status->value)
+            ->orderBy('w.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
     }

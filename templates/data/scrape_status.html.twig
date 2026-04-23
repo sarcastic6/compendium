@@ -1,0 +1,96 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'data.scrape_status.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1 class="page-title">{{ 'data.scrape_status.heading'|trans }}</h1>
+</div>
+
+{% if pending|length == 0 and failed|length == 0 %}
+    <div class="alert alert-success" role="alert">
+        <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>
+        {{ 'data.scrape_status.all_clear'|trans }}
+    </div>
+{% else %}
+
+    {# ── Failed ─────────────────────────────────────────────────────────── #}
+    {% if failed|length > 0 %}
+    <section class="mb-5" aria-labelledby="failed-heading">
+        <h2 class="h5 mb-3" id="failed-heading">
+            <i class="bi bi-x-circle-fill text-danger me-2" aria-hidden="true"></i>
+            {{ 'data.scrape_status.failed_heading'|trans({'count': failed|length}) }}
+        </h2>
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="ps-3">{{ 'data.scrape_status.col_work'|trans }}</th>
+                            <th scope="col">{{ 'data.scrape_status.col_queued'|trans }}</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for work in failed %}
+                        <tr>
+                            <td class="ps-3">
+                                <a href="{{ path('app_work_show', {id: work.id}) }}">{{ work.title }}</a>
+                            </td>
+                            <td class="text-muted">{{ work.createdAt|date('Y-m-d') }}</td>
+                            <td class="text-end pe-3">
+                                <form method="post"
+                                      action="{{ path('app_work_refresh', {id: work.id}) }}"
+                                      class="d-inline">
+                                    <input type="hidden"
+                                           name="_token"
+                                           value="{{ csrf_token('refresh_work_' ~ work.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
+                                        {{ 'data.scrape_status.retry'|trans }}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ── Pending ─────────────────────────────────────────────────────────── #}
+    {% if pending|length > 0 %}
+    <section aria-labelledby="pending-heading">
+        <h2 class="h5 mb-3" id="pending-heading">
+            <i class="bi bi-hourglass-split text-warning me-2" aria-hidden="true"></i>
+            {{ 'data.scrape_status.pending_heading'|trans({'count': pending|length}) }}
+        </h2>
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="ps-3">{{ 'data.scrape_status.col_work'|trans }}</th>
+                            <th scope="col">{{ 'data.scrape_status.col_queued'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for work in pending %}
+                        <tr>
+                            <td class="ps-3">
+                                <a href="{{ path('app_work_show', {id: work.id}) }}">{{ work.title }}</a>
+                            </td>
+                            <td class="text-muted">{{ work.createdAt|date('Y-m-d') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+{% endif %}
+{% endblock %}

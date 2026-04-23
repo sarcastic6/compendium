@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'data.import_urls.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1 class="page-title">{{ 'data.import_urls.heading'|trans }}</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post"
+                      action="{{ path('app_data_import_urls_post') }}"
+                      data-controller="loading-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('data_import_urls') }}">
+
+                    <div class="mb-3">
+                        <label for="urls" class="form-label">
+                            {{ 'data.import_urls.label'|trans }}
+                        </label>
+                        <textarea class="form-control font-monospace"
+                                  id="urls"
+                                  name="urls"
+                                  rows="10"
+                                  placeholder="https://archiveofourown.org/works/12345678
+https://archiveofourown.org/works/87654321"
+                                  required
+                                  aria-describedby="urls-help"></textarea>
+                        <div id="urls-help" class="form-text">
+                            {{ 'data.import_urls.help'|trans }}
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            data-loading-form-target="submit">
+                        <i class="bi bi-cloud-download me-1" aria-hidden="true"></i>
+                        {{ 'data.import_urls.submit'|trans }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

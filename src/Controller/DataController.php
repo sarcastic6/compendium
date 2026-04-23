@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Enum\ScrapeStatus;
 use App\Export\DataDumpExportFormat;
 use App\Export\FamiliarExportFormat;
+use App\Repository\WorkRepository;
+use App\Service\BulkUrlImportService;
 use App\Service\ReadingEntryExportService;
 use App\Service\SpreadsheetImportService;
 use DateTimeImmutable;
@@ -87,6 +90,38 @@ class DataController extends AbstractController
 
         return $this->render('data/import_result.html.twig', [
             'summary' => $summary,
+        ]);
+    }
+
+    #[Route('/import/urls', name: 'app_data_import_urls', methods: ['GET'])]
+    public function importUrlsForm(): Response
+    {
+        return $this->render('data/import_urls.html.twig');
+    }
+
+    #[Route('/import/urls', name: 'app_data_import_urls_post', methods: ['POST'])]
+    public function importUrlsProcess(Request $request, BulkUrlImportService $bulkUrlImportService): Response
+    {
+        if (!$this->isCsrfTokenValid('data_import_urls', $request->request->get('_token'))) {
+            $this->addFlash('error', 'security.csrf_invalid');
+
+            return $this->redirectToRoute('app_data_import_urls');
+        }
+
+        $rawInput = $request->request->getString('urls');
+        $summary  = $bulkUrlImportService->import($rawInput);
+
+        return $this->render('data/import_urls_result.html.twig', [
+            'summary' => $summary,
+        ]);
+    }
+
+    #[Route('/scrape-status', name: 'app_data_scrape_status', methods: ['GET'])]
+    public function scrapeStatus(WorkRepository $workRepository): Response
+    {
+        return $this->render('data/scrape_status.html.twig', [
+            'pending' => $workRepository->findByScrapeStatus(ScrapeStatus::Pending),
+            'failed'  => $workRepository->findByScrapeStatus(ScrapeStatus::Failed),
         ]);
     }
 
