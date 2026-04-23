@@ -72,6 +72,65 @@ class ReadingEntryDeleteTest extends AbstractFunctionalTest
         $this->assertNotNull($stillExists);
     }
 
+    public function test_bulk_delete_rejected_with_invalid_csrf(): void
+    {
+        $alice = $this->createUser('alice@example.com', 'Alice', 'CorrectHorse99!');
+        $status = $this->createStatus('Reading');
+
+        $work = new Work(WorkType::Book, 'Should Not Be Deleted');
+        $this->em->persist($work);
+        $this->em->flush();
+
+        $entry = new ReadingEntry($alice, $work, $status);
+        $this->em->persist($entry);
+        $this->em->flush();
+        $entryId = $entry->getId();
+
+        $this->logIn($this->client, 'alice@example.com', 'CorrectHorse99!');
+        $this->client->followRedirect();
+
+        $this->client->request('POST', '/reading-entries/bulk/delete', [
+            '_token' => 'invalid-token',
+            'ids' => [$entryId],
+        ]);
+
+        $this->assertResponseRedirects('/reading-entries');
+
+        $this->em->clear();
+        $this->assertNotNull($this->em->find(ReadingEntry::class, $entryId));
+    }
+
+    public function test_bulk_status_update_rejected_with_invalid_csrf(): void
+    {
+        $alice = $this->createUser('alice@example.com', 'Alice', 'CorrectHorse99!');
+        $statusA = $this->createStatus('Reading');
+        $statusB = $this->createStatus('Completed', true);
+
+        $work = new Work(WorkType::Book, 'Should Not Change');
+        $this->em->persist($work);
+        $this->em->flush();
+
+        $entry = new ReadingEntry($alice, $work, $statusA);
+        $this->em->persist($entry);
+        $this->em->flush();
+        $entryId = $entry->getId();
+
+        $this->logIn($this->client, 'alice@example.com', 'CorrectHorse99!');
+        $this->client->followRedirect();
+
+        $this->client->request('POST', '/reading-entries/bulk/status', [
+            '_token' => 'invalid-token',
+            'ids' => [$entryId],
+            'status_id' => $statusB->getId(),
+        ]);
+
+        $this->assertResponseRedirects('/reading-entries');
+
+        $this->em->clear();
+        $unchanged = $this->em->find(ReadingEntry::class, $entryId);
+        $this->assertSame($statusA->getId(), $unchanged->getStatus()->getId());
+    }
+
     public function test_bulk_delete_removes_only_selected(): void
     {
         $alice = $this->createUser('alice@example.com', 'Alice', 'CorrectHorse99!');
