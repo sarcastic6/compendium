@@ -43,6 +43,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EmailTw
     private bool $isDisabled = false;
 
     #[ORM\Column(options: ['default' => false])]
+    private bool $isVerified = false;
+
+    #[ORM\Column(options: ['default' => false])]
     private bool $isMfaEnabled = false;
 
     /** TOTP secret, encrypted at rest using sodium_crypto_secretbox. */
@@ -169,6 +172,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EmailTw
     public function setIsDisabled(bool $isDisabled): static
     {
         $this->isDisabled = $isDisabled;
+
+        return $this;
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->isVerified;
+    }
+
+    public function setIsVerified(bool $isVerified): static
+    {
+        $this->isVerified = $isVerified;
 
         return $this;
     }

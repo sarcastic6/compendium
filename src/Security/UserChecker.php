@@ -21,6 +21,10 @@ class UserChecker implements UserCheckerInterface
         if ($user->isDisabled()) {
             throw new CustomUserMessageAccountStatusException('auth.account_disabled');
         }
+
+        if (!$user->isVerified()) {
+            throw new CustomUserMessageAccountStatusException('auth.account_not_verified');
+        }
     }
 
     public function checkPostAuth(UserInterface $user, ?TokenInterface $token = null): void

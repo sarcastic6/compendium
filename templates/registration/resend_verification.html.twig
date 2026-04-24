@@ -1,0 +1,39 @@
+{% extends 'auth_base.html.twig' %}
+
+{% block title %}{{ 'auth.verify_email.resend.heading'|trans }}{% endblock %}
+
+{% block body %}
+<div class="auth-card">
+
+    <div class="auth-header">
+        <div class="auth-app-name">Compendium</div>
+        <div class="auth-app-sub">{{ 'nav.brand_sub'|trans }}</div>
+    </div>
+
+    <p style="color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--space-4);">
+        {{ 'auth.verify_email.resend.instructions'|trans }}
+    </p>
+
+    <form method="post" action="{{ path('app_verify_email_resend') }}" class="auth-form" novalidate>
+        <div>
+            <label for="email" class="form-label">{{ 'auth.register.email'|trans }}</label>
+            <input type="email" id="email" name="email"
+                   class="form-control" autocomplete="email" required autofocus>
+        </div>
+
+        <button type="submit" class="btn btn-primary auth-submit-btn">
+            {{ 'auth.verify_email.resend.submit'|trans }}
+        </button>
+    </form>
+
+    <div class="auth-footer">
+        <a href="{{ path('app_login') }}">{{ 'nav.login'|trans }}</a>
+    </div>
+
+</div>
+
+<div class="auth-quote">
+    <i class="bi bi-book" aria-hidden="true"></i><br>
+    "A reader lives a thousand lives before he dies."
+</div>
+{% endblock %}

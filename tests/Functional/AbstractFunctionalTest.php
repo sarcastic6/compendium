@@ -37,6 +37,7 @@ abstract class AbstractFunctionalTest extends WebTestCase
         string $password = 'CorrectHorse99!',
         UserRole $role = UserRole::User,
         bool $disabled = false,
+        bool $verified = true,
     ): User {
         /** @var UserPasswordHasherInterface $hasher */
         $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
@@ -45,6 +46,7 @@ abstract class AbstractFunctionalTest extends WebTestCase
         $user->setPasswordHash($hasher->hashPassword($user, $password));
         $user->setRole($role);
         $user->setIsDisabled($disabled);
+        $user->setIsVerified($verified);
 
         $this->em->persist($user);
         $this->em->flush();

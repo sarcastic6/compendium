@@ -88,8 +88,22 @@ auth:
         password: 'Password'
         password_confirm: 'Confirm Password'
         already_account: 'Already have an account?'
-        success: 'Account created. You can now log in.'
+        success: 'Account created. Check your email to verify your address before logging in.'
     account_disabled: 'Your account has been disabled. Please contact an administrator.'
+    account_not_verified: 'Please verify your email address before logging in.'
+    verify_email:
+        check_inbox:
+            heading: 'Check your inbox'
+            message: 'A verification link has been sent to %email%. Click the link to activate your account. It expires in 1 hour.'
+        resend:
+            heading: 'Resend verification email'
+            instructions: 'Enter your email address and we will send you a new verification link.'
+            submit: 'Resend verification email'
+            sent: 'If that address has an unverified account, a new verification link has been sent.'
+        success: 'Your email has been verified. You can now log in.'
+        error:
+            invalid_link: 'The verification link is invalid or has expired. Please request a new one.'
+        link: 'Resend verification email'
     password:
         too_short: 'Password must be at least 8 characters.'
         too_common: 'This password is too common or easy to guess. Please choose a stronger one.'
