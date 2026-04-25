@@ -109,6 +109,7 @@ At minimum, set:
 APP_ENV=prod
 APP_SECRET=<random 32-char string>
 MAILER_DSN=smtp://your-smtp-host:587
+MAILER_FROM=noreply@yourdomain.com
 TOTP_ENCRYPTION_KEY=<base64-encoded 32-byte key>
 ```
 

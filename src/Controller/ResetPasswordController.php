@@ -11,6 +11,7 @@ use App\Service\PasswordValidationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,6 +32,8 @@ class ResetPasswordController extends AbstractController
     public function __construct(
         private readonly ResetPasswordHelperInterface $resetPasswordHelper,
         private readonly EntityManagerInterface $entityManager,
+        #[Autowire(env: 'MAILER_FROM')]
+        private readonly string $mailerFrom,
     ) {
     }
 
@@ -140,7 +143,7 @@ class ResetPasswordController extends AbstractController
         }
 
         $email = (new TemplatedEmail())
-            ->from(new Address('noreply@reading-stats.local', 'Reading Stats'))
+            ->from(new Address($this->mailerFrom, 'Compendium'))
             ->to($user->getEmail())
             ->subject('Reset your password')
             ->htmlTemplate('reset_password/email.html.twig')
