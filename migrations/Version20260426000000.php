@@ -24,6 +24,13 @@ final class Version20260426000000 extends AbstractMigration
         return 'Enable WAL journal mode on SQLite (no-op on other platforms)';
     }
 
+    public function isTransactional(): bool
+    {
+        // This migration cannot be run inside a transaction because PRAGMA statements
+        // must be executed outside of transactions.
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         if ($this->connection->getDatabasePlatform() instanceof SqlitePlatform) {

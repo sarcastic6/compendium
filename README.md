@@ -121,7 +121,7 @@ The compose file mounts the SQLite database and Caddy TLS data from a directory 
 
 ```yaml
 volumes:
-  - ../compendium-data/data.db:/app/var/data.db:Z   # adjust path as needed
+  - ../compendium-data/data.db:/app/var/data.db:z   # adjust path as needed
   - ../compendium-data/caddy:/data:Z                 # adjust path as needed
 ```
 
