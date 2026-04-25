@@ -147,9 +147,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EmailTw
         return $this;
     }
 
+    #[\Deprecated]
     public function eraseCredentials(): void
     {
-        // No transient plain-text password stored
     }
 
     public function getRole(): UserRole

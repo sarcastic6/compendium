@@ -82,7 +82,7 @@ class ReadingEntryFormType extends AbstractType
                         $qb->innerJoin(
                             'App\Entity\Work',
                             'w',
-                            'WITH',
+                            'ON',
                             'w.id = :workId AND m MEMBER OF w.metadata',
                         )
                         ->setParameter('workId', $work->getId());

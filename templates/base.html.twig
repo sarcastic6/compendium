@@ -81,31 +81,31 @@
                                 {{ 'nav.rankings_authors'|trans }}
                             </a>
                             <a href="{{ path('app_stats_rankings', {type: 'Fandom'}) }}"
-                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Fandom' %} active{% endif %}">
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Fandom' %} active{% endif %}">
                                 {{ 'nav.rankings_fandoms'|trans }}
                             </a>
                             <a href="{{ path('app_stats_rankings', {type: 'Character'}) }}"
-                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Character' %} active{% endif %}">
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Character' %} active{% endif %}">
                                 {{ 'nav.rankings_characters'|trans }}
                             </a>
                             <a href="{{ path('app_stats_rankings', {type: 'Relationships'}) }}"
-                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Relationships' %} active{% endif %}">
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Relationships' %} active{% endif %}">
                                 {{ 'nav.rankings_relationships'|trans }}
                             </a>
                             <a href="{{ path('app_stats_rankings', {type: 'Tag'}) }}"
-                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Tag' %} active{% endif %}">
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Tag' %} active{% endif %}">
                                 {{ 'nav.rankings_tags'|trans }}
                             </a>
                             <a href="{{ path('app_stats_rankings', {type: 'Rating'}) }}"
-                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Rating' %} active{% endif %}">
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Rating' %} active{% endif %}">
                                 {{ 'nav.rankings_ratings'|trans }}
                             </a>
                             <a href="{{ path('app_stats_rankings', {type: 'Warning'}) }}"
-                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Warning' %} active{% endif %}">
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Warning' %} active{% endif %}">
                                 {{ 'nav.rankings_warnings'|trans }}
                             </a>
                             <a href="{{ path('app_stats_rankings', {type: 'Category'}) }}"
-                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Category' %} active{% endif %}">
+                               class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Category' %} active{% endif %}">
                                 {{ 'nav.rankings_categories'|trans }}
                             </a>
                             <a href="{{ path('app_stats_rankings_series') }}"
@@ -235,31 +235,31 @@
                                     {{ 'nav.rankings_authors'|trans }}
                                 </a>
                                 <a href="{{ path('app_stats_rankings', {type: 'Fandom'}) }}"
-                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Fandom' %} active{% endif %}">
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Fandom' %} active{% endif %}">
                                     {{ 'nav.rankings_fandoms'|trans }}
                                 </a>
                                 <a href="{{ path('app_stats_rankings', {type: 'Character'}) }}"
-                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Character' %} active{% endif %}">
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Character' %} active{% endif %}">
                                     {{ 'nav.rankings_characters'|trans }}
                                 </a>
                                 <a href="{{ path('app_stats_rankings', {type: 'Relationships'}) }}"
-                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Relationships' %} active{% endif %}">
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Relationships' %} active{% endif %}">
                                     {{ 'nav.rankings_relationships'|trans }}
                                 </a>
                                 <a href="{{ path('app_stats_rankings', {type: 'Tag'}) }}"
-                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Tag' %} active{% endif %}">
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Tag' %} active{% endif %}">
                                     {{ 'nav.rankings_tags'|trans }}
                                 </a>
                                 <a href="{{ path('app_stats_rankings', {type: 'Rating'}) }}"
-                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Rating' %} active{% endif %}">
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Rating' %} active{% endif %}">
                                     {{ 'nav.rankings_ratings'|trans }}
                                 </a>
                                 <a href="{{ path('app_stats_rankings', {type: 'Warning'}) }}"
-                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Warning' %} active{% endif %}">
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Warning' %} active{% endif %}">
                                     {{ 'nav.rankings_warnings'|trans }}
                                 </a>
                                 <a href="{{ path('app_stats_rankings', {type: 'Category'}) }}"
-                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.get('type') == 'Category' %} active{% endif %}">
+                                   class="sidebar-nav-item{% if currentRoute == 'app_stats_rankings' and app.request.attributes.get('type') == 'Category' %} active{% endif %}">
                                     {{ 'nav.rankings_categories'|trans }}
                                 </a>
                                 <a href="{{ path('app_stats_rankings_series') }}"
