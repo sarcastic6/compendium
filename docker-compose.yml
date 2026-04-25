@@ -11,3 +11,11 @@ services:
       - ../compendium-data/caddy:/data:Z
     env_file:
       - .env.prod
+  worker:
+    build: .
+    restart: unless-stopped
+    command: frankenphp php-cli bin/console messenger:consume async --time-limit=3600
+    volumes:
+      - ../compendium-data/data.db:/app/var/data.db:Z
+    env_file:
+      - .env.prod

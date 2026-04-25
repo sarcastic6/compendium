@@ -169,22 +169,11 @@ docker compose exec app php bin/console doctrine:migrations:migrate --no-interac
 
 Background scraping (bulk URL import and spreadsheet import) uses Symfony Messenger. The default transport stores jobs in the application database — no external queue service is needed.
 
-**Run the worker in development:**
+**In production (Docker):** the `worker` service in `docker-compose.yml` runs automatically alongside the app — no extra configuration needed.
+
+**In development:**
 ```bash
 php bin/console messenger:consume async -vv
-```
-
-**Run the worker in production** (keep it alive with a process supervisor):
-
-Using Supervisor (`/etc/supervisor/conf.d/compendium-worker.conf`):
-```ini
-[program:compendium-worker]
-command=php /path/to/app/bin/console messenger:consume async --time-limit=3600 --memory-limit=128M
-autostart=true
-autorestart=true
-user=www-data
-stderr_logfile=/var/log/compendium-worker.err.log
-stdout_logfile=/var/log/compendium-worker.out.log
 ```
 
 **Environment variables:**

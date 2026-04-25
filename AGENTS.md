@@ -296,6 +296,16 @@ Avoid database-specific syntax and functions.
 
 If raw SQL is unavoidable, use parameterized queries.
 
+**Exception — platform-conditional migrations:** A migration may use
+platform-specific SQL (e.g. SQLite PRAGMAs) provided it is guarded by
+an explicit platform check:
+
+    if ($this->connection->getDatabasePlatform() instanceof SqlitePlatform) {
+        $this->addSql('PRAGMA journal_mode=WAL');
+    }
+
+The migration must be a no-op on all other supported platforms.
+
 ## Entity Guidelines
 
 Entities must:
