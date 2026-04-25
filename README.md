@@ -86,14 +86,84 @@ flexible tagging, analytics dashboards, and user authentication with MFA support
    php bin/console app:promote-user your@email.com
    ```
 
-## First-Time Setup
+## Production Deployment (Docker)
 
-After installation, log in as admin and configure reference data:
+The app ships with a `Dockerfile` (FrankenPHP) and `docker-compose.yml` for production.
 
-1. **Statuses** (`/admin/statuses`) — Create reading statuses: TBR, Reading, On Hold, Completed, DNF
-2. **Metadata Types** (`/admin/metadata-types`) — Create tag categories: Rating, Warning, Category, Fandom, Character, Relationships, Tag
+### Prerequisites
 
-These are auto-created during AO3 import if they do not already exist, but creating them in advance lets you configure `multiple_allowed` and `show_as_dropdown` correctly from the start.
+- Docker (or Podman) with Compose support installed on the host
+- A `.env.prod` file in the `app/` directory (see below) — **never committed to version control**
+
+### 1. Create `.env.prod`
+
+Copy `.env` and fill in production values:
+
+```bash
+cp .env .env.prod
+```
+
+At minimum, set:
+
+```dotenv
+APP_ENV=prod
+APP_SECRET=<random 32-char string>
+MAILER_DSN=smtp://your-smtp-host:587
+TOTP_ENCRYPTION_KEY=<base64-encoded 32-byte key>
+```
+
+Generate `APP_SECRET`: `openssl rand -hex 16`
+Generate `TOTP_ENCRYPTION_KEY`: `php -r "echo base64_encode(random_bytes(32)) . PHP_EOL;"`
+
+### 2. Prepare the data directory
+
+The compose file mounts the SQLite database and Caddy TLS data from a directory **outside** the repo so they survive image rebuilds. Adjust the paths in `docker-compose.yml` to suit your server layout:
+
+```yaml
+volumes:
+  - ../compendium-data/data.db:/app/var/data.db:Z   # adjust path as needed
+  - ../compendium-data/caddy:/data:Z                 # adjust path as needed
+```
+
+> **Note:** The `:Z` suffix is a SELinux relabelling option (required on SELinux-enforcing systems such as Fedora/RHEL). Remove it if your host does not use SELinux.
+
+Create the directory and an empty database file before first run:
+
+```bash
+mkdir -p ../compendium-data
+touch ../compendium-data/data.db
+```
+
+### 3. Build and start
+
+```bash
+docker compose up -d --build
+```
+
+### 4. Run migrations
+
+```bash
+docker compose exec app php bin/console doctrine:migrations:migrate --no-interaction
+```
+
+Statuses and metadata types are seeded automatically by the migrations — no manual setup required.
+
+### 5. Create your first admin user
+
+Register at `/register`, then grant admin rights:
+
+```bash
+docker compose exec app php bin/console app:promote-user your@email.com
+```
+
+### Updating to a new version
+
+```bash
+git pull
+docker compose down
+docker compose up -d --build
+docker compose exec app php bin/console doctrine:migrations:migrate --no-interaction
+```
 
 ## Background Worker
 
