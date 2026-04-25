@@ -7,7 +7,7 @@ services:
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ../compendium-data/data.db:/app/var/data.db:z
+      - ../compendium-data/db:/app/var/db:z
       - ../compendium-data/caddy:/data:Z
     env_file:
       - .env.prod
@@ -16,6 +16,6 @@ services:
     restart: unless-stopped
     command: frankenphp php-cli bin/console messenger:consume async --time-limit=3600
     volumes:
-      - ../compendium-data/data.db:/app/var/data.db:z
+      - ../compendium-data/db:/app/var/db:z
     env_file:
       - .env.prod
