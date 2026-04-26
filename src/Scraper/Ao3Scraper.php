@@ -482,9 +482,17 @@ class Ao3Scraper implements ScraperInterface
     {
         try {
             $authors = [];
-            $crawler->filter('a[rel="author"]')->each(function (Crawler $node) use (&$authors): void {
+            $seen = [];
+            // Scope to h3.byline to avoid picking up rel="author" links in the
+            // associations block (e.g. translation credits), which caused duplicate
+            // author entries when the original author co-authored a translation.
+            $crawler->filter('h3.byline a[rel="author"]')->each(function (Crawler $node) use (&$authors, &$seen): void {
                 $name = trim($node->text());
-                if ($name !== '') {
+                if ($name !== '' && isset($seen[$name])) {
+                    $this->logger->warning('AO3 scraper: duplicate author skipped', ['name' => $name]);
+                }
+                if ($name !== '' && !isset($seen[$name])) {
+                    $seen[$name] = true;
                     $href = $node->attr('href');
                     $authors[] = [
                         'name' => $name,
@@ -1153,9 +1161,19 @@ class Ao3Scraper implements ScraperInterface
         foreach ($categorySelectors as $category => $selector) {
             try {
                 $tags = [];
-                $crawler->filter($selector)->each(function (Crawler $node) use (&$tags): void {
+                $seen = [];
+                $crawler->filter($selector)->each(function (Crawler $node) use (&$tags, &$seen): void {
                     $name = trim($node->text());
-                    if ($name !== '') {
+                    // Deduplicate by name — AO3 can return the same tag twice (e.g. when
+                    // a canonical tag and its unwrangled alias both appear in the HTML).
+                    if ($name !== '' && isset($seen[$name])) {
+                        $this->logger->warning('AO3 scraper: duplicate tag skipped', [
+                            'category' => $category,
+                            'name'     => $name,
+                        ]);
+                    }
+                    if ($name !== '' && !isset($seen[$name])) {
+                        $seen[$name] = true;
                         $href = $node->attr('href');
                         $tags[] = [
                             'name' => $name,
