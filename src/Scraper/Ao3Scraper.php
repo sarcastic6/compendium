@@ -19,9 +19,6 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
  * Only the following metadata is extracted: title, authors, summary, tags,
  * word count, chapter count, dates, series info, language, and source URL.
  *
- * TODO: DIAGNOSTIC LOGGING — Verbose session/cookie logging was added on 2026-03-27
- * to help diagnose an intermittent /lost_cookie redirect issue. Once the root cause
- * is identified and fixed, reduce these log statements to a sensible level.
  */
 class Ao3Scraper implements ScraperInterface
 {
@@ -227,7 +224,6 @@ class Ao3Scraper implements ScraperInterface
         $this->logger->debug('AO3 scraper: sending request', [
             'url' => $url,
             'is_retry' => $isRetry,
-            'cookie_header' => $cookieHeader,
             'session_cookie_present' => $this->sessionCookie !== null,
         ]);
 
@@ -259,7 +255,7 @@ class Ao3Scraper implements ScraperInterface
                     'requested_url' => $url,
                     'final_url' => $finalUrl,
                     'redirect_count' => $redirectCount,
-                    'session_cookie_was' => $this->sessionCookie,
+                    'session_cookie_present' => $this->sessionCookie !== null,
                     'is_retry' => $isRetry,
                 ]);
 
@@ -291,8 +287,7 @@ class Ao3Scraper implements ScraperInterface
                     'requested_url' => $url,
                     'final_url' => $finalUrl,
                     'redirect_count' => $redirectCount,
-                    'cookie_header_sent' => $cookieHeader,
-                    'session_cookie_was' => $this->sessionCookie,
+                    'session_cookie_present' => $this->sessionCookie !== null,
                     'is_retry' => $isRetry,
                 ]);
 
@@ -321,17 +316,10 @@ class Ao3Scraper implements ScraperInterface
             // AO3 rotates _otwarchive_session on redirects; if it appears here
             // we update our in-memory session and persist it so future processes
             // use the current value rather than a stale one.
-            $responseSetCookies = $response->getHeaders(false)['set-cookie'] ?? [];
-            $this->logger->debug('AO3 scraper: successful response Set-Cookie headers', [
-                'url' => $url,
-                'set_cookie_headers' => $responseSetCookies,
-            ]);
-
             $rotatedSession = $this->extractNamedCookie($response->getHeaders(false), '_otwarchive_session');
             if ($rotatedSession !== null && $rotatedSession !== $this->sessionCookie) {
                 $this->logger->debug('AO3 scraper: session cookie rotated in final response, updating persisted session', [
-                    'old_cookie' => $this->sessionCookie,
-                    'new_cookie' => $rotatedSession,
+                    'url' => $url,
                 ]);
                 $this->sessionCookie = $rotatedSession;
                 $this->saveSession();
@@ -806,7 +794,6 @@ class Ao3Scraper implements ScraperInterface
             'auth_enabled' => $this->authEnabled,
             'login_attempted' => $this->loginAttempted,
             'session_cookie_present' => $this->sessionCookie !== null,
-            'session_cookie' => $this->sessionCookie,
         ]);
 
         if (!$this->authEnabled || $this->loginAttempted) {
@@ -864,15 +851,10 @@ class Ao3Scraper implements ScraperInterface
         $this->logger->debug('AO3 login: extracted authenticity_token', ['token' => $token]);
 
         $preCookies = $this->extractAllCookies($pageResponse->getHeaders(false));
-        $this->logger->debug('AO3 login: pre-login cookies from GET response', [
-            'set_cookie_headers' => $pageResponse->getHeaders(false)['set-cookie'] ?? [],
-            'combined_pre_cookie_string' => $preCookies,
-        ]);
 
         // Step 2: POST credentials. Use max_redirects=0 so we receive the 302 directly
         // and can read its Set-Cookie header before the client follows the redirect.
         $cookieHeader = implode('; ', array_filter([$preCookies, 'view_adult=true']));
-        $this->logger->debug('AO3 login: sending POST with cookie header', ['cookie_header' => $cookieHeader]);
 
         $this->throttle();
         $postResponse = $this->httpClient->request('POST', $loginUrl, [
@@ -895,7 +877,6 @@ class Ao3Scraper implements ScraperInterface
 
         $this->logger->debug('AO3 login: POST response received', [
             'status' => $postStatus,
-            'all_set_cookie_headers' => $postResponse->getHeaders(false)['set-cookie'] ?? [],
             'location_header' => $postResponse->getHeaders(false)['location'] ?? [],
         ]);
 
@@ -918,10 +899,9 @@ class Ao3Scraper implements ScraperInterface
         $userCredentials   = $this->extractNamedCookie($postHeaders, 'user_credentials');
 
         $this->logger->debug('AO3 login: extracted cookies from POST 302', [
-            'session_cookie'      => $sessionCookie,
-            'remember_user_token' => $rememberUserToken,
-            'user_credentials'    => $userCredentials,
-            'all_set_cookie_headers' => $postHeaders['set-cookie'] ?? [],
+            'session_cookie_present'      => $sessionCookie !== null,
+            'remember_user_token_present' => $rememberUserToken !== null,
+            'user_credentials_present'    => $userCredentials !== null,
         ]);
 
         if ($sessionCookie === null) {
@@ -1014,9 +994,8 @@ class Ao3Scraper implements ScraperInterface
                 'path' => $this->sessionFilePath,
                 'saved_at' => $savedAt,
                 'age_seconds' => $ageSeconds,
-                'cookie' => $data['cookie'],
-                'remember_user_token' => $this->rememberUserToken,
-                'user_credentials' => $this->userCredentials,
+                'remember_user_token_present' => $this->rememberUserToken !== null,
+                'user_credentials_present' => $this->userCredentials !== null,
             ]);
 
             return $data['cookie'];
@@ -1049,9 +1028,8 @@ class Ao3Scraper implements ScraperInterface
 
             $this->logger->debug('AO3 scraper: session saved to file', [
                 'path' => $this->sessionFilePath,
-                'cookie' => $this->sessionCookie,
-                'remember_user_token' => $this->rememberUserToken,
-                'user_credentials' => $this->userCredentials,
+                'remember_user_token_present' => $this->rememberUserToken !== null,
+                'user_credentials_present' => $this->userCredentials !== null,
             ]);
         } catch (\Throwable $e) {
             $this->logger->warning('AO3 scraper: failed to save session file', ['error' => $e->getMessage()]);
