@@ -17,10 +17,18 @@
     {# ── Failed ─────────────────────────────────────────────────────────── #}
     {% if failed|length > 0 %}
     <section class="mb-5" aria-labelledby="failed-heading">
-        <h2 class="h5 mb-3" id="failed-heading">
-            <i class="bi bi-x-circle-fill text-danger me-2" aria-hidden="true"></i>
-            {{ 'data.scrape_status.failed_heading'|trans({'%count%': failed|length}) }}
-        </h2>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 mb-0" id="failed-heading">
+                <i class="bi bi-x-circle-fill text-danger me-2" aria-hidden="true"></i>
+                {{ 'data.scrape_status.failed_heading'|trans({'%count%': failed|length}) }}
+            </h2>
+            <form method="post" action="{{ path('app_data_scrape_clear_failed') }}" class="d-inline">
+                <input type="hidden" name="_token" value="{{ csrf_token('clear_failed_scrapes') }}">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                    {{ 'data.scrape_status.clear_failed'|trans }}
+                </button>
+            </form>
+        </div>
         <div class="card">
             <div class="card-body p-0">
                 <table class="table table-sm mb-0">

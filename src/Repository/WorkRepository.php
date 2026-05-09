@@ -70,6 +70,18 @@ class WorkRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function clearScrapeStatus(ScrapeStatus $status): int
+    {
+        return $this->createQueryBuilder('w')
+            ->update()
+            ->set('w.scrapeStatus', ':null')
+            ->setParameter('null', null)
+            ->where('w.scrapeStatus = :status')
+            ->setParameter('status', $status->value)
+            ->getQuery()
+            ->execute();
+    }
+
     /**
      * Fetches a work with all related entities in a single query to avoid N+1 problems.
      * Used by the work detail page.

@@ -682,3 +682,5 @@ data:
         col_queued: 'Queued'
         retry: 'Retry'
         retry_queued: 'Scrape re-queued — it will run in the background shortly.'
+        clear_failed: 'Clear all failed'
+        cleared: 'Failed scrapes cleared.'

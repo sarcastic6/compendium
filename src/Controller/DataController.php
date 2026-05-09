@@ -130,6 +130,20 @@ class DataController extends AbstractController
         ]);
     }
 
+    #[Route('/scrape-status/clear-failed', name: 'app_data_scrape_clear_failed', methods: ['POST'])]
+    public function clearFailedScrapes(Request $request, WorkRepository $workRepository): Response
+    {
+        if (!$this->isCsrfTokenValid('clear_failed_scrapes', $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $workRepository->clearScrapeStatus(ScrapeStatus::Failed);
+
+        $this->addFlash('success', 'data.scrape_status.cleared');
+
+        return $this->redirectToRoute('app_data_scrape_status');
+    }
+
     #[Route('/scrape-status/{id}/retry', name: 'app_data_scrape_retry', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function retryScrape(int $id, Request $request, WorkRepository $workRepository): Response
     {
