@@ -66,6 +66,13 @@ export default class extends Controller {
                 .forEach((chip) => {
                     const name = chip.dataset.chipName;
                     if (name) this.#selected.add(name.toLowerCase());
+
+                    // Pre-rendered chips (from AO3 import or edit form) need their remove
+                    // buttons wired up here; dynamically-added chips get listeners in #addChip().
+                    const btn = chip.querySelector('.btn-close');
+                    if (btn && name) {
+                        btn.addEventListener('click', () => this.#removeChip(chip, name));
+                    }
                 });
         }
 
