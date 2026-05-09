@@ -677,7 +677,7 @@ data:
     scrape_status:
         section_heading: 'Background scraping'
         heading: 'Scrape status'
-        description: 'Monitor background AO3 metadata scraping. Retry any failed scrapes here.'
+        description: 'Monitor background AO3 metadata scraping. Retry pending or failed scrapes here.'
         button: 'View status'
         all_clear: 'All caught up — no pending or failed scrapes.'
         failed_heading: '%count% failed'
