@@ -19,7 +19,7 @@
     <section class="mb-5" aria-labelledby="failed-heading">
         <h2 class="h5 mb-3" id="failed-heading">
             <i class="bi bi-x-circle-fill text-danger me-2" aria-hidden="true"></i>
-            {{ 'data.scrape_status.failed_heading'|trans({'count': failed|length}) }}
+            {{ 'data.scrape_status.failed_heading'|trans({'%count%': failed|length}) }}
         </h2>
         <div class="card">
             <div class="card-body p-0">
@@ -40,11 +40,11 @@
                             <td class="text-muted">{{ work.createdAt|date('Y-m-d') }}</td>
                             <td class="text-end pe-3">
                                 <form method="post"
-                                      action="{{ path('app_work_refresh', {id: work.id}) }}"
+                                      action="{{ path('app_data_scrape_retry', {id: work.id}) }}"
                                       class="d-inline">
                                     <input type="hidden"
                                            name="_token"
-                                           value="{{ csrf_token('refresh_work_' ~ work.id) }}">
+                                           value="{{ csrf_token('retry_scrape_' ~ work.id) }}">
                                     <button type="submit" class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
                                         {{ 'data.scrape_status.retry'|trans }}
@@ -65,7 +65,7 @@
     <section aria-labelledby="pending-heading">
         <h2 class="h5 mb-3" id="pending-heading">
             <i class="bi bi-hourglass-split text-warning me-2" aria-hidden="true"></i>
-            {{ 'data.scrape_status.pending_heading'|trans({'count': pending|length}) }}
+            {{ 'data.scrape_status.pending_heading'|trans({'%count%': pending|length}) }}
         </h2>
         <div class="card">
             <div class="card-body p-0">

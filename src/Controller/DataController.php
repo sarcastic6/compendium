@@ -8,16 +8,19 @@ use App\Entity\User;
 use App\Enum\ScrapeStatus;
 use App\Export\DataDumpExportFormat;
 use App\Export\FamiliarExportFormat;
+use App\Message\ScrapeWorkMessage;
 use App\Repository\WorkRepository;
 use App\Service\BulkUrlImportService;
 use App\Service\ReadingEntryExportService;
 use App\Service\SpreadsheetImportService;
 use DateTimeImmutable;
+use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -30,6 +33,8 @@ class DataController extends AbstractController
         private readonly DataDumpExportFormat $dataDumpFormat,
         private readonly FamiliarExportFormat $familiarFormat,
         private readonly SpreadsheetImportService $spreadsheetImportService,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly MessageBusInterface $messageBus,
     ) {
     }
 
@@ -123,6 +128,35 @@ class DataController extends AbstractController
             'pending' => $workRepository->findByScrapeStatus(ScrapeStatus::Pending),
             'failed'  => $workRepository->findByScrapeStatus(ScrapeStatus::Failed),
         ]);
+    }
+
+    #[Route('/scrape-status/{id}/retry', name: 'app_data_scrape_retry', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function retryScrape(int $id, Request $request, WorkRepository $workRepository): Response
+    {
+        if (!$this->isCsrfTokenValid('retry_scrape_' . $id, $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $work = $workRepository->find($id);
+        if ($work === null) {
+            throw $this->createNotFoundException();
+        }
+
+        $link = $work->getLink();
+        if ($link === null) {
+            $this->addFlash('error', 'work.refresh.error.no_link');
+
+            return $this->redirectToRoute('app_data_scrape_status');
+        }
+
+        $work->setScrapeStatus(ScrapeStatus::Pending);
+        $this->entityManager->flush();
+
+        $this->messageBus->dispatch(new ScrapeWorkMessage($work->getId(), $link));
+
+        $this->addFlash('success', 'data.scrape_status.retry_queued');
+
+        return $this->redirectToRoute('app_data_scrape_status');
     }
 
     #[Route('/export/data-dump', name: 'app_data_export_data_dump')]
