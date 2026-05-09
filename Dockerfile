@@ -18,6 +18,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /app
 
+# PHP configuration
+COPY --link docker/php/conf.d/app.ini $PHP_INI_DIR/conf.d/
+
 # Copy composer files first (for layer caching)
 COPY composer.json composer.lock ./
 
