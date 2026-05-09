@@ -59,7 +59,7 @@ final class ScrapeWorkMessageHandler
         // scrapeStatus stays Pending indefinitely if something unexpected fires.
         try {
             try {
-                $scraped      = $this->scraper->scrape($message->url);
+                $scraped      = $this->scraper->scrape($message->url, $message->resolvedUrl);
                 $importResult = $this->importService->mapToWorkFormDto($scraped);
                 $this->workService->refreshWork($work, $importResult->dto, fullReplace: true);
                 $work->setScrapeStatus(ScrapeStatus::Complete);
@@ -70,7 +70,8 @@ final class ScrapeWorkMessageHandler
                     ['id' => $message->workId, 'title' => $work->getTitle()],
                 );
             } catch (RateLimitException $e) {
-                $this->requeueOrFail($message, $e->getRetryAfterSeconds(), 'rate limiting');
+                $resolvedUrl = $this->scraper->getLastWorkFinalUrl() ?? $message->resolvedUrl;
+                $this->requeueOrFail($message, $e->getRetryAfterSeconds(), 'rate limiting', $resolvedUrl);
             } catch (ScrapingException $e) {
                 $work->setScrapeStatus(ScrapeStatus::Failed);
                 $this->entityManager->flush();
@@ -84,7 +85,8 @@ final class ScrapeWorkMessageHandler
                     ],
                 );
             } catch (TransportExceptionInterface $e) {
-                $this->requeueOrFail($message, null, 'transport error');
+                $resolvedUrl = $this->scraper->getLastWorkFinalUrl() ?? $message->resolvedUrl;
+                $this->requeueOrFail($message, null, 'transport error', $resolvedUrl);
 
                 $this->logger->warning(
                     'ScrapeWorkMessageHandler: Work {id} transport error on attempt {attempt}, requeued.',
@@ -115,7 +117,7 @@ final class ScrapeWorkMessageHandler
      * Requeues the message with exponential backoff, or marks the work as failed
      * if the max attempt cap has been reached.
      */
-    private function requeueOrFail(ScrapeWorkMessage $message, ?int $retryAfterSeconds, string $context): void
+    private function requeueOrFail(ScrapeWorkMessage $message, ?int $retryAfterSeconds, string $context, ?string $resolvedUrl = null): void
     {
         if ($message->attempt >= self::MAX_ATTEMPTS) {
             $work = $this->workRepository->find($message->workId);
@@ -137,7 +139,7 @@ final class ScrapeWorkMessageHandler
         $delayMs = (int) ($delaySecs * 1000);
 
         $this->messageBus->dispatch(
-            new ScrapeWorkMessage($message->workId, $message->url, $message->attempt + 1),
+            new ScrapeWorkMessage($message->workId, $message->url, $message->attempt + 1, $resolvedUrl),
             [new DelayStamp($delayMs)],
         );
 

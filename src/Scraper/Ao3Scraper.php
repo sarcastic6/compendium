@@ -28,6 +28,15 @@ class Ao3Scraper implements ScraperInterface
     private const RETRY_AFTER_CAP_SECONDS = 120;
 
     /**
+     * The final URL (after redirect-following) of the most recent work page request.
+     * Set in fetchUrl() after getStatusCode() — before getContent() — so it is
+     * available even when the body download subsequently times out.
+     * Only updated when the requested URL is a work page (/works/{id}), so a
+     * series page fetch cannot overwrite the cached work redirect.
+     */
+    private ?string $lastWorkFinalUrl = null;
+
+    /**
      * Timestamp (microtime float) of the last outbound HTTP request made by this instance.
      * Null until the first request. Persists across calls within the same process lifetime,
      * so a Messenger worker correctly throttles across consecutive messages.
@@ -79,6 +88,7 @@ class Ao3Scraper implements ScraperInterface
         private readonly string $userAgent,
         #[Autowire(env: 'int:SCRAPER_REQUEST_DELAY_MS')]
         private readonly int $requestDelayMs,
+        private readonly int $maxDuration,
         #[Autowire(env: 'bool:AO3_AUTH_ENABLED')]
         private readonly bool $authEnabled,
         // Nullable so the container compiles when auth is disabled and the vars are absent.
@@ -125,7 +135,7 @@ class Ao3Scraper implements ScraperInterface
      * @throws ScrapingException if AO3 returns any other non-200 status
      * @throws TransportExceptionInterface if the HTTP request cannot be completed
      */
-    public function scrapeWorkPage(string $url): ScrapedWorkDto
+    public function scrapeWorkPage(string $url, ?string $resolvedUrl = null): ScrapedWorkDto
     {
         // Explicitly guard against non-AO3 URLs. This makes the security boundary
         // intentional and visible — do not rely on normalizeUrl() to enforce it,
@@ -138,16 +148,55 @@ class Ao3Scraper implements ScraperInterface
 
         $normalizedUrl = $this->normalizeUrl($url);
 
-        $this->logger->debug('AO3 scraper: fetching work page', ['url' => $normalizedUrl]);
+        // If a pre-resolved URL is provided (cached from a previous attempt's redirect),
+        // fetch it directly to skip the redirect round-trip. The canonical work URL is
+        // still used as sourceUrl in the DTO so the Work record stays correct.
+        $fetchUrl = $resolvedUrl ?? $normalizedUrl;
 
-        $html = $this->fetchUrl($normalizedUrl);
-
-        $this->logger->debug('AO3 scraper: fetched work page HTML', [
-            'url' => $normalizedUrl,
-            'bytes' => strlen($html),
+        $this->logger->debug('AO3 scraper: fetching work page', [
+            'url' => $fetchUrl,
+            'resolved_from_cache' => $resolvedUrl !== null,
         ]);
 
-        return $this->parse($html, $normalizedUrl);
+        $tWorkPageStart = microtime(true);
+        $this->logger->info('[SCRAPER-DEBUG] scrapeWorkPage() starting fetch', [
+            'fetch_url' => $fetchUrl,
+            'canonical_url' => $normalizedUrl,
+        ]);
+
+        $html = $this->fetchUrl($fetchUrl);
+
+        $this->logger->info('[SCRAPER-DEBUG] scrapeWorkPage() fetch done, starting parse()', [
+            'fetch_url' => $fetchUrl,
+            'fetch_elapsed_seconds' => round(microtime(true) - $tWorkPageStart, 3),
+            'html_bytes' => strlen($html),
+        ]);
+
+        $tParseStart = microtime(true);
+        $dto = $this->parse($html, $normalizedUrl);
+
+        $this->logger->info('[SCRAPER-DEBUG] parse() complete', [
+            'fetch_url' => $fetchUrl,
+            'parse_elapsed_seconds' => round(microtime(true) - $tParseStart, 3),
+            'title' => $dto->title,
+            'authors' => array_column($dto->authors ?? [], 'name'),
+            'words' => $dto->words,
+            'chapters' => $dto->chapters,
+            'language' => $dto->language,
+            'series_name' => $dto->seriesName,
+            'series_url' => $dto->seriesUrl,
+            'place_in_series' => $dto->placeInSeries,
+            'is_complete' => $dto->isComplete,
+            'metadata_types_found' => array_keys($dto->metadata ?? []),
+            'metadata_counts' => array_map('count', $dto->metadata ?? []),
+        ]);
+
+        return $dto;
+    }
+
+    public function getLastWorkFinalUrl(): ?string
+    {
+        return $this->lastWorkFinalUrl;
     }
 
     /**
@@ -168,9 +217,9 @@ class Ao3Scraper implements ScraperInterface
      * @throws ScrapingException if AO3 returns any other non-200 status
      * @throws TransportExceptionInterface if an HTTP request cannot be completed
      */
-    public function scrape(string $url): ScrapedWorkDto
+    public function scrape(string $url, ?string $resolvedUrl = null): ScrapedWorkDto
     {
-        $dto = $this->scrapeWorkPage($url);
+        $dto = $this->scrapeWorkPage($url, $resolvedUrl);
 
         if ($dto->seriesUrl !== null) {
             $seriesData = $this->fetchSeriesData($dto->seriesUrl);
@@ -208,6 +257,7 @@ class Ao3Scraper implements ScraperInterface
         // AO3 redirects canonical work URLs to /chapters/{id} and drops query params,
         // so this must be a cookie (not a query param) to survive the redirect chain.
         $cookies = ['view_adult=true'];
+
         if ($this->sessionCookie !== null) {
             $cookies[] = $this->sessionCookie;
             // Send all auth cookies together — remember_user_token allows AO3 to
@@ -228,10 +278,10 @@ class Ao3Scraper implements ScraperInterface
         ]);
 
         $response = $this->httpClient->request('GET', $url, [
-            'headers' => [
-                'User-Agent' => $this->userAgent,
+            'max_duration' => $this->maxDuration,
+            'headers' => array_merge($this->getBrowserHeaders(), [
                 'Cookie' => $cookieHeader,
-            ],
+            ]),
         ]);
 
         // getStatusCode() may throw TransportExceptionInterface for async clients — let it propagate.
@@ -239,6 +289,12 @@ class Ao3Scraper implements ScraperInterface
         $this->lastRequestAt = microtime(true);
 
         $finalUrl = $response->getInfo('url') ?? $url;
+        // Track work page redirects for retry caching. Gated on the requested URL being a
+        // work page so series fetches cannot overwrite this. Set before getContent() so the
+        // value survives a body-download timeout.
+        if (preg_match('#/works/\d+#', $url)) {
+            $this->lastWorkFinalUrl = $finalUrl;
+        }
         $redirectCount = $response->getInfo('redirect_count') ?? 0;
         $this->logger->debug('AO3 scraper: received response', [
             'requested_url' => $url,
@@ -246,6 +302,22 @@ class Ao3Scraper implements ScraperInterface
             'http_status' => $statusCode,
             'redirected' => $finalUrl !== $url,
             'redirect_count' => $redirectCount,
+        ]);
+
+        // DEBUG: Log all response headers so we can see Content-Encoding, Content-Type,
+        // and Content-Length. This helps diagnose Brotli/encoding issues and body-size hangs.
+        $allHeaders = $response->getHeaders(false);
+        $this->logger->info('[SCRAPER-DEBUG] response headers', [
+            'url' => $url,
+            'final_url' => $finalUrl,
+            'status' => $statusCode,
+            'content-type' => $allHeaders['content-type'][0] ?? 'absent',
+            'content-encoding' => $allHeaders['content-encoding'][0] ?? 'absent',
+            'content-length' => $allHeaders['content-length'][0] ?? 'absent',
+            'transfer-encoding' => $allHeaders['transfer-encoding'][0] ?? 'absent',
+            'cf-cache-status' => $allHeaders['cf-cache-status'][0] ?? 'absent',
+            'server' => $allHeaders['server'][0] ?? 'absent',
+            'all-header-names' => implode(', ', array_keys($allHeaders)),
         ]);
 
         if ($statusCode === 200) {
@@ -310,7 +382,58 @@ class Ao3Scraper implements ScraperInterface
                 );
             }
 
-            $content = $response->getContent();
+            $tGetContentStart = microtime(true);
+            $this->logger->info('[SCRAPER-DEBUG] body download begins (streaming)', [
+                'url' => $url,
+                'final_url' => $finalUrl,
+            ]);
+
+            $buffer = '';
+            try {
+                foreach ($this->httpClient->stream($response) as $chunk) {
+                    // isTimeout() covers the stream()-level timeout; TransportExceptionInterface
+                    // from getContent() covers max_duration expiry. Handle both paths.
+                    if ($chunk->isTimeout()) {
+                        $this->logPartialBodyDump($url, $finalUrl, $buffer, $tGetContentStart, 'stream-timeout');
+                        $chunk->getContent(); // throws TransportException
+                    }
+                    $buffer .= $chunk->getContent();
+                    if ($chunk->isLast()) {
+                        break;
+                    }
+                    // NativeHttpClient with chunked transfer encoding may never deliver the
+                    // closing zero-length chunk, leaving isLast() permanently false. Break as
+                    // soon as we have a complete HTML document rather than waiting for
+                    // max_duration to fire.
+                    if (str_contains(substr($buffer, -20), '</html>')) {
+                        $this->logger->info('[SCRAPER-DEBUG] detected </html> — breaking stream early', [
+                            'url' => $url,
+                            'elapsed_seconds' => round(microtime(true) - $tGetContentStart, 3),
+                            'bytes_received' => strlen($buffer),
+                        ]);
+                        break;
+                    }
+                }
+            } catch (TransportExceptionInterface $e) {
+                $this->logPartialBodyDump($url, $finalUrl, $buffer, $tGetContentStart, $e->getMessage());
+                throw $e;
+            }
+            $content = $buffer;
+
+            $tGetContentElapsed = round(microtime(true) - $tGetContentStart, 3);
+            $contentBytes = strlen($content);
+            $hexPrefix = bin2hex(substr($content, 0, 16));
+            $textPreview = substr(preg_replace('/\s+/', ' ', $content), 0, 300);
+            $looksLikeHtml = str_contains(substr($content, 0, 200), '<html') || str_contains(substr($content, 0, 200), '<!DOCTYPE');
+            $this->logger->info('[SCRAPER-DEBUG] body download complete', [
+                'url' => $url,
+                'final_url' => $finalUrl,
+                'elapsed_seconds' => $tGetContentElapsed,
+                'content_bytes' => $contentBytes,
+                'looks_like_html' => $looksLikeHtml,
+                'first_16_bytes_hex' => $hexPrefix,
+                'first_300_chars' => $textPreview,
+            ]);
 
             // Log any Set-Cookie headers on the final successful response.
             // AO3 rotates _otwarchive_session on redirects; if it appears here
@@ -391,6 +514,24 @@ class Ao3Scraper implements ScraperInterface
         }
 
         return $seconds > 0 ? $seconds : null;
+    }
+
+    private function logPartialBodyDump(string $url, string $finalUrl, string $buffer, float $startTime, string $reason): void
+    {
+        $bytesReceived = strlen($buffer);
+        $this->logger->info('[SCRAPER-DEBUG] body download interrupted — partial content dump', [
+            'url' => $url,
+            'final_url' => $finalUrl,
+            'reason' => $reason,
+            'elapsed_seconds' => round(microtime(true) - $startTime, 3),
+            'bytes_received' => $bytesReceived,
+            'first_16_bytes_hex' => bin2hex(substr($buffer, 0, 16)),
+            'looks_like_html' => str_contains(substr($buffer, 0, 200), '<html') || str_contains(substr($buffer, 0, 200), '<!DOCTYPE'),
+            'first_500_chars' => substr(preg_replace('/\s+/', ' ', $buffer), 0, 500),
+            'last_200_chars' => $bytesReceived > 500
+                ? substr(preg_replace('/\s+/', ' ', $buffer), -200)
+                : '(see first_500_chars)',
+        ]);
     }
 
     public function canonicalizeUrl(string $url): string
@@ -660,14 +801,16 @@ class Ao3Scraper implements ScraperInterface
             $seriesUrl = null;
             $placeInSeries = null;
 
-            $linkNode = $node->filter('a');
+            // Use a[href^="/series/"] rather than the first <a> in the block.
+            // On chapter pages (where AO3 redirects logged-in users), dd.series contains
+            // navigation links (Previous Work, Next Work) that appear before the series link
+            // and would otherwise be picked up by filter('a').first().
+            $linkNode = $node->filter('a[href^="/series/"]');
             if ($linkNode->count() > 0) {
                 $seriesName = trim($linkNode->first()->text());
                 $href = $linkNode->first()->attr('href');
                 if ($href !== null) {
-                    $seriesUrl = str_starts_with($href, 'http')
-                        ? $href
-                        : 'https://' . self::AO3_HOST . $href;
+                    $seriesUrl = 'https://' . self::AO3_HOST . $href;
                 }
             }
 
@@ -712,11 +855,38 @@ class Ao3Scraper implements ScraperInterface
             ));
         }
 
+        $path = parse_url($seriesUrl, PHP_URL_PATH) ?? '';
+        if (!preg_match('#^/series/\d+#', $path)) {
+            throw new ScrapingException(sprintf(
+                'Refusing to fetch non-series URL as series data: %s',
+                $seriesUrl,
+            ));
+        }
+
         $this->logger->debug('AO3 scraper: fetching series page', ['url' => $seriesUrl]);
+
+        $tSeriesStart = microtime(true);
+        $this->logger->info('[SCRAPER-DEBUG] fetchSeriesData() starting', ['url' => $seriesUrl]);
 
         $html = $this->fetchUrl($seriesUrl);
 
-        return $this->parseSeriesPage($html);
+        $this->logger->info('[SCRAPER-DEBUG] fetchSeriesData() fetch done, parsing', [
+            'url' => $seriesUrl,
+            'fetch_elapsed_seconds' => round(microtime(true) - $tSeriesStart, 3),
+            'html_bytes' => strlen($html),
+        ]);
+
+        $result = $this->parseSeriesPage($html);
+
+        $this->logger->info('[SCRAPER-DEBUG] fetchSeriesData() parse done', [
+            'url' => $seriesUrl,
+            'total_elapsed_seconds' => round(microtime(true) - $tSeriesStart, 3),
+            'number_of_parts' => $result['numberOfParts'],
+            'total_words' => $result['totalWords'],
+            'is_complete' => $result['isComplete'],
+        ]);
+
+        return $result;
     }
 
     /**
@@ -826,7 +996,8 @@ class Ao3Scraper implements ScraperInterface
 
         $this->throttle();
         $pageResponse = $this->httpClient->request('GET', $loginUrl, [
-            'headers' => ['User-Agent' => $this->userAgent],
+            'max_duration' => $this->maxDuration,
+            'headers' => $this->getBrowserHeaders(),
         ]);
         $pageStatus = $pageResponse->getStatusCode();
         $this->lastRequestAt = microtime(true);
@@ -859,11 +1030,12 @@ class Ao3Scraper implements ScraperInterface
         $this->throttle();
         $postResponse = $this->httpClient->request('POST', $loginUrl, [
             'max_redirects' => 0,
-            'headers' => [
-                'User-Agent' => $this->userAgent,
+            'max_duration' => $this->maxDuration,
+            'headers' => array_merge($this->getBrowserHeaders(), [
                 'Cookie' => $cookieHeader,
                 'Content-Type' => 'application/x-www-form-urlencoded',
-            ],
+                'Sec-Fetch-Site' => 'same-origin',
+            ]),
             'body' => http_build_query([
                 'user[login]' => $this->username,
                 'user[password]' => $this->password,
@@ -1114,6 +1286,32 @@ class Ao3Scraper implements ScraperInterface
         }
 
         return null;
+    }
+
+    /**
+     * Returns browser-like request headers to reduce the likelihood of Cloudflare
+     * bot-detection rejecting our requests. Only User-Agent was sent previously;
+     * missing Accept/Sec-Fetch-* headers are a common fingerprint for non-browser clients.
+     *
+     * @return array<string, string>
+     */
+    private function getBrowserHeaders(): array
+    {
+        return [
+            'User-Agent' => $this->userAgent,
+            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language' => 'en-US,en;q=0.5',
+            // Omit Connection: keep-alive — NativeHttpClient's PHP stream wrapper defaults
+            // to connection-close semantics, causing the server to close the TCP connection
+            // after the body. With keep-alive, the server keeps the socket open and relies
+            // on the chunked zero-length terminator to signal end-of-body; if that terminator
+            // is dropped by Cloudflare, getContent() hangs until max_duration fires.
+            'Upgrade-Insecure-Requests' => '1',
+            'Sec-Fetch-Dest' => 'document',
+            'Sec-Fetch-Mode' => 'navigate',
+            'Sec-Fetch-Site' => 'none',
+            'Sec-Fetch-User' => '?1',
+        ];
     }
 
     /**

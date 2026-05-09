@@ -39,11 +39,22 @@ services:
     # request as separate Cookie headers with different _otwarchive_session values,
     # causing AO3 to redirect to /lost_cookie. NativeHttpClient has no internal cookie
     # jar, so our Cookie header is the sole source of truth.
-    Symfony\Component\HttpClient\NativeHttpClient:
-        arguments:
-            $defaultOptions:
-                max_duration: 30
+    Symfony\Component\HttpClient\NativeHttpClient: ~
 
     App\Scraper\Ao3Scraper:
         arguments:
             $httpClient: '@Symfony\Component\HttpClient\NativeHttpClient'
+            $maxDuration: 30
+
+    # Async scraper instance used by ScrapeWorkMessageHandler.
+    # Higher timeout because two sequential AO3 requests (work page + series page)
+    # must both complete before the Messenger message is acknowledged.
+    app.scraper.ao3.async:
+        class: App\Scraper\Ao3Scraper
+        arguments:
+            $httpClient: '@Symfony\Component\HttpClient\NativeHttpClient'
+            $maxDuration: 60
+
+    App\MessageHandler\ScrapeWorkMessageHandler:
+        arguments:
+            $scraper: '@app.scraper.ao3.async'

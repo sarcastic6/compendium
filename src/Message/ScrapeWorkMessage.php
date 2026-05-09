@@ -21,5 +21,6 @@ final readonly class ScrapeWorkMessage
         public int $workId,
         public string $url,
         public int $attempt = 0,
+        public ?string $resolvedUrl = null,
     ) {}
 }
