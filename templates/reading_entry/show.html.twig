@@ -38,8 +38,14 @@
                 </button>
             </form>
         {% endif %}
+        {% if not entry.work.deleted %}
+            <a href="{{ path('app_work_edit', {id: entry.work.id}) }}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-book" aria-hidden="true"></i>
+                {{ 'work.action.edit'|trans }}
+            </a>
+        {% endif %}
         <a href="{{ path('app_reading_entry_edit', {id: entry.id}) }}" class="btn btn-secondary btn-sm">
-            <i class="bi bi-pencil" aria-hidden="true"></i>
+            <i class="bi bi-clock-history" aria-hidden="true"></i>
             {{ 'reading.entry.edit'|trans }}
         </a>
         <button type="button" class="btn btn-danger btn-sm"

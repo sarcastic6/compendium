@@ -20,6 +20,7 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use App\Service\WorkService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -61,11 +62,51 @@ class WorkController extends AbstractController
             }
         }
 
-        // Get Author MetadataType at render time so the autocomplete URL has a valid typeId.
-        // findOrCreateAuthorType() flushes when creating a new entity, ensuring getId() != null.
+        return $this->render('work/new.html.twig', $this->buildWorkFormViewData($form, $dto));
+    }
+
+    /**
+     * Edit an existing Work's metadata.
+     */
+    #[Route('/{id}/edit', name: 'app_work_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+    public function edit(int $id, Request $request): Response
+    {
+        $work = $this->workRepository->findWithAllRelations($id);
+        if ($work === null) {
+            throw $this->createNotFoundException();
+        }
+
+        $dto = $this->workService->workToFormDto($work);
+        $form = $this->createForm(WorkFormType::class, $dto);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $this->workService->updateWork($work, $dto);
+                $this->addFlash('success', 'work.updated');
+
+                return $this->redirectToRoute('app_work_show', ['id' => $id]);
+            } catch (\InvalidArgumentException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
+        }
+
+        return $this->render('work/edit.html.twig', array_merge(
+            $this->buildWorkFormViewData($form, $dto),
+            ['work' => $work],
+        ));
+    }
+
+    /**
+     * Builds the template variables shared by the new and edit work form views.
+     * Handles metadata type sorting, checkbox pre-population, and chip index building.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildWorkFormViewData(FormInterface $form, WorkFormDto $dto): array
+    {
         $authorType = $this->workService->findOrCreateAuthorType();
 
-        // All non-Author metadata types, sorted by display order.
         $metadataTypes = $this->metadataTypeRepository->createQueryBuilder('mt')
             ->where('mt.name != :author')
             ->setParameter('author', 'Author')
@@ -82,30 +123,23 @@ class WorkController extends AbstractController
             return $posA !== $posB ? $posA <=> $posB : strcmp($a->getName(), $b->getName());
         });
 
-        // Checkbox types: rendered as checkbox groups (small, stable vocabularies).
         $checkboxTypes = array_values(array_filter(
             $metadataTypes,
             static fn (MetadataType $t) => $t->isShowAsCheckboxes(),
         ));
 
-        // Known metadata values for each checkbox type, for rendering the checkbox options.
         $checkboxOptions = $this->metadataRepository->findCheckboxOptionsByTypes($checkboxTypes);
 
-        // Pre-computed set of known names per checkbox type (for "scraped extras" detection).
         $knownCheckboxNames = [];
         foreach ($checkboxOptions as $typeId => $options) {
             $knownCheckboxNames[$typeId] = array_map(static fn ($o) => $o['name'], $options);
         }
 
-        // Resolve which checkboxes should be pre-checked from DTO data (AO3 import or POST re-render).
-        // This method is read-only — the controller is responsible for removing the matched entries.
         $preselectedCheckboxNames = $this->workService->resolveCheckboxPreselections(
             $dto->metadata,
             $checkboxTypes,
         );
 
-        // Remove checkbox-type entries from $dto->metadata so they don't also render as
-        // autocomplete chips. They are represented by the $preselectedCheckboxNames instead.
         $checkboxTypeIds = array_map(static fn (MetadataType $t) => $t->getId(), $checkboxTypes);
         $dto->metadata = array_values(array_filter(
             $dto->metadata,
@@ -116,8 +150,6 @@ class WorkController extends AbstractController
             ),
         ));
 
-        // Build indexed chip data for autocomplete pre-population (grouped by MetadataType ID).
-        // Each chip carries its form index so the template can emit correct hidden field names.
         $metadataByType = [];
         $metaIndex = 0;
         foreach ($dto->metadata as $entry) {
@@ -133,7 +165,6 @@ class WorkController extends AbstractController
             $metaIndex++;
         }
 
-        // Author chips, indexed for hidden field emission.
         $authorChips = [];
         foreach ($dto->authors as $i => $author) {
             $authorChips[] = [
@@ -143,18 +174,18 @@ class WorkController extends AbstractController
             ];
         }
 
-        return $this->render('work/new.html.twig', [
-            'form'                    => $form,
-            'dto'                     => $dto,
-            'metadataTypes'           => $metadataTypes,
-            'checkboxOptions'         => $checkboxOptions,
-            'knownCheckboxNames'      => $knownCheckboxNames,
+        return [
+            'form'                     => $form,
+            'dto'                      => $dto,
+            'metadataTypes'            => $metadataTypes,
+            'checkboxOptions'          => $checkboxOptions,
+            'knownCheckboxNames'       => $knownCheckboxNames,
             'preselectedCheckboxNames' => $preselectedCheckboxNames,
-            'metadataByType'          => $metadataByType,
-            'totalMetadataIndex'      => $metaIndex,
-            'authorTypeId'            => $authorType->getId(),
-            'authorChips'             => $authorChips,
-        ]);
+            'metadataByType'           => $metadataByType,
+            'totalMetadataIndex'       => $metaIndex,
+            'authorTypeId'             => $authorType->getId(),
+            'authorChips'              => $authorChips,
+        ];
     }
 
     /**

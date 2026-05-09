@@ -195,7 +195,9 @@ reading:
 
 work:
     new_heading: 'Add a Work'
+    edit_heading: 'Edit Work'
     created: 'Work saved.'
+    updated: 'Work updated.'
     select_heading: 'Select a Work'
     select_prompt: 'Search for an existing work or create a new one.'
     import_separator: 'or import from URL'
@@ -210,6 +212,7 @@ work:
         load_error: 'Failed to load preview.'
     action:
         log_entry: 'Log Entry'
+        edit: 'Edit Work'
     show:
         heading: 'Work details'
         no_metadata: 'No metadata attached to this work.'

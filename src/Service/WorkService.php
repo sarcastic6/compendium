@@ -28,6 +28,121 @@ class WorkService
     }
 
     /**
+     * Maps an existing Work entity to a WorkFormDto for edit form pre-population.
+     * Authors are extracted from metadata (type='Author') and placed in dto->authors.
+     * The series source URL is resolved using the work's source type.
+     */
+    public function workToFormDto(Work $work): WorkFormDto
+    {
+        $dto = new WorkFormDto();
+        $dto->type           = $work->getType();
+        $dto->title          = $work->getTitle();
+        $dto->summary        = $work->getSummary();
+        $dto->language       = $work->getLanguage();
+        $dto->publishedDate  = $work->getPublishedDate();
+        $dto->lastUpdatedDate = $work->getLastUpdatedDate();
+        $dto->words          = $work->getWords();
+        $dto->chapters       = $work->getChapters();
+        $dto->link           = $work->getLink();
+        $dto->sourceType     = $work->getSourceType();
+        $dto->placeInSeries  = $work->getPlaceInSeries();
+
+        $series = $work->getSeries();
+        if ($series !== null) {
+            $dto->seriesName = $series->getName();
+            $dto->seriesId   = $series->getId();
+            $dto->seriesUrl  = $series->getLinkForSource($work->getSourceType());
+        }
+
+        foreach ($work->getMetadata() as $metadata) {
+            $link = $metadata->getLinkForSource($work->getSourceType());
+            if ($metadata->getMetadataType()->getName() === 'Author') {
+                $dto->authors[] = ['name' => $metadata->getName(), 'link' => $link];
+            } else {
+                $dto->metadata[] = [
+                    'metadataType' => $metadata->getMetadataType(),
+                    'name'         => $metadata->getName(),
+                    'link'         => $link,
+                ];
+            }
+        }
+
+        return $dto;
+    }
+
+    /**
+     * Applies a full update to an existing Work from the DTO.
+     *
+     * Unlike refreshWork(), every field is written unconditionally — null clears the field.
+     * This is the correct behaviour for a manual edit form where the user controls all values.
+     * Series and metadata are fully replaced (not selectively synced).
+     *
+     * @throws \InvalidArgumentException if a series ID is supplied but not found, or if a
+     *                                   metadata type enforces single values but receives multiple
+     */
+    public function updateWork(Work $work, WorkFormDto $dto): void
+    {
+        $work->setType($dto->type);
+        $work->setTitle($dto->title);
+        $work->setSummary($dto->summary);
+        $work->setLanguage($dto->language);
+        $work->setPublishedDate($dto->publishedDate);
+        $work->setLastUpdatedDate($dto->lastUpdatedDate);
+        $work->setWords($dto->words);
+        $work->setChapters($dto->chapters);
+        $work->setLink($dto->link);
+        $work->setSourceType($dto->sourceType);
+
+        // Three-way series resolution — same logic as createWork().
+        if ($dto->seriesId !== null) {
+            $series = $this->seriesRepository->find($dto->seriesId);
+            if ($series === null) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Series with ID %d not found. It may have been deleted.',
+                    $dto->seriesId,
+                ));
+            }
+            $work->setSeries($series);
+            $work->setPlaceInSeries($dto->placeInSeries);
+        } elseif ($dto->seriesName !== null && trim($dto->seriesName) !== '') {
+            $series = $this->findOrCreateSeries(
+                trim($dto->seriesName),
+                $dto->seriesUrl,
+                $dto->sourceType,
+                $dto->seriesNumberOfParts,
+                $dto->seriesTotalWords,
+                $dto->seriesIsComplete,
+            );
+            $work->setSeries($series);
+            $work->setPlaceInSeries($dto->placeInSeries);
+        } else {
+            $work->setSeries(null);
+            $work->setPlaceInSeries(null);
+        }
+
+        // Full metadata replacement — clear all existing associations then re-apply.
+        $work->getMetadata()->clear();
+
+        $allMetadata = $dto->metadata;
+        if ($dto->authors !== []) {
+            $authorType = $this->findOrCreateAuthorType();
+            foreach ($dto->authors as $entry) {
+                $name = trim((string) ($entry['name'] ?? ''));
+                if ($name !== '') {
+                    $allMetadata[] = [
+                        'metadataType' => $authorType,
+                        'name'         => $name,
+                        'link'         => $entry['link'] ?? null,
+                    ];
+                }
+            }
+        }
+
+        $this->applyMetadata($work, $allMetadata, $dto->sourceType);
+        $this->entityManager->flush();
+    }
+
+    /**
      * Refreshes an existing Work's metadata from a freshly scraped DTO.
      *
      * Only fields with non-null scraped values are updated — if a field fails to parse

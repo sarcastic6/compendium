@@ -1,0 +1,189 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'work.edit_heading'|trans }}{% endblock %}
+
+{% block body %}
+
+<div class="page-header">
+    <div class="page-header-text">
+        <a href="{{ path('app_work_show', {id: work.id}) }}" class="back-link">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            {{ work.title }}
+        </a>
+    </div>
+</div>
+
+<h1 class="h3 mb-4">{{ 'work.edit_heading'|trans }}</h1>
+
+{{
+    form_start(form, {
+        'attr': {
+            'novalidate': true,
+            'data-metadata-index': totalMetadataIndex,
+            'data-author-index': authorChips|length
+        }
+    })
+}}
+
+<div class="row g-3">
+    <div class="col-md-6">
+        {{ form_row(form.type) }}
+        {{ form_row(form.title) }}
+        {{ form_row(form.summary) }}
+    </div>
+    <div class="col-md-6">
+        {{ form_row(form.sourceType) }}
+        {{ form_row(form.link) }}
+
+        {# Series — single-select autocomplete with find-or-create support #}
+        <div class="mb-3 position-relative"
+             data-controller="autocomplete"
+             data-autocomplete-url-value="{{ path('api_series_search') }}"
+             data-autocomplete-allow-new-value="true"
+             data-autocomplete-multi-value-value="false"
+             data-autocomplete-min-chars-value="2">
+            {{ form_label(form.seriesName) }}
+            {{ form_errors(form.seriesName) }}
+            {{ form_widget(form.seriesName, {'attr': {'data-autocomplete-target': 'input', 'autocomplete': 'off'}}) }}
+            {{ form_widget(form.seriesId, {'attr': {'data-autocomplete-target': 'hiddenField'}}) }}
+            {{ form_widget(form.seriesUrl) }}
+            <ul class="dropdown-menu w-100" data-autocomplete-target="results" style="display:none; max-height:200px; overflow-y:auto;"></ul>
+        </div>
+
+        {{ form_row(form.placeInSeries) }}
+        {{ form_row(form.language) }}
+    </div>
+    <div class="col-md-3">
+        {{ form_row(form.publishedDate) }}
+    </div>
+    <div class="col-md-3">
+        {{ form_row(form.lastUpdatedDate) }}
+    </div>
+    <div class="col-md-3">
+        {{ form_row(form.words) }}
+    </div>
+    <div class="col-md-3">
+        {{ form_row(form.chapters) }}
+    </div>
+</div>
+
+<hr>
+
+{# Authors — multi-value autocomplete #}
+<div class="mb-4 position-relative"
+     data-controller="autocomplete"
+     data-autocomplete-url-value="{{ path('api_metadata_search', {'typeId': authorTypeId}) }}"
+     data-autocomplete-allow-new-value="true"
+     data-autocomplete-multi-value-value="true"
+     data-autocomplete-min-chars-value="2"
+     data-autocomplete-field-prefix-value="work_form[authors]"
+     data-autocomplete-index-attribute-value="authorIndex">
+    <h2 class="h5 mb-2">{{ 'work.field.authors'|trans }}</h2>
+    <div data-autocomplete-target="chipContainer" class="d-flex flex-wrap gap-2 mb-2">
+        {% for chip in authorChips %}
+            <span class="badge bg-secondary fs-6 d-inline-flex align-items-center gap-1"
+                  data-chip-name="{{ chip.name }}">
+                {{ chip.name }}
+                <button type="button" class="btn-close btn-close-white btn-sm" aria-label="{{ 'action.remove'|trans }}"></button>
+                <input type="hidden" name="work_form[authors][{{ chip.index }}][name]" value="{{ chip.name }}">
+                <input type="hidden" name="work_form[authors][{{ chip.index }}][link]" value="{{ chip.link }}">
+            </span>
+        {% endfor %}
+    </div>
+    <input type="text"
+           class="form-control"
+           data-autocomplete-target="input"
+           autocomplete="off"
+           placeholder="{{ 'work.field.author_name'|trans }}">
+    <ul class="dropdown-menu w-100" data-autocomplete-target="results" style="display:none; max-height:200px; overflow-y:auto;"></ul>
+</div>
+{% do form.authors.setRendered %}
+
+{# Metadata sections — each MetadataType renders as either checkboxes or autocomplete #}
+{% for metadataType in metadataTypes %}
+<hr>
+
+{% if metadataType.showAsCheckboxes %}
+
+    {# Checkbox section for small, stable vocabularies (Rating, Warning, Category) #}
+    <div class="mb-4" data-controller="checkbox-metadata">
+        <h2 class="h5 mb-2">{{ metadataType.name }}</h2>
+        <div class="d-flex flex-wrap gap-3">
+            {# Known options from the database #}
+            {% for option in checkboxOptions[metadataType.id] ?? [] %}
+                <div class="form-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           id="checkbox_{{ metadataType.id }}_{{ loop.index0 }}"
+                           value="{{ option.name }}"
+                           data-type-id="{{ metadataType.id }}"
+                           {% if option.name in (preselectedCheckboxNames[metadataType.id] ?? []) %}checked{% endif %}>
+                    <label class="form-check-label" for="checkbox_{{ metadataType.id }}_{{ loop.index0 }}">
+                        {{ option.name }}
+                    </label>
+                </div>
+            {% endfor %}
+
+            {# Scraped extras: values from AO3 import that don't exist in the DB yet. #}
+            {% for extraName in preselectedCheckboxNames[metadataType.id] ?? [] %}
+                {% if extraName not in (knownCheckboxNames[metadataType.id] ?? []) %}
+                    <div class="form-check">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               id="checkbox_{{ metadataType.id }}_extra_{{ loop.index0 }}"
+                               value="{{ extraName }}"
+                               data-type-id="{{ metadataType.id }}"
+                               checked>
+                        <label class="form-check-label" for="checkbox_{{ metadataType.id }}_extra_{{ loop.index0 }}">
+                            {{ extraName }}
+                        </label>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+{% else %}
+
+    {# Autocomplete section for high-cardinality types (Fandom, Relationships, Character, Tag, …) #}
+    <div class="mb-4 position-relative"
+         data-controller="autocomplete"
+         data-autocomplete-url-value="{{ path('api_metadata_search', {'typeId': metadataType.id}) }}"
+         data-autocomplete-allow-new-value="true"
+         data-autocomplete-multi-value-value="true"
+         data-autocomplete-min-chars-value="2"
+         data-autocomplete-field-prefix-value="work_form[metadata]"
+         data-autocomplete-index-attribute-value="metadataIndex"
+         data-autocomplete-type-id-value="{{ metadataType.id }}">
+        <h2 class="h5 mb-2">{{ metadataType.name }}</h2>
+        <div data-autocomplete-target="chipContainer" class="d-flex flex-wrap gap-2 mb-2">
+            {% for chip in metadataByType[metadataType.id] ?? [] %}
+                <span class="badge bg-secondary fs-6 d-inline-flex align-items-center gap-1"
+                      data-chip-name="{{ chip.name }}">
+                    {{ chip.name }}
+                    <button type="button" class="btn-close btn-close-white btn-sm" aria-label="{{ 'action.remove'|trans }}"></button>
+                    <input type="hidden" name="work_form[metadata][{{ chip.index }}][name]" value="{{ chip.name }}">
+                    <input type="hidden" name="work_form[metadata][{{ chip.index }}][metadataType]" value="{{ metadataType.id }}">
+                    <input type="hidden" name="work_form[metadata][{{ chip.index }}][link]" value="{{ chip.link }}">
+                </span>
+            {% endfor %}
+        </div>
+        <input type="text"
+               class="form-control"
+               data-autocomplete-target="input"
+               autocomplete="off"
+               placeholder="{{ 'work.field.add_metadata'|trans({'%type%': metadataType.name}) }}">
+        <ul class="dropdown-menu w-100" data-autocomplete-target="results" style="display:none; max-height:200px; overflow-y:auto;"></ul>
+    </div>
+
+{% endif %}
+{% endfor %}
+{% do form.metadata.setRendered %}
+
+<div class="d-flex gap-2 mt-3">
+    <button type="submit" class="btn btn-primary">{{ 'action.save'|trans }}</button>
+    <a href="{{ path('app_work_show', {id: work.id}) }}" class="btn btn-outline-secondary">{{ 'action.cancel'|trans }}</a>
+</div>
+
+{{ form_end(form) }}
+{% endblock %}
