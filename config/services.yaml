@@ -39,7 +39,10 @@ services:
     # request as separate Cookie headers with different _otwarchive_session values,
     # causing AO3 to redirect to /lost_cookie. NativeHttpClient has no internal cookie
     # jar, so our Cookie header is the sole source of truth.
-    Symfony\Component\HttpClient\NativeHttpClient: ~
+    Symfony\Component\HttpClient\NativeHttpClient:
+        arguments:
+            $defaultOptions:
+                max_duration: 30
 
     App\Scraper\Ao3Scraper:
         arguments:
