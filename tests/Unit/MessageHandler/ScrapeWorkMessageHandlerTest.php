@@ -124,7 +124,9 @@ class ScrapeWorkMessageHandlerTest extends TestCase
             ->method('dispatch')
             ->with(
                 $this->callback(static function (ScrapeWorkMessage $msg): bool {
-                    return $msg->workId === 1 && $msg->attempt === 1;
+                    return $msg->workId === 1
+                        && $msg->url === 'https://archiveofourown.org/works/1'
+                        && $msg->attempt === 1;
                 }),
                 $this->callback(static function (array $stamps): bool {
                     foreach ($stamps as $stamp) {
@@ -154,6 +156,57 @@ class ScrapeWorkMessageHandlerTest extends TestCase
         $handler($message);
 
         // scrapeStatus was never changed — still null (pending was set by import service, not handler)
+        $this->assertNull($work->getScrapeStatus());
+    }
+
+    public function test_handler_requeues_rate_limit_with_retry_url(): void
+    {
+        $work = $this->makeWork();
+        $message = new ScrapeWorkMessage(1, 'https://archiveofourown.org/works/1', attempt: 0);
+
+        $workRepository = $this->createStub(WorkRepository::class);
+        $workRepository->method('find')->willReturn($work);
+
+        $scraper = $this->createMock(Ao3Scraper::class);
+        $scraper->expects($this->once())
+            ->method('scrape')
+            ->willThrowException(new RateLimitException(
+                'https://archiveofourown.org/works/1',
+                30,
+                'https://archiveofourown.org/works/1/chapters/2',
+            ));
+
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->expects($this->once())
+            ->method('dispatch')
+            ->with(
+                $this->callback(static function (ScrapeWorkMessage $msg): bool {
+                    return $msg->workId === 1
+                        && $msg->url === 'https://archiveofourown.org/works/1/chapters/2'
+                        && $msg->attempt === 1;
+                }),
+                $this->anything(),
+            )
+            ->willReturn(new Envelope(new ScrapeWorkMessage(
+                1,
+                'https://archiveofourown.org/works/1/chapters/2',
+                1,
+            )));
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('flush');
+
+        $handler = $this->makeHandler(
+            $scraper,
+            $this->createStub(WorkService::class),
+            $this->createStub(ImportService::class),
+            $workRepository,
+            $entityManager,
+            $messageBus,
+        );
+
+        $handler($message);
+
         $this->assertNull($work->getScrapeStatus());
     }
 

@@ -137,13 +137,14 @@ class Ao3Scraper implements ScraperInterface
         }
 
         $normalizedUrl = $this->normalizeUrl($url);
+        $fetchUrl = $this->normalizeFetchUrl($url);
 
-        $this->logger->debug('AO3 scraper: fetching work page', ['url' => $normalizedUrl]);
+        $this->logger->debug('AO3 scraper: fetching work page', ['url' => $fetchUrl]);
 
-        $html = $this->fetchUrl($normalizedUrl);
+        $html = $this->fetchUrl($fetchUrl);
 
         $this->logger->debug('AO3 scraper: fetched work page HTML', [
-            'url' => $normalizedUrl,
+            'url' => $fetchUrl,
             'bytes' => strlen($html),
         ]);
 
@@ -330,13 +331,13 @@ class Ao3Scraper implements ScraperInterface
 
         if ($statusCode === 429 || $statusCode === 503) {
             $retryAfter = $this->parseRetryAfter($response->getHeaders(false));
-            throw new RateLimitException($url, $retryAfter);
+            throw new RateLimitException($url, $retryAfter, $this->getSafeRetryUrl($url, $finalUrl));
         }
 
         if ($statusCode === 502 || $statusCode === 504) {
             // Transient Cloudflare/infrastructure errors — indistinguishable from a rate limit
             // in practice; apply the same backoff-with-jitter strategy.
-            throw new RateLimitException($url, null);
+            throw new RateLimitException($url, null, $this->getSafeRetryUrl($url, $finalUrl));
         }
 
         throw new ScrapingException(
@@ -393,6 +394,36 @@ class Ao3Scraper implements ScraperInterface
         return $seconds > 0 ? $seconds : null;
     }
 
+    private function getSafeRetryUrl(string $requestedUrl, string $finalUrl): ?string
+    {
+        if ($requestedUrl === $finalUrl) {
+            return null;
+        }
+
+        $requestedWorkId = $this->extractWorkId($requestedUrl);
+        $finalWorkId = $this->extractWorkId($finalUrl);
+        if ($requestedWorkId === null || $finalWorkId === null || $requestedWorkId !== $finalWorkId) {
+            return null;
+        }
+
+        $host = parse_url($finalUrl, PHP_URL_HOST);
+        if ($host !== self::AO3_HOST && $host !== 'www.' . self::AO3_HOST) {
+            return null;
+        }
+
+        return $finalUrl;
+    }
+
+    private function extractWorkId(string $url): ?string
+    {
+        $path = parse_url($url, PHP_URL_PATH) ?? '';
+        if (!preg_match('#^/works/(\d+)(?:/chapters/\d+)?/?$#', $path, $matches)) {
+            return null;
+        }
+
+        return $matches[1];
+    }
+
     public function canonicalizeUrl(string $url): string
     {
         return $this->normalizeUrl($url);
@@ -415,6 +446,22 @@ class Ao3Scraper implements ScraperInterface
         }
 
         return 'https://' . self::AO3_HOST . $path;
+    }
+
+    private function normalizeFetchUrl(string $url): string
+    {
+        if (!str_starts_with($url, 'http')) {
+            $url = 'https://' . $url;
+        }
+
+        $parsed = parse_url($url);
+        $path = $parsed['path'] ?? '';
+
+        if (preg_match('#^/works/\d+/chapters/\d+/?$#', $path, $matches)) {
+            return 'https://' . self::AO3_HOST . rtrim($matches[0], '/');
+        }
+
+        return $this->normalizeUrl($url);
     }
 
     private function parse(string $html, string $sourceUrl): ScrapedWorkDto

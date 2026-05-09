@@ -70,7 +70,7 @@ final class ScrapeWorkMessageHandler
                     ['id' => $message->workId, 'title' => $work->getTitle()],
                 );
             } catch (RateLimitException $e) {
-                $this->requeueOrFail($message, $e->getRetryAfterSeconds(), 'rate limiting');
+                $this->requeueOrFail($message, $e->getRetryAfterSeconds(), 'rate limiting', $e->getRetryUrl());
             } catch (ScrapingException $e) {
                 $work->setScrapeStatus(ScrapeStatus::Failed);
                 $this->entityManager->flush();
@@ -115,7 +115,12 @@ final class ScrapeWorkMessageHandler
      * Requeues the message with exponential backoff, or marks the work as failed
      * if the max attempt cap has been reached.
      */
-    private function requeueOrFail(ScrapeWorkMessage $message, ?int $retryAfterSeconds, string $context): void
+    private function requeueOrFail(
+        ScrapeWorkMessage $message,
+        ?int $retryAfterSeconds,
+        string $context,
+        ?string $retryUrl = null,
+    ): void
     {
         if ($message->attempt >= self::MAX_ATTEMPTS) {
             $work = $this->workRepository->find($message->workId);
@@ -135,19 +140,21 @@ final class ScrapeWorkMessageHandler
         $delaySecs = $retryAfterSeconds
             ?? (2 ** $message->attempt) + random_int(0, 1000) / 1000;
         $delayMs = (int) ($delaySecs * 1000);
+        $nextUrl = $retryUrl ?? $message->url;
 
         $this->messageBus->dispatch(
-            new ScrapeWorkMessage($message->workId, $message->url, $message->attempt + 1),
+            new ScrapeWorkMessage($message->workId, $nextUrl, $message->attempt + 1),
             [new DelayStamp($delayMs)],
         );
 
         $this->logger->info(
             'ScrapeWorkMessageHandler: Work {id} {context}, requeued with {delay}s delay (attempt {attempt}).',
             [
-                'id'      => $message->workId,
-                'context' => $context,
-                'delay'   => $delaySecs,
-                'attempt' => $message->attempt,
+                'id'        => $message->workId,
+                'context'   => $context,
+                'delay'     => $delaySecs,
+                'attempt'   => $message->attempt,
+                'retry_url' => $nextUrl,
             ],
         );
     }

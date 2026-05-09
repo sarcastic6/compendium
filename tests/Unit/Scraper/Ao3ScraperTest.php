@@ -281,6 +281,16 @@ class Ao3ScraperTest extends TestCase
         $this->assertStringNotContainsString('/chapters/', $dto->sourceUrl ?? '');
     }
 
+    public function test_chapter_url_is_used_for_fetch_but_not_source_url(): void
+    {
+        $response = new MockResponse($this->fixture('minimal_work'), ['http_code' => 200]);
+        $scraper = $this->makeScraper($response);
+        $dto = $scraper->scrape('https://archiveofourown.org/works/55555/chapters/99999');
+
+        $this->assertSame('https://archiveofourown.org/works/55555/chapters/99999', $response->getRequestUrl());
+        $this->assertSame('https://archiveofourown.org/works/55555', $dto->sourceUrl);
+    }
+
     // --- HTTP error handling: RateLimitException ---
 
     /** @return array<string, array{int}> */
@@ -312,6 +322,40 @@ class Ao3ScraperTest extends TestCase
             $this->fail('Expected RateLimitException');
         } catch (RateLimitException $e) {
             $this->assertStringContainsString('archiveofourown.org', $e->getUrl());
+        }
+    }
+
+    public function test_rate_limit_exception_carries_safe_retry_url_after_redirect(): void
+    {
+        $response = new MockResponse('', [
+            'http_code'      => 429,
+            'url'            => 'https://archiveofourown.org/works/99999/chapters/88888',
+            'redirect_count' => 1,
+        ]);
+        $scraper = $this->makeScraper($response);
+
+        try {
+            $scraper->scrape('https://archiveofourown.org/works/99999');
+            $this->fail('Expected RateLimitException');
+        } catch (RateLimitException $e) {
+            $this->assertSame('https://archiveofourown.org/works/99999/chapters/88888', $e->getRetryUrl());
+        }
+    }
+
+    public function test_rate_limit_exception_rejects_retry_url_for_different_work(): void
+    {
+        $response = new MockResponse('', [
+            'http_code'      => 429,
+            'url'            => 'https://archiveofourown.org/works/12345/chapters/88888',
+            'redirect_count' => 1,
+        ]);
+        $scraper = $this->makeScraper($response);
+
+        try {
+            $scraper->scrape('https://archiveofourown.org/works/99999');
+            $this->fail('Expected RateLimitException');
+        } catch (RateLimitException $e) {
+            $this->assertNull($e->getRetryUrl());
         }
     }
 

@@ -18,6 +18,7 @@ class RateLimitException extends \RuntimeException
     public function __construct(
         private readonly string $url,
         private readonly ?int $retryAfterSeconds = null,
+        private readonly ?string $retryUrl = null,
     ) {
         parent::__construct(sprintf('AO3 rate limit hit for URL: %s', $url));
     }
@@ -35,5 +36,15 @@ class RateLimitException extends \RuntimeException
     public function getRetryAfterSeconds(): ?int
     {
         return $this->retryAfterSeconds;
+    }
+
+    /**
+     * A safe resolved URL to use for the next retry, when AO3 redirected the
+     * original request to another URL for the same work. Null means retry the
+     * original message URL.
+     */
+    public function getRetryUrl(): ?string
+    {
+        return $this->retryUrl;
     }
 }
